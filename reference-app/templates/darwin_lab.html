@@ -3,39 +3,54 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🧬 Darwin Lab — Эволюция алгоритмов</title>
+<title>Darwin Lab Arena — ORIS reference UI</title>
+<meta name="description" content="Reference UI for ORIS dental radiology schema. Q1 paper-quality companion app for IJOS submission. All examples synthetic — no PII.">
+<link rel="preconnect" href="https://rsms.me">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <link rel="stylesheet" href="/static/css/darwin_lab.css">
 </head>
-<body>
-<!-- Back-nav: compact link back to main site -->
-<div style="background:#0f172a;border-bottom:1px solid rgba(255,255,255,0.06);padding:4px 16px;display:flex;align-items:center;gap:12px;font-size:12px;flex-shrink:0">
-    <a href="/" style="color:#94a3b8;text-decoration:none;display:flex;align-items:center;gap:4px" onmouseover="this.style.color='#f1f5f9'" onmouseout="this.style.color='#94a3b8'">
-        <span style="font-size:14px">←</span> Patient Viewer
+<body data-theme="dark">
+<!-- Back-nav (breadcrumb) — synthetic-data badge + privacy notice -->
+<nav class="back-nav" role="navigation" aria-label="Breadcrumb"
+     style="background:var(--bg-elev);border-bottom:1px solid var(--border);padding:6px 16px;display:flex;align-items:center;gap:12px;font-size:12px;flex-shrink:0;font-family:var(--font-sans, system-ui)">
+    <a href="/" style="color:var(--text-muted);text-decoration:none;display:flex;align-items:center;gap:4px"
+       onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-muted)'"
+       aria-label="Back to Patient Viewer">
+        <span style="font-size:14px" aria-hidden="true">←</span> Patient Viewer
     </a>
-    <span style="color:rgba(255,255,255,0.15)">›</span>
-    <span style="color:rgba(139,92,246,0.6)">🔬 Рентген</span>
-    <span style="color:rgba(255,255,255,0.15)">›</span>
-    <span style="color:#f1f5f9;font-weight:500">Darwin Lab</span>
+    <span style="color:var(--text-faint)" aria-hidden="true">›</span>
+    <span style="color:var(--purple);opacity:0.7" aria-label="Radiology">🔬 Рентген</span>
+    <span style="color:var(--text-faint)" aria-hidden="true">›</span>
+    <span style="color:var(--text);font-weight:500">Darwin Lab</span>
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-strong);font-size:10px;font-weight:600;letter-spacing:0.04em" aria-label="Privacy banner">SYNTHETIC · NO PII</span>
     <span style="flex:1"></span>
-    <a href="/dissertation-cases" style="color:#94a3b8;text-decoration:none;font-size:11px" onmouseover="this.style.color='#f59e0b'" onmouseout="this.style.color='#94a3b8'">🎓 Диссертация</a>
-    <a href="/panorama-workspace" style="color:#94a3b8;text-decoration:none;font-size:11px" onmouseover="this.style.color='#8b5cf6'" onmouseout="this.style.color='#94a3b8'">🩺 Клинический обзор</a>
-</div>
+    <a href="/dissertation-cases" style="color:var(--text-muted);text-decoration:none;font-size:11px"
+       onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-muted)'">🎓 Диссертация</a>
+    <a href="/panorama-workspace" style="color:var(--text-muted);text-decoration:none;font-size:11px"
+       onmouseover="this.style.color='var(--purple)'" onmouseout="this.style.color='var(--text-muted)'">🩺 Клинический обзор</a>
+</nav>
 <div class="app">
     <!-- Top bar -->
-    <div class="topbar">
-        <h1>🧬 Darwin Lab <span>Исследовательская лаборатория — эволюция алгоритмов, оценка имплантатов, наложение масок</span></h1>
-        <div class="nav">
-            <a href="/">📋 Пациенты</a>
-            <a href="/panorama-workspace">🩺 Клинический обзор</a>
-            <a href="/panorama-monitor">📊 Монитор</a>
-            <a href="/darwin-lab" class="active" onclick="showView('tree');return false;">🧬 Эволюция</a>
-            <a href="#" onclick="showView('evaluate');return false;" id="nav-evaluate">🧪 Оценка</a>
-            <a href="#" onclick="showView('metrics');return false;" id="nav-metrics">📊 Метрики</a>
-            <a href="#" onclick="showView('implant-lab');return false;" id="nav-implant">🦴 Имплант-анализ</a>
-            <a href="#" onclick="showView('arena');return false;" id="nav-arena">🎯 Арена</a>
-        </div>
-    </div>
+    <header class="topbar" role="banner">
+        <h1>Darwin Lab <span>ORIS reference UI · synthetic data · paper-companion</span></h1>
+        <nav class="nav" role="navigation" aria-label="Primary">
+            <a href="/" aria-label="Patients">📋 Пациенты</a>
+            <a href="/panorama-workspace" aria-label="Clinical overview">🩺 Клинический обзор</a>
+            <a href="/panorama-monitor" aria-label="Monitor">📊 Монитор</a>
+            <a href="/darwin-lab" class="active" onclick="showView('tree');return false;" aria-current="page">🧬 Эволюция</a>
+            <a href="#" onclick="showView('evaluate');return false;" id="nav-evaluate" aria-label="Evaluate">🧪 Оценка</a>
+            <a href="#" onclick="showView('metrics');return false;" id="nav-metrics" aria-label="Metrics">📊 Метрики</a>
+            <a href="#" onclick="showView('implant-lab');return false;" id="nav-implant" aria-label="Implant analysis">🦴 Имплант-анализ</a>
+            <a href="#" onclick="showView('arena');return false;" id="nav-arena" aria-label="Arena">🎯 Арена</a>
+            <button class="theme-toggle" type="button" onclick="document.body.classList.toggle('theme-light');try{localStorage.setItem('oris-theme', document.body.classList.contains('theme-light')?'light':'dark')}catch(e){}" aria-label="Toggle light/dark theme" title="Toggle light/dark theme">Theme</button>
+        </nav>
+    </header>
+    <script>
+        // Restore saved theme on load (synthetic-only, no auth)
+        try { if (localStorage.getItem('oris-theme') === 'light') document.body.classList.add('theme-light'); } catch(e){}
+    </script>
 
     <!-- Left sidebar: algorithm list -->
     <div class="sidebar" id="sidebar">
