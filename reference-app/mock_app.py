@@ -258,55 +258,83 @@ def _generate_mock_algorithms(gt_formula: dict) -> list[dict]:
     return [a, b, c]
 
 
+def _ingest_image(conn: sqlite3.Connection, img_path: Path, source_label: str) -> int | None:
+    """Ingest an image file into uploaded_images table (idempotent via SHA-256)."""
+    if not img_path.exists():
+        return None
+    img_bytes = img_path.read_bytes()
+    sha = hashlib.sha256(img_bytes).hexdigest()
+    row = conn.execute("SELECT id FROM uploaded_images WHERE sha256 = ?", (sha,)).fetchone()
+    if row:
+        return row["id"]
+    # Probe dimensions via Pillow if available
+    w = h = None
+    if HAS_PILLOW:
+        try:
+            with Image.open(io.BytesIO(img_bytes)) as im:
+                w, h = im.size
+        except Exception:
+            pass
+    cur = conn.execute(
+        """
+        INSERT INTO uploaded_images (sha256, mime, width, height, bytes,
+                                     privacy_ack, source_label, original_size)
+        VALUES (?, 'image/png', ?, ?, ?, 1, ?, ?)
+        """,
+        (sha, w, h, img_bytes, source_label, len(img_bytes)),
+    )
+    return cur.lastrowid
+
+
 def bootstrap_demo_data() -> None:
-    """Seed the SQLite DB with synthetic examples on first run (idempotent)."""
+    """Seed the SQLite DB with anonymized real-cohort cases (case_A/B/C) plus
+    optional synthetic-fallback cases. Idempotent — re-runs are safe.
+
+    Three primary cases (anonymised from the RUDN K08.1 cohort, all PII stripped,
+    full-image cropping + watermark applied):
+      file_id 1001 = Case A — multi-tooth + multiple implants + bridges
+      file_id 1002 = Case B — heavy restoration (crowns + endo + bridge + impl)
+      file_id 1003 = Case C — implant-only / All-on-X (10 impl + bar overdenture)
+
+    The 3 synthetic schema-test fixtures from ../examples/synthetic_*.json
+    remain available for testing the parser/bridges in isolation but are NOT
+    seeded into the demo SQLite (they would clutter the file list).
+    """
     with db_connect() as conn:
         # Sandbox
         conn.execute(
             "INSERT OR IGNORE INTO sandboxes (sandbox_id, label, is_demo) VALUES (?, ?, ?)",
-            ("RUDN", "Synthetic Demo Sandbox", 1),
+            ("RUDN", "Anonymised Demo Cases (RUDN K08.1, PII stripped)", 1),
         )
 
-        # Default sample image (synthetic placeholder)
-        sample_path = HERE / "static" / "images" / "synthetic_opg_001.png"
-        sample_image_id = None
-        if sample_path.exists():
-            img_bytes = sample_path.read_bytes()
-            sha = hashlib.sha256(img_bytes).hexdigest()
-            row = conn.execute("SELECT id FROM uploaded_images WHERE sha256 = ?", (sha,)).fetchone()
-            if row:
-                sample_image_id = row["id"]
-            else:
-                cur = conn.execute(
-                    """
-                    INSERT INTO uploaded_images (sha256, mime, width, height, bytes,
-                                                 privacy_ack, source_label, original_size)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (sha, "image/png", 2880, 1450, img_bytes, 1, "ship_with_app", len(img_bytes)),
-                )
-                sample_image_id = cur.lastrowid
+        # ── Primary: 3 anonymised real-cohort cases with attached OPG images ──
+        cases_dir = HERE / "data" / "cases"
+        images_dir = HERE / "static" / "images" / "cases"
 
-        # Files + GT + history + algorithms from synthetic_*.json
-        file_id_base = 10001
-        for idx, example_path in enumerate(sorted(EXAMPLES_DIR.glob("synthetic_*.json"))):
-            try:
-                doc = json.loads(example_path.read_text(encoding="utf-8"))
-            except Exception as e:
-                print(f"  ⚠ skipping {example_path.name}: {e}")
+        for case_letter in ("A", "B", "C"):
+            json_path = cases_dir / f"case_{case_letter}.json"
+            png_path = images_dir / f"case_{case_letter}.png"
+            if not json_path.exists():
+                print(f"  ⚠ Missing {json_path.name}, skipping case {case_letter}")
                 continue
 
-            file_id = file_id_base + idx
-            formula, bridge_links, tooth_notes, root_data = _oris_doc_to_legacy_formula(doc)
-            label = doc.get("notes", "Synthetic example")[:200]
-            acquisition_date = (doc.get("imaging") or {}).get("acquisition_date") or "2026-01-15T00:00:00Z"
+            doc = json.loads(json_path.read_text(encoding="utf-8"))
+            file_id = doc["file_id"]                     # 1001/1002/1003
+            label = doc["label"]                         # generic case description
+            formula = doc.get("formula", {})
+            bridge_links = doc.get("bridge_links", {})
+            tooth_notes = doc.get("tooth_notes", {})
+            root_data = doc.get("root_data", {})
+
+            # Ingest the corresponding anonymised PNG
+            image_id = _ingest_image(conn, png_path, f"case_{case_letter}_anonymised")
 
             conn.execute(
                 """
                 INSERT OR REPLACE INTO files (file_id, sandbox_id, filename, label, image_id, created_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, 'RUDN', ?, ?, ?, '2026-01-01T00:00:00Z')
                 """,
-                (file_id, "RUDN", example_path.name, label, sample_image_id, acquisition_date),
+                (file_id, f"case_{case_letter}.png", label, image_id),
             )
             conn.execute(
                 """
@@ -323,7 +351,6 @@ def bootstrap_demo_data() -> None:
                     json.dumps(root_data),
                 ),
             )
-            # Initial history row
             existing = conn.execute(
                 "SELECT 1 FROM history WHERE file_id = ?", (file_id,)
             ).fetchone()
@@ -335,7 +362,6 @@ def bootstrap_demo_data() -> None:
                     """,
                     (file_id, str(uuid.uuid4())),
                 )
-            # Mock algorithms
             for algo in _generate_mock_algorithms(formula):
                 conn.execute(
                     """
@@ -351,7 +377,8 @@ def bootstrap_demo_data() -> None:
                         algo["generation"], algo["branch"],
                     ),
                 )
-            print(f"  ✓ {example_path.name} → file_id={file_id}, {len(formula)} teeth")
+            print(f"  ✓ Case {case_letter} → file_id={file_id}, {len(formula)} teeth, "
+                  f"{len(bridge_links)} bridge links, image: {png_path.name}")
 
 
 # ============================================================================

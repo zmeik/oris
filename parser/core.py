@@ -19,7 +19,15 @@ import re
 from dataclasses import dataclass, field
 
 # Canonical ordered list of statuses, matching the Darwin-Lab Arena
-# `ARENA_STATUS_CYCLE` constant. Order is preserved for the picker UI cycle.
+# `ARENA_STATUS_CYCLE` constant (17 statuses) plus production extensions
+# observed in real ground-truth data (`impl_cover`, `attrition`).
+#
+# NOTE on paper alignment: paper v9 §2.1 and §3.1 cite "18 statuses derived
+# from production ARENA_STATUS_CYCLE". Those 18 are the 17 below plus the
+# empty string "" (unannotated). The two additional production statuses
+# (`impl_cover`, `attrition`) are documented in grammar/statuses.md as
+# "production-observed extensions" — they are accepted by the validator and
+# bridges, but flagged in the schema as out-of-paper-scope until v0.2.
 STATUSES: tuple[str, ...] = (
     "present",
     "missing",
@@ -27,6 +35,7 @@ STATUSES: tuple[str, ...] = (
     "impl_fixture",
     "impl_healing",
     "impl_restored",
+    "impl_cover",       # production extension: cover screw sealed under mucosa
     "post",
     "crowned",
     "restored",
@@ -37,6 +46,7 @@ STATUSES: tuple[str, ...] = (
     "bridge",
     "bar",
     "cantilever",
+    "attrition",        # production extension: tooth wear / abrasion (TWI)
     "uncertain",
 )
 

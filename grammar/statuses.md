@@ -1,6 +1,8 @@
-# 18 layer statuses
+# Layer statuses
 
-> ORIS v0.1 derives its 18 layer statuses from the production constant `ARENA_STATUS_CYCLE` in the Darwin-Lab Arena codebase. Each status maps to one of four semantic categories (physiological, treatment, pathological, artifact) and is anchored to authoritative literature.
+> ORIS v0.1 derives its layer statuses from the production constant `ARENA_STATUS_CYCLE` in the Darwin-Lab Arena codebase (18 statuses including the empty string `''`), plus 2 production-observed extensions (`impl_cover`, `attrition`) seen in real ground-truth data — together 20 statuses, of which 19 are non-empty. Each status maps to one of four semantic categories (physiological, treatment, pathological, artifact) and is anchored to authoritative literature.
+>
+> **Paper alignment:** Paper v9 §2.1 cites "18 statuses derived from production ARENA_STATUS_CYCLE". The 2 extension statuses below (`impl_cover`, `attrition`) are documented here as production-observed but not yet listed in the paper's main text — they are accepted by the parser/validator/bridges and exist in real K08.1 cohort GT. They will be promoted to the paper text in v0.2.
 
 ## Quick reference
 
@@ -11,8 +13,9 @@
 | `missing` | treatment trace | Tooth absent | dark grey cell, "A" |
 | `implant` | treatment | Generic implant (no detail) | blue cell, screw icon |
 | `impl_fixture` | treatment | Implant fixture only (no abutment, no crown) | blue, "F" |
-| `impl_healing` | treatment | Implant with healing abutment / cover screw | blue, "H" |
+| `impl_healing` | treatment | Implant with healing abutment | blue, "H" |
 | `impl_restored` | treatment | Implant with final prosthetic restoration | blue, "I+K" / "IK" |
+| `impl_cover` | treatment | Implant with **cover screw** sealed under mucosa (sub-mucosal, between Stage 1 and Stage 2 surgery) — **production extension** | blue, "ИЗ" / "IC" |
 | `post` | treatment | Intraradicular post (metal or fibre) | green, "Ш" / "P" |
 | `crowned` | treatment | Full-coverage coronal restoration | blue, "K" |
 | `restored` | treatment | Filling (composite/amalgam/glass-ionomer) | orange, "П" / "F" |
@@ -23,7 +26,28 @@
 | `bridge` | treatment | Bridge component (pontic or retainer abutment) | grey, "B" |
 | `bar` | treatment | Implant bar (overdenture with bar attachment) | grey, "—" |
 | `cantilever` | treatment | Cantilever pontic (single-side retention) | grey, "↦" |
+| `attrition` | pathological | Tooth wear / abrasion (TWI Lussi index) — **production extension** | yellow, "≈" |
 | `uncertain` | artifact | Indeterminable (artifact / low quality) | yellow, "?" |
+
+## Detailed definitions of production extensions
+
+### `impl_cover` — Implant with cover screw
+
+**Source:** ITI Treatment Guide vol. 5 (Stage 1 / Stage 2 surgical protocol).
+
+Distinct from `impl_healing` — `impl_healing` has a healing abutment protruding through the mucosa, whereas `impl_cover` has a flat **cover screw** sealing the implant platform sub-mucosally during the osseointegration period (typically 3–6 months between Stage 1 placement and Stage 2 uncovering).
+
+**Radiographic appearance.** Implant fixture visible with a flat radiopaque element flush with the platform (the cover screw); no abutment protruding occlusally; mucosal seal evident on intraoral imaging if available.
+
+**Clinical relevance.** Frequent during the load-free osseointegration phase; confirms the implant is at Stage 1 → Stage 2 transition awaiting uncovery.
+
+### `attrition` — Tooth wear
+
+**Source:** Lussi A, Carvalho TS. "Erosive tooth wear: a multifactorial condition of growing concern and increasing knowledge." *Monogr Oral Sci* 2014;25:1-15.
+
+Radiographically observable tooth wear / abrasion (TWI 0–4). Typically visible as flattening of cusp tips, reduced crown height, or shortened incisal edges. Often combined with other layers (e.g. `attrition+restored`).
+
+**Clinical relevance.** Indicator of bruxism, parafunction, or erosive habits; relevant for prosthetic planning and implant longevity (high-attrition patients have higher implant complication rates per Misch 2020 Ch. 47).
 
 ## Detailed definitions
 
