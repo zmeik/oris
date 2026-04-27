@@ -63,3 +63,8 @@ desktop.ini
 
 # Output
 *.log
+
+# reference-app generated files (SQLite DB, uploaded images)
+reference-app/data/*.db
+reference-app/data/*.db-journal
+reference-app/uploads/
