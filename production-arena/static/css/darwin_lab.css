@@ -1,0 +1,1644 @@
+:root {
+    --bg: #0a0e1a;
+    --surface: #131a2b;
+    --surface2: #1a2340;
+    --border: #2a3555;
+    --text: #e8ecf4;
+    --text-dim: #7a8baa;
+    --green: #10b981;
+    --red: #ef4444;
+    --yellow: #eab308;
+    --blue: #3b82f6;
+    --purple: #8b5cf6;
+    --gold: #f59e0b;
+    --gray: #4b5563;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; height:100vh; overflow:hidden; }
+
+/* Layout */
+.app { display:grid; grid-template-columns:260px 1fr 380px; grid-template-rows:56px 1fr; height:100vh; }
+.topbar { grid-column:1/-1; background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 20px; gap:16px; }
+.topbar h1 { font-size:18px; font-weight:600; }
+.topbar h1 span { font-size:14px; color:var(--text-dim); font-weight:400; margin-left:8px; }
+.topbar .nav { display:flex; gap:4px; margin-left:auto; }
+.topbar .nav a { color:var(--text-dim); text-decoration:none; padding:6px 14px; border-radius:6px; font-size:13px; transition:0.2s; }
+.topbar .nav a:hover { background:var(--surface2); color:var(--text); }
+.topbar .nav a.active { background:var(--blue); color:#fff; }
+
+/* Sidebar */
+.sidebar { background:var(--surface); border-right:1px solid var(--border); overflow-y:auto; padding:12px; }
+.sidebar h3 { font-size:12px; text-transform:uppercase; color:var(--text-dim); letter-spacing:1px; margin-bottom:8px; }
+.algo-card { padding:10px 12px; border-radius:8px; cursor:pointer; margin-bottom:6px; border:1px solid transparent; transition:0.2s; }
+.algo-card:hover { background:var(--surface2); border-color:var(--border); }
+.algo-card.selected { background:var(--surface2); border-color:var(--blue); }
+.algo-card .name { font-size:14px; font-weight:600; display:flex; align-items:center; gap:6px; }
+.algo-card .codename { font-size:11px; color:var(--text-dim); margin-top:2px; }
+.algo-card .metrics { display:flex; gap:8px; margin-top:6px; font-size:11px; }
+.algo-card .metrics span { padding:2px 6px; border-radius:4px; background:var(--bg); }
+.algo-card.dead { opacity:0.45; }
+.algo-card.dead:hover { opacity:0.7; }
+
+/* Verdict badges */
+.badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+.badge.success { background:rgba(16,185,129,0.15); color:var(--green); }
+.badge.failure { background:rgba(239,68,68,0.15); color:var(--red); }
+.badge.partial_success { background:rgba(234,179,8,0.15); color:var(--yellow); }
+.badge.champion { background:rgba(245,158,11,0.2); color:var(--gold); border:1px solid var(--gold); }
+
+/* Center tree area */
+.tree-area { position:relative; overflow:hidden; background:var(--bg); }
+.tree-controls { position:absolute; top:12px; left:12px; z-index:10; display:flex; gap:6px; }
+.tree-controls button { background:var(--surface); border:1px solid var(--border); color:var(--text); padding:6px 14px; border-radius:6px; cursor:pointer; font-size:12px; transition:0.2s; }
+.tree-controls button:hover { background:var(--surface2); }
+.tree-controls button.active { background:var(--blue); border-color:var(--blue); }
+.tree-info { position:absolute; bottom:12px; left:12px; z-index:10; font-size:11px; color:var(--text-dim); }
+svg { width:100%; height:100%; }
+
+/* D3 tree styles */
+.node circle { cursor:pointer; transition:0.3s; }
+.node circle:hover { filter:brightness(1.3); }
+.node text { font-size:12px; fill:var(--text); pointer-events:none; }
+.node .codename-label { font-size:10px; fill:var(--text-dim); }
+.node .metric-label { font-size:9px; fill:var(--text-dim); }
+.link { fill:none; stroke:var(--border); stroke-width:2; }
+.link.champion-path { stroke:var(--gold); stroke-width:3; }
+.link.dead-branch { stroke:var(--gray); stroke-dasharray:4,4; }
+
+/* Right panel */
+.detail-panel { background:var(--surface); border-left:1px solid var(--border); overflow-y:auto; }
+.detail-panel .empty { display:flex; align-items:center; justify-content:center; height:100%; color:var(--text-dim); font-size:14px; text-align:center; padding:30px; }
+
+/* Evaluate view */
+/* ═══ Evaluate area ═══ */
+.evaluate-area { display:none; overflow-y:auto; padding:20px; background:var(--bg); grid-column: 2 / 4; }
+.evaluate-area.active { display:block; }
+.eval-case { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:24px; }
+.eval-case h2 { font-size:16px; margin-bottom:4px; }
+.eval-case .subtitle { color:var(--text-dim); font-size:12px; margin-bottom:16px; }
+.eval-case .opg-container { display:flex; gap:12px; margin-bottom:16px; }
+.eval-case .opg-container img { border-radius:8px; border:1px solid var(--border); max-height:200px; flex:1; object-fit:contain; background:#000; cursor:pointer; transition:0.3s; }
+.eval-case .opg-container img:hover { border-color:var(--blue); transform:scale(1.02); }
+.eval-case .opg-container img.zoomed { position:fixed; top:0; left:0; width:100vw; height:100vh; max-height:100vh; z-index:9999; border-radius:0; transform:none; object-fit:contain; }
+
+/* Twin OPG view: original + segmentation overlay */
+.opg-twin { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+.opg-twin .opg-col { text-align:center; }
+.opg-twin .opg-col-title { font-size:11px; color:var(--text-dim); margin-bottom:4px; text-transform:uppercase; letter-spacing:1px; }
+.opg-twin .opg-col img { border-radius:8px; border:1px solid var(--border); width:100%; max-height:280px; object-fit:contain; background:#000; cursor:pointer; transition:0.3s; }
+.opg-twin .opg-col img:hover { border-color:var(--blue); transform:scale(1.02); }
+.opg-twin .opg-col img.zoomed { position:fixed; top:0; left:0; width:100vw; height:100vh; max-height:100vh; z-index:9999; border-radius:0; transform:none; object-fit:contain; }
+
+/* ── Fullscreen OPG viewer with zoom/pan ── */
+.opg-viewer-overlay {
+    position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:10000;
+    background:rgba(0,0,0,0.95); display:flex; flex-direction:column;
+    user-select:none; -webkit-user-select:none;
+}
+.opg-viewer-toolbar {
+    display:flex; align-items:center; gap:8px; padding:8px 16px;
+    background:rgba(30,30,30,0.9); border-bottom:1px solid rgba(255,255,255,0.1);
+    flex-shrink:0; z-index:2;
+}
+.opg-viewer-toolbar button {
+    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2);
+    color:#fff; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:13px;
+    transition:all 0.15s;
+}
+.opg-viewer-toolbar button:hover { background:rgba(255,255,255,0.25); }
+.opg-viewer-toolbar button.active { background:var(--blue); border-color:var(--blue); }
+.opg-viewer-toolbar .vt-sep { width:1px; height:20px; background:rgba(255,255,255,0.15); }
+.opg-viewer-toolbar .vt-label { font-size:11px; color:rgba(255,255,255,0.5); }
+.opg-viewer-toolbar .vt-zoom { font-size:12px; color:rgba(255,255,255,0.7); min-width:45px; text-align:center; }
+.opg-viewer-canvas {
+    flex:1; overflow:hidden; position:relative; cursor:grab;
+}
+.opg-viewer-canvas.dragging { cursor:grabbing; }
+.opg-viewer-canvas img {
+    position:absolute; transform-origin:0 0; transition:none;
+    image-rendering:auto; pointer-events:none;
+}
+.opg-viewer-canvas canvas.dist-grid {
+    position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1;
+}
+/* Distortion correction panel */
+.dist-panel {
+    background:rgba(20,20,30,0.95); border-bottom:1px solid rgba(255,255,255,0.1);
+    padding:10px 16px; display:none; flex-shrink:0; z-index:2;
+    max-height:180px; overflow-y:auto;
+}
+.dist-panel.open { display:block; }
+.dist-row { display:flex; align-items:center; gap:12px; margin-bottom:8px; flex-wrap:wrap; }
+.dist-row label { font-size:12px; color:rgba(255,255,255,0.7); min-width:90px; }
+.dist-row input[type=range] { flex:1; min-width:150px; max-width:300px; accent-color:#3b82f6; }
+.dist-row .dist-val { font-size:13px; color:#fff; font-weight:600; min-width:45px; font-family:monospace; }
+.dist-presets { display:flex; gap:4px; }
+.dist-presets button {
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+    color:rgba(255,255,255,0.7); padding:3px 8px; border-radius:4px; cursor:pointer; font-size:10px;
+}
+.dist-presets button:hover { background:rgba(255,255,255,0.2); }
+.dist-presets button.active { background:var(--blue); border-color:var(--blue); color:#fff; }
+.dist-info { font-size:10px; color:rgba(255,255,255,0.4); line-height:1.5; margin-top:6px; max-width:900px; }
+.dist-info b { color:rgba(255,255,255,0.6); }
+.dist-disclaimer { font-size:9px; color:rgba(255,255,255,0.25); margin-top:4px; font-style:italic; }
+
+/* ── Angulation measurement tool ── */
+.opg-viewer-canvas.ang-mode { cursor:crosshair !important; }
+.opg-viewer-canvas.ang-mode.dragging { cursor:crosshair !important; }
+.opg-viewer-canvas canvas.ang-canvas {
+    position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:2;
+}
+.ang-panel {
+    background:rgba(20,20,30,0.95); border-bottom:1px solid rgba(255,255,255,0.1);
+    padding:10px 16px; display:none; flex-shrink:0; z-index:2;
+    max-height:35vh; overflow-y:auto;
+}
+.ang-panel.open { display:block; }
+.ang-results {
+    display:flex; gap:8px; flex-wrap:wrap; align-items:flex-start;
+}
+.ang-axis-tag {
+    display:inline-flex; align-items:center; gap:4px; padding:3px 8px;
+    border-radius:6px; font-size:11px; font-weight:600; cursor:pointer;
+    border:1px solid rgba(255,255,255,0.2); transition:0.15s;
+}
+.ang-axis-tag:hover { background:rgba(255,255,255,0.15); }
+.ang-axis-tag .ang-del { font-size:9px; opacity:0.5; margin-left:2px; }
+.ang-axis-tag .ang-del:hover { opacity:1; color:var(--red); }
+.ang-pair-result {
+    display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
+    border-radius:6px; font-size:12px; font-weight:600; margin:2px;
+}
+.ang-pair-result.parallel { background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.3); }
+.ang-pair-result.acceptable { background:rgba(59,130,246,0.2); color:#60a5fa; border:1px solid rgba(59,130,246,0.3); }
+.ang-pair-result.angled { background:rgba(234,179,8,0.2); color:#fbbf24; border:1px solid rgba(234,179,8,0.3); }
+.ang-pair-result.risky { background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.3); }
+.ang-hint { font-size:10px; color:rgba(255,255,255,0.4); font-style:italic; }
+
+/* ── Implant Library Overlay ── */
+.lib-panel {
+    background:rgba(20,20,30,0.95); border-bottom:1px solid rgba(255,255,255,0.1);
+    padding:8px 16px; display:none; flex-shrink:0; z-index:2; max-height:200px; overflow-y:auto;
+}
+.lib-panel.open { display:block; }
+.lib-systems {
+    display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;
+}
+.lib-sys-btn {
+    background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+    color:rgba(255,255,255,0.7); padding:4px 10px; border-radius:6px; cursor:pointer;
+    font-size:11px; transition:0.15s;
+}
+.lib-sys-btn:hover { background:rgba(255,255,255,0.2); }
+.lib-sys-btn.active { background:var(--green); border-color:var(--green); color:#fff; }
+.lib-variants {
+    display:flex; gap:4px; flex-wrap:wrap; margin-top:6px;
+}
+.lib-var-btn {
+    background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+    color:rgba(255,255,255,0.6); padding:2px 8px; border-radius:4px; cursor:pointer;
+    font-size:10px; font-family:monospace;
+}
+.lib-var-btn:hover { background:rgba(255,255,255,0.15); }
+.lib-var-btn.active { background:rgba(52,211,153,0.2); border-color:var(--green); color:#34d399; }
+.lib-preview {
+    display:flex; gap:12px; align-items:flex-start; margin-top:8px;
+}
+.lib-svg-wrap {
+    background:rgba(0,0,0,0.4); border-radius:6px; padding:6px;
+    border:1px solid rgba(255,255,255,0.1); flex-shrink:0;
+}
+.lib-overlay-canvas {
+    position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:3;
+}
+.lib-controls {
+    display:flex; gap:8px; align-items:center; margin-top:6px;
+}
+.lib-controls label {
+    font-size:10px; color:rgba(255,255,255,0.5);
+}
+.lib-controls input[type=range] {
+    width:100px;
+}
+.impl-passport summary:hover { background:rgba(0,200,255,0.05); border-radius:6px 6px 0 0; }
+.impl-passport[open] summary { border-bottom:1px solid rgba(0,200,255,0.1); }
+.lib-match-badge {
+    display:inline-flex; align-items:center; gap:3px; padding:2px 6px;
+    border-radius:4px; font-size:9px; font-weight:600;
+}
+.lib-match-badge.good { background:rgba(52,211,153,0.2); color:#34d399; }
+.lib-match-badge.ok { background:rgba(59,130,246,0.2); color:#60a5fa; }
+.lib-match-badge.poor { background:rgba(234,179,8,0.2); color:#fbbf24; }
+/* Local warp handles & panel */
+.warp-panel {
+    background:rgba(20,20,30,0.95); border-bottom:1px solid rgba(255,255,255,0.1);
+    padding:8px 16px; display:none; flex-shrink:0; z-index:2;
+}
+.warp-panel.open { display:block; }
+.warp-row { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+.warp-row label { font-size:11px; color:rgba(255,255,255,0.6); min-width:70px; }
+.warp-row input[type=range] { flex:1; min-width:100px; max-width:180px; accent-color:#a78bfa; }
+.warp-row .warp-val { font-size:11px; color:#a78bfa; font-weight:600; min-width:40px; font-family:monospace; }
+.warp-impl-select { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:6px; }
+.warp-impl-btn {
+    background:rgba(167,139,250,0.1); border:1px solid rgba(167,139,250,0.25);
+    color:rgba(167,139,250,0.8); padding:2px 8px; border-radius:4px; cursor:pointer;
+    font-size:10px; font-family:monospace; transition:0.15s;
+}
+.warp-impl-btn:hover { background:rgba(167,139,250,0.25); }
+.warp-impl-btn.active { background:rgba(167,139,250,0.3); border-color:#a78bfa; color:#c4b5fd; }
+
+/* Card context block */
+.card-context { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px 16px; margin-bottom:16px; }
+.card-context summary { font-size:13px; font-weight:600; cursor:pointer; color:var(--text-dim); }
+.card-context summary:hover { color:var(--text); }
+.card-context .ctx-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-top:10px; }
+.card-context .ctx-chip { font-size:12px; padding:4px 10px; border-radius:6px; background:var(--surface2); display:inline-flex; align-items:center; gap:4px; margin:2px; }
+.card-context .ctx-chip.impl { border-left:3px solid var(--green); }
+.card-context .ctx-chip.diag { border-left:3px solid var(--yellow); }
+.card-context .ctx-chip.diary { border-left:3px solid var(--blue); }
+.card-context .ctx-chip.yolo { border-left:3px solid var(--purple); }
+.card-context .ctx-label { font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px; }
+
+/* Dental formula grid */
+.df-section { margin:12px 0; }
+.df-section-title { font-size:13px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:8px; }
+.df-section-title .df-label { color:var(--text-dim); font-weight:400; font-size:11px; }
+.df-grid-wrap { display:flex; flex-direction:column; gap:2px; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 10px; }
+.df-row { display:flex; justify-content:center; gap:0; }
+.df-cell { width:34px; height:38px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid var(--border); border-radius:4px; margin:1px; font-size:10px; cursor:pointer; transition:0.15s; position:relative; user-select:none; }
+.df-cell:hover { border-color:var(--blue); transform:scale(1.1); z-index:2; }
+.df-cell .fdi { font-weight:700; font-size:11px; }
+.df-cell .st-icon { font-size:12px; line-height:1; }
+.df-cell.st-empty { background:rgba(75,85,99,0.15); border-style:dotted; border-color:var(--gray); }
+.df-cell.st-empty .fdi { color:var(--gray); }
+/* GT formula bigger cells */
+.df-grid-wrap.gt-editable .df-cell { width:42px; height:46px; }
+.df-grid-wrap.gt-editable .df-cell .fdi { font-size:12px; }
+.df-grid-wrap.gt-editable .df-cell .st-icon { font-size:14px; }
+.df-mid { width:16px; display:flex; align-items:center; justify-content:center; color:var(--text-dim); font-size:14px; font-weight:700; }
+.df-sep { height:2px; background:var(--border); margin:2px 20px; border-radius:1px; }
+
+/* Tooth statuses */
+.df-cell.st-present { background:rgba(16,185,129,0.08); border-color:rgba(16,185,129,0.3); }
+.df-cell.st-present .fdi { color:var(--green); }
+.df-cell.st-missing { background:rgba(239,68,68,0.06); border-color:rgba(239,68,68,0.2); border-style:dashed; }
+.df-cell.st-missing .fdi { color:var(--red); text-decoration:line-through; }
+.df-cell.st-implant { background:rgba(16,185,129,0.15); border-color:var(--green); border-width:2px; }
+.df-cell.st-implant .fdi { color:var(--green); font-weight:800; }
+.df-cell.st-impl_fixture { background:rgba(22,163,74,0.15); border-color:#16a34a; border-width:2px; }
+.df-cell.st-impl_fixture .fdi { color:#16a34a; font-weight:800; }
+.df-cell.st-impl_healing { background:rgba(202,138,4,0.15); border-color:#ca8a04; border-width:2px; }
+.df-cell.st-impl_healing .fdi { color:#ca8a04; font-weight:800; }
+.df-cell.st-impl_restored { background:rgba(6,182,212,0.18); border-color:#06b6d4; border-width:2px; }
+.df-cell.st-impl_restored .fdi { color:#06b6d4; font-weight:800; }
+.df-cell.st-crown { background:rgba(6,182,212,0.1); border-color:rgba(6,182,212,0.4); }
+.df-cell.st-crown .fdi { color:#06b6d4; }
+.df-cell.st-filling { background:rgba(14,165,233,0.08); border-color:rgba(14,165,233,0.3); }
+.df-cell.st-filling .fdi { color:#0ea5e9; }
+.df-cell.st-root { background:rgba(217,70,239,0.08); border-color:rgba(217,70,239,0.3); }
+.df-cell.st-root .fdi { color:#d946ef; }
+.df-cell.st-bridge_pontic { background:rgba(139,92,246,0.08); border-color:rgba(139,92,246,0.3); }
+.df-cell.st-bridge_pontic .fdi { color:var(--purple); }
+
+/* Status icons */
+.st-present .st-icon::after { content:'✓'; color:var(--green); }
+.st-missing .st-icon::after { content:'✕'; color:var(--red); }
+.st-implant .st-icon::after { content:'⬡'; color:var(--green); }
+.st-impl_fixture .st-icon::after { content:'⬡'; color:#16a34a; }
+.st-impl_healing .st-icon::after { content:'⬡↑'; color:#ca8a04; }
+.st-impl_restored .st-icon::after { content:'⬡♛'; color:#06b6d4; }
+.st-crown .st-icon::after { content:'♛'; color:#06b6d4; }
+.st-filling .st-icon::after { content:'●'; color:#0ea5e9; }
+.st-root .st-icon::after { content:'↓'; color:#d946ef; }
+.st-bridge_pontic .st-icon::after { content:'⌒'; color:var(--purple); }
+
+/* GT formula is editable */
+.df-grid-wrap.gt-editable .df-cell:hover { background:rgba(59,130,246,0.2); border-color:var(--blue); }
+.df-grid-wrap.gt-editable .df-cell:active { transform:scale(0.95); }
+
+/* Comparison: match/mismatch */
+.df-cell.match { box-shadow:0 0 0 2px var(--green); }
+.df-cell.mismatch { box-shadow:0 0 0 2px var(--red); animation:pulse-red 1s infinite; }
+@keyframes pulse-red { 0%,100%{box-shadow:0 0 0 2px var(--red)} 50%{box-shadow:0 0 6px 2px var(--red)} }
+
+/* Status picker popup */
+.status-picker { position:absolute; top:100%; left:50%; transform:translateX(-50%); background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:6px; display:none; z-index:100; white-space:nowrap; box-shadow:0 8px 24px rgba(0,0,0,0.5); }
+.status-picker.open { display:flex; gap:4px; }
+.status-picker button { background:var(--bg); border:1px solid var(--border); color:var(--text); padding:4px 8px; border-radius:4px; cursor:pointer; font-size:11px; }
+.status-picker button:hover { background:var(--blue); color:#fff; }
+
+/* Algorithm formula comparison */
+.algo-formulas { display:grid; grid-template-columns:repeat(auto-fit, minmax(400px, 1fr)); gap:12px; margin-top:12px; }
+.algo-formula-card { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px; }
+.algo-formula-card h4 { font-size:13px; margin-bottom:6px; display:flex; justify-content:space-between; }
+.algo-formula-card .accuracy { font-weight:700; }
+
+.eval-toolbar { display:flex; gap:8px; align-items:center; margin:10px 0; flex-wrap:wrap; }
+.eval-toolbar button { background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:6px 14px; border-radius:6px; font-size:12px; cursor:pointer; }
+.eval-toolbar button:hover { background:var(--blue); border-color:var(--blue); }
+.eval-toolbar button.primary { background:var(--green); border-color:var(--green); color:#fff; font-weight:600; }
+.eval-toolbar .legend { font-size:11px; color:var(--text-dim); display:flex; gap:10px; margin-left:auto; }
+.eval-toolbar .legend span { display:flex; align-items:center; gap:4px; }
+
+.eval-saved { display:inline-block; padding:4px 12px; border-radius:6px; background:rgba(16,185,129,0.15); color:var(--green); font-size:12px; margin-left:12px; }
+.algo-row { transition:0.2s; }
+.algo-row:hover { background:rgba(59,130,246,0.05); }
+
+/* Experiment card */
+.exp-card { padding:16px; }
+.exp-header { margin-bottom:16px; }
+.exp-header .title { font-size:18px; font-weight:700; margin-bottom:4px; }
+.exp-header .subtitle { font-size:12px; color:var(--text-dim); }
+.exp-header .verdict-row { display:flex; align-items:center; gap:8px; margin-top:8px; }
+.exp-header .metrics-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; }
+.metric-box { background:var(--bg); border-radius:8px; padding:8px 10px; text-align:center; }
+.metric-box .value { font-size:20px; font-weight:700; }
+.metric-box .label { font-size:10px; color:var(--text-dim); text-transform:uppercase; }
+.metric-box.up .value { color:var(--green); }
+.metric-box.down .value { color:var(--red); }
+
+/* Collapsible sections */
+.section { border-top:1px solid var(--border); }
+.section-header { padding:12px 16px; cursor:pointer; display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; color:var(--text-dim); transition:0.2s; user-select:none; }
+.section-header:hover { color:var(--text); background:rgba(255,255,255,0.02); }
+.section-header .icon { font-size:16px; }
+.section-header .arrow { margin-left:auto; transition:0.3s; font-size:10px; }
+.section-header.open .arrow { transform:rotate(90deg); }
+.section-body { padding:0 16px 14px; display:none; }
+.section-body.open { display:block; }
+.section-body p { font-size:13px; line-height:1.6; color:var(--text); margin-bottom:8px; }
+.section-body .label { font-size:11px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; margin-top:12px; margin-bottom:4px; }
+.section-body ul { list-style:none; padding:0; }
+.section-body li { font-size:12px; padding:4px 0; padding-left:16px; position:relative; line-height:1.5; }
+.section-body li::before { content:'→'; position:absolute; left:0; color:var(--blue); }
+.section-body li.lesson::before { content:'💡'; }
+.section-body li.failure::before { content:'⚠️'; }
+.section-body li.finding::before { content:'🔍'; }
+.section-body li.mutation::before { content:'🧬'; }
+
+/* Diff box */
+.diff-box { background:var(--bg); border-radius:6px; padding:10px 12px; font-family:'SF Mono',monospace; font-size:12px; line-height:1.6; margin:8px 0; border-left:3px solid var(--blue); }
+.diff-box .added { color:var(--green); }
+.diff-box .removed { color:var(--red); }
+.diff-box .unchanged { color:var(--text-dim); }
+
+/* Tags */
+.tag-list { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+.tag { font-size:10px; padding:2px 8px; border-radius:10px; background:var(--bg); color:var(--text-dim); border:1px solid var(--border); }
+
+/* TL;DR box */
+.tldr-box { background:linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.08)); border:1px solid rgba(59,130,246,0.2); border-radius:8px; padding:12px 14px; margin:12px 0; font-size:13px; line-height:1.6; }
+
+/* Hypothesis box */
+.hypothesis-box { background:var(--bg); border-left:3px solid var(--purple); border-radius:0 6px 6px 0; padding:10px 14px; margin:8px 0; font-style:italic; font-size:13px; }
+.hypothesis-outcome { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; margin-left:6px; }
+.hypothesis-outcome.confirmed { background:rgba(16,185,129,0.15); color:var(--green); }
+.hypothesis-outcome.refuted { background:rgba(239,68,68,0.15); color:var(--red); }
+.hypothesis-outcome.partially_confirmed { background:rgba(234,179,8,0.15); color:var(--yellow); }
+
+/* Results table */
+.results-table { width:100%; border-collapse:collapse; font-size:12px; margin:8px 0; }
+.results-table th { text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); color:var(--text-dim); font-size:11px; text-transform:uppercase; }
+.results-table td { padding:6px 8px; border-bottom:1px solid rgba(42,53,85,0.5); }
+.results-table .delta.positive { color:var(--green); }
+.results-table .delta.negative { color:var(--red); }
+
+/* ═══ Implant Assessment Lab ═══ */
+.implant-lab { display:none; overflow-y:auto; padding:20px; background:var(--bg); grid-column: 1 / -1; }
+.implant-lab.active { display:block; }
+.impl-header { margin-bottom:24px; }
+.impl-header h2 { font-size:20px; margin-bottom:6px; }
+.impl-header p { color:var(--text-dim); font-size:13px; }
+
+/* Method cards */
+.methods-grid { display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; margin-bottom:24px; }
+.method-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; cursor:pointer; transition:0.2s; }
+.method-card:hover { border-color:var(--blue); transform:translateY(-2px); }
+.method-card.active { border-color:var(--green); box-shadow:0 0 0 1px var(--green); }
+.method-card .m-icon { font-size:28px; margin-bottom:8px; }
+.method-card .m-title { font-size:14px; font-weight:700; margin-bottom:4px; }
+.method-card .method-warn { display:inline-block; margin-left:6px; color:#eab308; font-size:13px; cursor:help; vertical-align:middle; }
+.method-card .method-warn:hover { color:#facc15; }
+.method-card .m-subtitle { font-size:11px; color:var(--text-dim); margin-bottom:8px; }
+.method-card .m-status { font-size:12px; padding:3px 8px; border-radius:4px; display:inline-block; }
+.method-card .m-status.ready { background:rgba(16,185,129,0.12); color:var(--green); }
+.method-card .m-status.loading { background:rgba(59,130,246,0.12); color:var(--blue); }
+
+/* Notation switcher */
+.notation-switcher { display:flex; gap:2px; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:2px; margin-left:auto; }
+.notation-switcher button { background:transparent; border:none; color:var(--text-dim); padding:4px 12px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; transition:0.15s; white-space:nowrap; }
+.notation-switcher button:hover { color:var(--text); background:var(--surface2); }
+.notation-switcher button.active { background:var(--blue); color:#fff; }
+
+/* Tooth position badge */
+.tooth-pos { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:12px; font-weight:700; background:rgba(59,130,246,0.12); color:var(--blue); border:1px solid rgba(59,130,246,0.25); }
+.tooth-pos.from-formula { background:rgba(16,185,129,0.12); color:var(--green); border-color:rgba(16,185,129,0.3); }
+.tooth-pos.from-estimate { background:rgba(234,179,8,0.08); color:var(--yellow); border-color:rgba(234,179,8,0.2); }
+.tooth-pos .tp-fdi { }
+.tooth-pos .tp-alt { font-size:10px; color:var(--text-dim); font-weight:400; }
+.tooth-pos .tp-name { font-size:10px; color:var(--text-dim); font-weight:400; margin-left:4px; }
+.tooth-pos .tp-src { font-size:8px; text-transform:uppercase; letter-spacing:0.3px; opacity:0.7; }
+
+/* Implant results panel */
+.impl-results { display:grid; grid-template-columns:1fr 380px; gap:20px; }
+.impl-results-main { }
+.impl-results-refs { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; max-height:calc(100vh - 200px); overflow-y:auto; }
+
+/* Single implant assessment card */
+.impl-assess-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px; cursor:pointer; transition:border-color 0.2s; }
+.impl-assess-card:hover { border-color:var(--blue); }
+.impl-assess-card.active-impl { border-color:var(--green); box-shadow:0 0 0 1px var(--green), 0 4px 16px rgba(16,185,129,0.15); }
+.impl-assess-card h3 { font-size:15px; margin-bottom:8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+/* Collapsible card body */
+.impl-card-collapse { overflow:hidden; transition:max-height 0.3s ease, opacity 0.2s ease; max-height:3000px; opacity:1; }
+.impl-assess-card.impl-collapsed .impl-card-collapse { max-height:0; opacity:0; margin:0; }
+.impl-assess-card.impl-collapsed { padding-bottom:10px; }
+.impl-assess-card .impl-toggle { font-size:10px; color:var(--text-dim); transition:transform 0.2s; display:inline-block; }
+.impl-assess-card.impl-collapsed .impl-toggle { transform:rotate(-90deg); }
+.impl-assess-card .composite { font-size:28px; font-weight:800; }
+
+/* Implant crop + details layout */
+.impl-card-body { display:grid; grid-template-columns:auto 1fr; gap:16px; align-items:start; }
+.impl-crop-panel { display:flex; flex-direction:column; gap:6px; min-width:180px; max-width:240px; position:sticky; top:8px; }
+.impl-crop-panel img { border-radius:8px; border:1px solid var(--border); width:100%; object-fit:contain; background:#000; cursor:pointer; }
+.impl-crop-panel .crop-filters { display:flex; gap:3px; flex-wrap:wrap; }
+.impl-crop-panel .crop-filters button { background:var(--bg); border:1px solid var(--border); color:var(--text-dim); padding:2px 6px; border-radius:4px; font-size:9px; cursor:pointer; }
+.impl-crop-panel .crop-filters button:hover, .impl-crop-panel .crop-filters button.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+.impl-crop-legend { font-size:9px; color:var(--text-dim); line-height:1.5; }
+.impl-crop-legend span { display:inline-flex; align-items:center; gap:3px; margin-right:6px; }
+
+/* ── Verification buttons — EXACT copy of verify_patient.html .fbtn ── */
+.iv-actions { display:inline-flex; gap:3px; flex-shrink:0; }
+.iv-btn {
+    width:24px; height:24px; border:none; border-radius:6px; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:12px; transition:all 0.15s; background:transparent;
+    color:var(--text-dim); opacity:0.5;
+}
+.impl-assess-card:hover .iv-btn, .method-verify-wrap:hover .iv-btn { opacity:1; }
+.iv-btn:hover { transform:scale(1.15); }
+/* ✓ confirm — always visible green */
+.iv-btn.iv-confirm { opacity:0.9; color:#34d399; background:rgba(16,185,129,0.15); }
+.iv-btn.iv-confirm:hover { background:#22c55e; color:#fff; }
+/* ✎ edit */
+.iv-btn.iv-edit:hover { background:#3b82f6; color:#fff; }
+/* ? uncertain */
+.iv-btn.iv-uncertain:hover { background:#f59e0b; color:#fff; }
+/* Active states — solid fill, white icon */
+.iv-btn.iv-on { opacity:1 !important; color:#fff !important; }
+.iv-btn.iv-confirm.iv-on { background:#22c55e; }
+.iv-btn.iv-edit.iv-on { background:#3b82f6; }
+.iv-btn.iv-uncertain.iv-on { background:#f59e0b; }
+/* Card border highlight when verified */
+.impl-assess-card.iv-st-confirmed { border-left:3px solid #22c55e; }
+.impl-assess-card.iv-st-corrected { border-left:3px solid #3b82f6; }
+.impl-assess-card.iv-st-uncertain { border-left:3px solid #f59e0b; }
+/* Method verified states */
+.method-verify-wrap { position:relative; padding:2px 0; }
+.method-verify-wrap.iv-st-confirmed { border-left:3px solid #22c55e; padding-left:8px; background:rgba(34,197,94,0.04); border-radius:4px; }
+.method-verify-wrap.iv-st-corrected { border-left:3px solid #3b82f6; padding-left:8px; background:rgba(59,130,246,0.04); border-radius:4px; }
+.method-verify-wrap.iv-st-uncertain { border-left:3px solid #f59e0b; padding-left:8px; background:rgba(245,158,11,0.04); border-radius:4px; }
+/* Summary strip at bottom */
+.iv-summary { display:flex; align-items:center; gap:8px; padding:10px 14px; margin-top:12px; border:1px solid var(--border); border-radius:8px; background:var(--surface); font-size:12px; flex-wrap:wrap; }
+.iv-summary.iv-done { border-color:rgba(16,185,129,0.4); background:rgba(16,185,129,0.06); }
+
+/* OPG highlight overlay — canvas is clickable for implant selection */
+.opg-wrapper { position:relative; display:inline-block; width:100%; }
+.opg-wrapper canvas { position:absolute; top:0; left:0; width:100%; height:100%; cursor:crosshair; }
+
+/* Dental formula widget (ported from verify_patient) */
+.df-widget { margin:8px 0; padding:10px 12px; background:var(--surface); border:1px solid var(--border); border-radius:8px; }
+.df-widget .df-title { font-size:11px; font-weight:600; color:var(--text-dim); margin-bottom:8px; letter-spacing:0.3px; }
+.df-widget .df-grid { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.df-widget .df-row { display:flex; align-items:center; gap:2px; }
+.df-widget .df-mid { width:8px; text-align:center; color:var(--border); font-size:14px; font-weight:300; }
+.df-widget .df-sep { width:100%; max-width:440px; height:1px; background:var(--border); margin:1px 0; }
+.df-widget .df-cell { width:24px; height:26px; display:flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:600; border-radius:4px; border:1px solid var(--border);
+    cursor:pointer; transition:0.15s; position:relative; color:var(--text-dim); background:transparent; }
+.df-widget .df-cell:hover { border-color:var(--blue); transform:scale(1.1); z-index:1; }
+.df-widget .df-cell .df-mark { position:absolute; top:-1px; right:1px; font-size:7px; font-weight:700; line-height:1; }
+.df-widget .df-cell.df-filled { background:rgba(59,130,246,0.2); border-color:#3b82f6; color:#93c5fd; }
+.df-widget .df-cell.df-filled .df-mark { color:#60a5fa; }
+.df-widget .df-cell.df-caries { background:rgba(239,68,68,0.2); border-color:#ef4444; color:#fca5a5; }
+.df-widget .df-cell.df-caries .df-mark { color:#f87171; }
+.df-widget .df-cell.df-absent { background:rgba(100,100,100,0.15); border-color:#555; color:#666; text-decoration:line-through; }
+.df-widget .df-cell.df-absent .df-mark { color:#888; }
+.df-widget .df-cell.df-crown { background:rgba(245,158,11,0.2); border-color:#f59e0b; color:#fbbf24; }
+.df-widget .df-cell.df-crown .df-mark { color:#f59e0b; }
+.df-widget .df-cell.df-pulpitis { background:rgba(236,72,153,0.2); border-color:#ec4899; color:#f9a8d4; }
+.df-widget .df-cell.df-pulpitis .df-mark { color:#ec4899; }
+.df-widget .df-cell.df-perio { background:rgba(168,85,247,0.2); border-color:#a855f7; color:#c4b5fd; }
+.df-widget .df-cell.df-perio .df-mark { color:#a855f7; }
+.df-widget .df-cell.df-mobility { background:rgba(234,179,8,0.2); border-color:#eab308; color:#fde047; }
+.df-widget .df-cell.df-mobility .df-mark { color:#eab308; }
+.df-widget .df-cell.df-root { background:rgba(168,162,158,0.2); border-color:#a8a29e; color:#d6d3d1; }
+.df-widget .df-cell.df-root .df-mark { color:#a8a29e; }
+.df-widget .df-cell.df-periodontitis { background:rgba(249,115,22,0.2); border-color:#f97316; color:#fdba74; }
+.df-widget .df-cell.df-periodontitis .df-mark { color:#f97316; }
+.df-widget .df-cell.df-artificial { background:rgba(20,184,166,0.2); border-color:#14b8a6; color:#5eead4; }
+.df-widget .df-cell.df-artificial .df-mark { color:#14b8a6; }
+.df-widget .df-cell.df-implant { background:rgba(16,185,129,0.25); border-color:#10b981; color:#6ee7b7; box-shadow:0 0 4px rgba(16,185,129,0.3); }
+.df-widget .df-cell.df-implant .df-mark { color:#10b981; }
+.df-widget .df-cell.df-implant.active-tooth { border-color:#fff; box-shadow:0 0 8px rgba(16,185,129,0.6); transform:scale(1.15); }
+.df-widget .df-cell.df-implant.df-implant-nodet { background:rgba(16,185,129,0.1); border-style:dashed; box-shadow:none; opacity:0.75; }
+.df-widget .df-legend { margin-top:6px; font-size:9px; color:var(--text-dim); opacity:0.6; text-align:center; }
+.df-popup { position:fixed; z-index:200; background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; padding:8px; display:grid; grid-template-columns:repeat(4,1fr); gap:4px; box-shadow:0 4px 16px rgba(0,0,0,0.4); }
+.df-popup-title { grid-column:1/-1; font-size:10px; color:var(--text-dim); text-align:center; padding-bottom:4px; border-bottom:1px solid var(--border); margin-bottom:2px; }
+.df-popup-btn { width:28px; height:26px; display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--border); border-radius:4px; background:var(--bg); color:var(--text-dim); font-size:10px; font-weight:600; cursor:pointer; transition:0.15s; }
+.df-popup-btn:hover { border-color:var(--blue); background:rgba(59,130,246,0.15); color:var(--text); transform:scale(1.1); }
+.df-popup-btn.active { border-color:var(--blue); background:var(--blue); color:#fff; }
+.df-popup-btn.df-btn-clear { grid-column:1/-1; width:auto; font-size:9px; color:var(--text-dim); opacity:0.7; }
+.df-popup-btn.df-btn-clear:hover { opacity:1; background:rgba(239,68,68,0.15); border-color:#ef4444; color:#fca5a5; }
+
+/* Sticky OPG panel */
+.opg-sticky { background:var(--bg); padding:8px 0 4px; border-bottom:1px solid var(--border); margin-bottom:12px; }
+.opg-sticky.pinned { position:sticky; top:0; z-index:50; }
+.opg-toolbar { display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap; }
+.opg-toolbar .opg-tb-group { display:flex; gap:3px; align-items:center; }
+.opg-toolbar .opg-tb-label { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; margin-right:2px; }
+.opg-toolbar button { background:var(--bg); border:1px solid var(--border); color:var(--text-dim); padding:3px 8px; border-radius:5px; font-size:10px; cursor:pointer; transition:0.15s; }
+.opg-toolbar button:hover { background:var(--surface2); color:var(--text); }
+.opg-toolbar button.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+.opg-toolbar .pin-btn { font-size:13px; padding:3px 7px; }
+.opg-toolbar .pin-btn.active { background:var(--green); border-color:var(--green); }
+
+/* Score bar */
+.score-bar { display:flex; gap:4px; align-items:center; margin:8px 0; }
+.score-bar .bar { flex:1; height:8px; background:var(--bg); border-radius:4px; overflow:hidden; }
+.score-bar .bar-fill { height:100%; border-radius:4px; transition:width 0.5s; }
+.score-bar .bar-label { font-size:11px; color:var(--text-dim); min-width:80px; cursor:pointer; }
+.score-bar .bar-label:hover { color:var(--text); text-decoration:underline; }
+.score-bar.method-active { background:rgba(59,130,246,0.08); border-radius:6px; padding:2px 4px; margin:-2px -4px; }
+
+/* Inline method explainer */
+.method-explainer { margin-top:4px; font-size:10px; line-height:1.5; color:var(--text-dim); background:var(--surface2); border-left:3px solid var(--blue); border-radius:0 6px 6px 0; padding:8px 12px; }
+.method-explainer strong { color:var(--text); }
+.method-explainer .norm { color:var(--green); }
+.method-explainer .warn { color:var(--yellow); }
+.method-explainer .bad { color:var(--red); }
+
+/* Method detail rows */
+.method-detail { background:var(--bg); border-radius:8px; padding:12px; margin:8px 0; cursor:pointer; border:1px solid transparent; transition:border-color 0.2s; }
+.method-detail:hover { border-color:var(--border); }
+.method-detail.method-active { border-color:var(--blue); box-shadow:0 0 0 1px var(--blue); }
+.method-detail h4 { font-size:13px; font-weight:600; margin-bottom:6px; display:flex; align-items:center; gap:6px; }
+.method-detail .md-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:8px; }
+.method-detail .md-metric { text-align:center; }
+.method-detail .md-metric .val { font-size:18px; font-weight:700; }
+.method-detail .md-metric .lbl { font-size:10px; color:var(--text-dim); text-transform:uppercase; }
+
+/* Zone heatmap */
+.zone-heatmap { display:grid; grid-template-columns:repeat(3, 1fr); gap:4px; margin:6px 0; }
+.zone-heatmap .zone { padding:6px; border-radius:4px; text-align:center; font-size:11px; }
+.zone-heatmap .zone .z-val { font-weight:700; }
+.zone-heatmap .zone .z-lbl { font-size:9px; color:var(--text-dim); }
+
+/* References panel */
+details.ref-section { margin-bottom:8px; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+details.ref-section > summary { padding:8px 12px; cursor:pointer; list-style:none; background:var(--surface2); }
+details.ref-section > summary::-webkit-details-marker { display:none; }
+details.ref-section > summary::before { content:'▶ '; font-size:10px; color:var(--text-dim); transition:0.2s; }
+details.ref-section[open] > summary::before { content:'▼ '; }
+details.ref-section > summary:hover { background:var(--border); }
+details.ref-section > :not(summary) { padding:0 12px; }
+details.ref-section > :last-child { padding-bottom:10px; }
+.ref-section h4 { font-size:13px; font-weight:700; color:var(--blue); margin:0; }
+.ref-item { font-size:11px; line-height:1.6; padding:6px 8px; background:var(--bg); border-radius:6px; margin-bottom:4px; border-left:3px solid var(--border); }
+.ref-item .ref-authors { color:var(--text); font-weight:600; }
+.ref-item .ref-title { color:var(--text-dim); font-style:italic; }
+.ref-item .ref-journal { color:var(--text-dim); }
+.ref-item .ref-finding { color:var(--green); font-size:10px; margin-top:2px; }
+.ref-item .ref-pmid { color:var(--blue); font-size:10px; }
+
+/* Grade badges */
+.grade-badge { padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:4px; }
+.grade-badge.bone_intact { background:rgba(16,185,129,0.15); color:var(--green); }
+.grade-badge.bone_remodel { background:rgba(234,179,8,0.15); color:var(--yellow); }
+.grade-badge.bone_loss_mild { background:rgba(249,115,22,0.15); color:#f97316; }
+.grade-badge.bone_loss_mod { background:rgba(239,68,68,0.15); color:var(--red); }
+.grade-badge.bone_loss_sev { background:rgba(100,100,100,0.2); color:#888; }
+.grade-badge.bone_lesion { background:rgba(168,85,247,0.15); color:#a855f7; }
+
+/* Superstructure badges */
+.super-badge { padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+.super-badge.impl_fixture { background:rgba(16,185,129,0.12); color:var(--green); }
+.super-badge.impl_healing { background:rgba(234,179,8,0.12); color:var(--yellow); }
+.super-badge.impl_restored { background:rgba(6,182,212,0.12); color:#06b6d4; }
+
+/* Limitations list */
+.lim-list { list-style:none; padding:0; margin:4px 0; }
+.lim-list li { font-size:11px; padding:2px 0 2px 14px; color:var(--text-dim); position:relative; }
+.lim-list li::before { content:'⚠'; position:absolute; left:0; font-size:9px; }
+
+/* ═══ Sandbox bar ═══ */
+.arena-sandbox-bar {
+    display:flex; align-items:center; gap:10px; padding:8px 14px;
+    background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.2);
+    border-radius:8px; margin-bottom:12px; flex-wrap:wrap;
+}
+.arena-sandbox-bar select {
+    padding:4px 10px; border-radius:6px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text); font-size:12px; cursor:pointer;
+    min-width:180px;
+}
+.arena-sandbox-bar .sbx-btn {
+    padding:4px 10px; border-radius:6px; border:1px solid var(--border);
+    background:var(--surface); color:var(--text); font-size:11px; cursor:pointer;
+    transition:all 0.15s;
+}
+.arena-sandbox-bar .sbx-btn:hover { background:rgba(99,102,241,0.2); border-color:rgba(99,102,241,0.4); }
+.arena-sandbox-bar .sbx-label { font-size:11px; color:var(--text-dim); white-space:nowrap; }
+.arena-sandbox-bar .sbx-count { font-size:10px; padding:1px 6px; border-radius:8px; background:rgba(99,102,241,0.15); color:rgba(165,180,252,0.9); }
+
+/* ── Sandbox import dialog ── */
+.sandbox-import-overlay {
+    display:none; position:fixed; inset:0; z-index:9000;
+    background:rgba(0,0,0,0.6); justify-content:center; align-items:center;
+}
+.sandbox-import-box {
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:20px; width:440px; max-width:90vw; box-shadow:0 8px 32px rgba(0,0,0,0.5);
+}
+.sandbox-import-drop {
+    border:2px dashed var(--border); border-radius:8px; padding:30px; text-align:center;
+    color:var(--text-dim); font-size:12px; cursor:pointer; transition:all 0.2s;
+    margin:12px 0;
+}
+.sandbox-import-drop.dragover { border-color:rgba(99,102,241,0.6); background:rgba(99,102,241,0.05); }
+.sandbox-import-drop input[type="file"] { display:none; }
+.sandbox-import-files { max-height:200px; overflow-y:auto; font-size:11px; margin-top:8px; }
+.sandbox-import-files .sif-item { display:flex; justify-content:space-between; padding:4px 8px; border-bottom:1px solid var(--border); }
+.sandbox-import-files .sif-item .sif-name { color:var(--text); }
+.sandbox-import-files .sif-item .sif-size { color:var(--text-dim); font-size:10px; }
+
+/* ── Confusion matrix drilldown modal (A1) ── */
+.confusion-overlay {
+    display:none; position:fixed; inset:0; z-index:9500;
+    background:rgba(0,0,0,0.65); justify-content:center; align-items:center;
+}
+.confusion-box {
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:20px; width:720px; max-width:95vw; max-height:85vh;
+    box-shadow:0 8px 32px rgba(0,0,0,0.5); display:flex; flex-direction:column;
+}
+.confusion-box .cm-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.confusion-box .cm-grid { display:grid; grid-template-columns:auto 1fr 1fr; gap:0; font-size:12px; margin-bottom:16px; }
+.confusion-box .cm-cell { padding:8px 12px; text-align:center; border:1px solid var(--border); }
+.confusion-box .cm-cell.tp { background:rgba(16,185,129,0.15); color:#22c55e; font-weight:700; }
+.confusion-box .cm-cell.tn { background:rgba(16,185,129,0.06); color:var(--text-dim); }
+.confusion-box .cm-cell.fp { background:rgba(239,68,68,0.12); color:#ef4444; font-weight:600; }
+.confusion-box .cm-cell.fn { background:rgba(234,179,8,0.12); color:#eab308; font-weight:600; }
+.confusion-box .cm-cell.label { background:var(--surface2,#1e1e2e); color:var(--text-dim); font-weight:600; font-size:10px; }
+.confusion-box .cm-tabs { display:flex; gap:4px; margin-bottom:8px; }
+.confusion-box .cm-tabs button {
+    padding:4px 12px; border-radius:4px; font-size:11px; cursor:pointer;
+    background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text-dim);
+}
+.confusion-box .cm-tabs button.active { background:#6366f1; border-color:#6366f1; color:#fff; }
+.confusion-box .cm-file-list { flex:1; overflow-y:auto; font-size:11px; }
+.confusion-box .cm-file-item {
+    padding:6px 8px; border-bottom:1px solid rgba(255,255,255,0.04);
+    cursor:pointer; transition:background 0.15s;
+}
+.confusion-box .cm-file-item:hover { background:var(--surface2,#1e1e2e); }
+.confusion-box .cm-tooth {
+    display:inline-block; padding:1px 6px; border-radius:3px; font-size:10px; margin:1px 2px; font-weight:600;
+}
+.confusion-box .cm-tooth.fp { background:rgba(239,68,68,0.15); color:#f87171; }
+.confusion-box .cm-tooth.fn { background:rgba(234,179,8,0.15); color:#fbbf24; }
+
+/* ═══ Arena view ═══ */
+.arena-area { display:none; overflow-y:auto; padding:16px; background:var(--bg); grid-column: 1 / -1; }
+.arena-area.active { display:block; }
+
+.arena-patient-group { border:1px solid var(--border); border-radius:12px; margin-bottom:24px; overflow:hidden; }
+.arena-patient-group-header { display:flex; align-items:center; gap:10px; padding:10px 16px; background:rgba(255,255,255,0.03); border-bottom:1px solid var(--border); }
+.arena-patient-group-header h2 { font-size:15px; margin:0; font-weight:600; }
+.arena-patient-group-header .group-badge { font-size:10px; padding:2px 7px; border-radius:10px; background:rgba(59,130,246,0.15); color:rgba(147,197,253,0.9); }
+.arena-patient-group .arena-case:last-child { margin-bottom:0; border-bottom:none; }
+.arena-case { background:var(--surface); border-bottom:1px solid var(--border); padding:16px; position:relative; }
+.arena-case h3.snap-title { font-size:13px; margin-bottom:2px; font-weight:500; color:var(--text); display:flex; align-items:center; gap:8px; }
+.arena-case h3.snap-title .snap-idx { font-size:10px; padding:1px 6px; border-radius:8px; background:rgba(255,255,255,0.06); color:var(--text-dim); }
+.arena-case .case-meta { color:var(--text-dim); font-size:11px; margin-bottom:12px; }
+.gt-copy-btn { font-size:10px; padding:2px 8px; border-radius:4px; border:1px solid rgba(34,211,238,0.3); background:rgba(34,211,238,0.08); color:rgba(34,211,238,0.9); cursor:pointer; transition:all 0.15s; white-space:nowrap; }
+.gt-copy-btn:hover { background:rgba(34,211,238,0.2); border-color:rgba(34,211,238,0.5); }
+.gt-copy-menu { position:absolute; z-index:999; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:6px 0; box-shadow:0 4px 16px rgba(0,0,0,0.4); min-width:200px; }
+.gt-copy-menu-item { padding:6px 14px; font-size:11px; cursor:pointer; color:var(--text); display:flex; justify-content:space-between; gap:12px; }
+.gt-copy-menu-item:hover { background:rgba(34,211,238,0.1); }
+.gt-copy-menu-item .copy-filled { color:var(--text-dim); font-size:10px; }
+
+/* ── Трёхколоночный layout: OPG слева + формулы + detail справа ── */
+.arena-body { display:flex; gap:16px; align-items:flex-start; }
+.arena-opg-col { width:520px; min-width:340px; flex-shrink:0; position:sticky; top:16px; }
+.arena-formulas-col { flex:1; min-width:0; }
+.arena-detail-col { width:200px; min-width:160px; flex-shrink:0; position:sticky; top:16px; }
+.arena-detail-panel {
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    padding:12px; font-size:11px; color:var(--text-dim); min-height:80px;
+}
+.arena-detail-panel h4 { font-size:13px; font-weight:600; color:var(--text); margin:0 0 6px; }
+.arena-detail-panel .adp-meta { font-size:10px; margin-bottom:8px; }
+.arena-detail-panel .adp-diff { margin-top:8px; }
+.arena-detail-panel .adp-diff-item { display:flex; gap:4px; font-size:10px; padding:2px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+.arena-detail-panel .adp-diff-item .fdi { color:var(--text); font-weight:600; width:28px; }
+.arena-detail-panel .adp-diff-item .got { color:var(--red); }
+.arena-detail-panel .adp-diff-item .exp { color:var(--green); }
+.arena-detail-empty { color:var(--text-dim); font-size:11px; padding:20px 8px; text-align:center; }
+
+/* ── Tooth detail panel (right side) ── */
+.td-section-header {
+    font-size:9px; text-transform:uppercase; letter-spacing:0.5px;
+    color:var(--text-dim); padding:6px 0 3px; margin-top:4px;
+    border-top:1px solid var(--border);
+}
+.td-section-header:first-child { border-top:none; margin-top:0; }
+.td-btn {
+    display:block; width:100%; text-align:left;
+    padding:5px 8px; margin-bottom:2px;
+    background:var(--surface2, rgba(255,255,255,0.03)); border:none; border-left:3px solid transparent;
+    border-radius:4px; color:var(--text); font-size:11px;
+    cursor:pointer; transition:all 0.15s;
+}
+.td-btn:hover { background:rgba(255,255,255,0.06); filter:brightness(1.2); }
+.td-btn.active { background:rgba(255,255,255,0.05); font-weight:600; }
+[id^="tooth-detail-card-"] { margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+.td-placeholder { color:var(--text-dim); font-size:11px; padding:12px 8px; text-align:center; }
+
+.arena-opg-wrap { position:relative; overflow:hidden; border-radius:6px; border:1px solid var(--border); background:#000; cursor:grab; }
+.arena-opg-wrap:active { cursor:grabbing; }
+.arena-opg { width:100%; display:block; transition:transform 0.1s; transform-origin:center; pointer-events:none; }
+.arena-opg.zoomed { position:fixed; top:0; left:0; width:100vw; height:100vh; max-height:100vh; z-index:9999; border-radius:0; object-fit:contain; }
+
+/* ── Tooth hover highlight canvas overlay ── */
+.opg-hover-canvas, .arena-opg-highlight-canvas {
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    pointer-events:none; z-index:10; border-radius:8px;
+}
+.opg-col { position:relative; }  /* needed for absolute canvas */
+/* Hovered tooth cell in formula (eval + arena) */
+.df-cell.hover-active, .arena-cell.hover-active {
+    outline:2px solid rgba(59,130,246,0.8) !important;
+    outline-offset:-1px;
+    background:rgba(59,130,246,0.12) !important;
+    border-radius:3px;
+    z-index:2;
+}
+
+/* ── OPG toolbar (фильтры + toggle сегментации) ── */
+.arena-opg-toolbar { display:flex; gap:3px; flex-wrap:wrap; margin-top:6px; }
+.arena-opg-toolbar .opg-filter-btn {
+    font-size:9px; padding:3px 6px; border-radius:3px; cursor:pointer; border:1px solid rgba(255,255,255,0.1);
+    background:transparent; color:var(--text-dim); transition:all 0.15s;
+}
+.arena-opg-toolbar .opg-filter-btn:hover { border-color:rgba(255,255,255,0.3); color:var(--text); }
+.arena-opg-toolbar .opg-filter-btn.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+
+.arena-formulas { border-radius:6px; }
+.arena-formula-row { display:flex; align-items:center; margin-bottom:2px; border-radius:4px; background:var(--surface); border:1px solid rgba(255,255,255,0.04); }
+.arena-formula-row:last-child { margin-bottom:0; }
+.arena-formula-row:nth-child(even):not(.ground-truth) { background:rgba(255,255,255,0.015); }
+/* Label СПРАВА от формулы (CSS order) */
+.arena-formula-row .row-label { order:2; width:130px; min-width:130px; padding:6px 8px; font-size:11px; font-weight:600; background:transparent; display:flex; flex-direction:column; gap:1px; text-align:right; cursor:pointer; overflow:hidden; }
+.arena-formula-row .row-label:hover { color:var(--blue); }
+.arena-formula-row .row-label .row-sub { font-size:10px; color:var(--text-dim); font-weight:400; }
+.arena-formula-row .row-formula-wrap { order:1; flex:0 0 auto; display:flex; flex-direction:column; position:relative; }
+.arena-formula-row .row-cells { display:flex; }
+.arena-formula-row .row-score { order:3; }
+
+.arena-formula-row.ground-truth { background:rgba(59,130,246,0.04); margin-bottom:8px; border:1px solid rgba(59,130,246,0.15); position:relative; }
+.arena-formula-row.ground-truth .row-label { color:var(--blue); cursor:default; }
+
+/* ── Ячейки зубов — увеличенные для читабельности ── */
+.arena-cell { width:40px; flex:0 0 40px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:2px 0; position:relative; cursor:default; min-height:52px; }
+.arena-cell.midline-right { border-right:2px solid rgba(255,255,255,0.1); }
+.arena-cell .cell-num { font-size:10px; color:rgba(255,255,255,0.5); line-height:1; margin-bottom:2px; order:1; }
+.arena-cell .tooth-svg { order:2; }
+.arena-cell .cell-abbr { font-size:9px; font-weight:700; line-height:1; margin-top:2px; order:3; }
+
+/* ── Стоматологическая конвенция зубной формулы ──
+   Верхняя челюсть: корневой SVG (снаружи/вверху) → комментарий → коронковый SVG → номер (у разделителя)
+   Нижняя челюсть: номер (у разделителя) → коронковый SVG → комментарий → корневой SVG (снаружи/внизу)
+   Номера обеих челюстей сходятся к разделительной линии */
+
+/* Нижняя челюсть (default): корневой SVG снизу/снаружи */
+.arena-cell .cell-root { order:4; margin-top:1px; line-height:0; opacity:0.85; height:50px; display:flex; align-items:flex-start; justify-content:center; overflow:hidden; }
+.arena-cell .cell-root .root-svg { display:block; margin:0 auto; }
+.row-cells-upper .arena-cell .cell-root { align-items:flex-end; }
+
+/* Верхняя челюсть: корневой SVG сверху/снаружи */
+.row-cells-upper .arena-cell .cell-root { order:0; margin-bottom:1px; margin-top:0; }
+.row-cells-upper .arena-cell .cell-abbr { order:1; margin-top:0; margin-bottom:2px; }
+.row-cells-upper .arena-cell .tooth-svg { order:2; }
+.row-cells-upper .arena-cell .cell-num  { order:3; margin-bottom:0; margin-top:2px; }
+
+/* Скрыть корневой SVG для missing/absent — нет зуба = нет корня */
+.arena-cell.missing .cell-root, .arena-cell.absent .cell-root { display:none; }
+/* Бейдж ×N для множественных имплантатов на одной позиции */
+.impl-count-badge {
+    position:absolute; top:1px; right:1px; font-size:7px; font-weight:700;
+    background:rgba(16,185,129,0.7); color:#fff; border-radius:3px;
+    padding:0 2px; line-height:12px; z-index:3; pointer-events:none;
+}
+/* Понтик/консоль: корень пунктирный ghost (нет настоящего зуба, только протез) */
+.arena-cell.bridge .cell-root, .arena-cell.bridge_pontic .cell-root,
+.arena-cell.cantilever .cell-root { opacity:0.15; pointer-events:none; }
+/* Фиксированная min-height для понтиков/консолей чтобы ряд не проваливался */
+.arena-cell.bridge, .arena-cell.bridge_pontic, .arena-cell.cantilever { min-height:80px; }
+.arena-cell .cell-root[onclick] { cursor:pointer; border-radius:4px; transition: background 0.15s; }
+.arena-cell .cell-root[onclick]:hover { background:rgba(168,85,247,0.15); }
+
+/* Root picker section */
+.tp-roots-variant-btn {
+    padding: 4px 8px; border-radius: 4px; font-size: 10px;
+    background: var(--surface2, #1e2130); border: 1px solid var(--border, #2a2d3a);
+    cursor: pointer; position: relative; color: var(--text, #e5e7eb);
+}
+.tp-roots-variant-btn:hover { border-color: var(--purple, #a855f7); }
+.tp-roots-variant-btn.active { background: var(--purple, #a855f7); border-color: var(--purple, #a855f7); color: #fff; }
+.tp-roots-variant-btn .freq-badge {
+    position: absolute; top: -5px; right: -5px;
+    background: var(--gold, #f59e0b); color: var(--bg, #0f1117); font-size: 8px;
+    padding: 0 3px; border-radius: 6px; font-weight: 700;
+}
+.tp-vertucci-row { display: flex; align-items: center; gap: 6px; font-size: 10px; margin-bottom: 3px; }
+.tp-vertucci-row label { color: rgba(255,255,255,0.5); min-width: 30px; }
+.tp-vertucci-row select {
+    background: var(--surface2, #1e2130); border: 1px solid var(--border, #2a2d3a);
+    color: var(--text, #e5e7eb); border-radius: 4px; padding: 2px 4px; font-size: 10px;
+}
+#tp-root-preview svg { cursor: default; }
+#tp-root-preview .canal-path { cursor: pointer; }
+#tp-root-preview .canal-path:hover { filter: brightness(1.5); }
+
+/* Скрыть номера зубов в строках алгоритмов — показывать только в ЭТАЛОН */
+.arena-formula-row:not(.ground-truth) .cell-num { visibility:hidden; height:0; margin:0; overflow:hidden; }
+.arena-formula-row:not(.ground-truth) .arena-cell { min-height:40px; }
+
+/* ── Кнопки голосования — стилизованные ── */
+.arena-vote-btn { background:none; border:1px solid rgba(255,255,255,0.1); border-radius:3px; cursor:pointer; font-size:12px; width:22px; height:22px; display:flex; align-items:center; justify-content:center; transition:all 0.15s; color:var(--text-dim); }
+.arena-vote-btn:hover { border-color:rgba(255,255,255,0.3); }
+.arena-vote-btn.vote-up { color:var(--green); }
+.arena-vote-btn.vote-up:hover { background:rgba(16,185,129,0.15); }
+.arena-vote-btn.vote-down { color:var(--red); }
+.arena-vote-btn.vote-down:hover { background:rgba(239,68,68,0.15); }
+.arena-vote-btn.vote-revive { color:var(--yellow); }
+
+/* ── GT confirm button ── */
+.gt-confirm-btn { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.3); border:1px solid rgba(255,255,255,0.1); border-radius:4px; width:26px; height:26px; font-size:16px; font-weight:700; cursor:not-allowed; display:flex; align-items:center; justify-content:center; transition:all 0.2s; margin-top:6px; }
+.gt-confirm-btn.ready { background:var(--green); color:#fff; border-color:var(--green); cursor:pointer; }
+.gt-confirm-btn.ready:hover { filter:brightness(1.2); transform:scale(1.1); }
+.gt-confirm-btn.saved { background:rgba(16,185,129,0.2); color:var(--green); border-color:rgba(16,185,129,0.3); cursor:default; }
+
+/* ── Свёртка слабых алгоритмов ── */
+.arena-low-score { margin-top:4px; }
+.arena-low-score summary { font-size:10px; color:var(--text-dim); cursor:pointer; padding:4px 8px; text-align:center; }
+.arena-low-score summary:hover { color:var(--text); }
+
+/* ── Свёртка всего блока формул (кроме GT) ── */
+.arena-algos-collapsible { margin-top:2px; }
+.arena-algos-collapsible > summary { font-size:11px; color:var(--text-dim); cursor:pointer; padding:6px 10px;
+    text-align:center; border:1px dashed rgba(255,255,255,0.08); border-radius:4px; list-style:none; user-select:none; }
+.arena-algos-collapsible > summary::-webkit-details-marker { display:none; }
+.arena-algos-collapsible > summary:hover { color:var(--text); border-color:rgba(255,255,255,0.15); }
+.arena-algos-collapsible[open] > summary { border-style:solid; margin-bottom:4px; }
+
+/* ── Multi-tooth drag selection highlight ── */
+.arena-cell.drag-selected { outline:2px solid var(--blue); outline-offset:-1px; border-radius:2px; }
+
+@media (max-width:1100px) {
+    .arena-detail-col { display:none; }
+    .arena-detail-col.force-show { display:block !important; position:fixed; right:8px; top:60px; z-index:9999; width:240px; max-height:80vh; overflow-y:auto; background:var(--surface); border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
+}
+@media (max-width:960px) {
+    .arena-body { flex-direction:column; }
+    .arena-opg-col { width:100%; position:static; }
+    .arena-opg { max-height:220px; }
+}
+
+/* ── Tooth SVG diagram (квадрат с 4 трапециями V-M-D-L + центр O) ── */
+.tooth-svg { width:34px; height:34px; display:block; }
+.tooth-svg polygon { stroke:rgba(255,255,255,0.15); stroke-width:0.5; fill:transparent; transition:fill 0.15s; }
+.tooth-svg line { stroke:rgba(255,255,255,0.15); stroke-width:0.5; }
+
+.cell-abbr {
+    font-size:10px; font-weight:700; line-height:14px; text-align:center;
+    width:36px; border:1px solid rgba(255,255,255,0.12); border-radius:1px;
+    margin-top:2px; overflow:hidden; white-space:nowrap; cursor:default;
+}
+
+/* ── Статусы — единый цвет всех полигонов ── */
+/* Интактные — тихий контур «здоровые молчат» */
+/* Unmarked teeth (no status set) — dim to distinguish from explicitly marked 'present' */
+.arena-cell.unmarked .tooth-svg { opacity:0.25; }
+.arena-cell.unmarked .cell-root { opacity:0.2; }
+.arena-cell.unmarked .cell-num { color:rgba(239,68,68,0.5) !important; }
+/* Интактные зубы: тихие но ВИДИМЫЕ в GT-ряду для кликабельности */
+.arena-cell.present .tooth-svg polygon,
+.arena-cell.natural .tooth-svg polygon { fill:rgba(255,255,255,0.03); stroke:rgba(255,255,255,0.10); }
+.arena-formula-row.ground-truth .arena-cell.present .tooth-svg polygon,
+.arena-formula-row.ground-truth .arena-cell.natural .tooth-svg polygon { fill:rgba(255,255,255,0.10); stroke:rgba(255,255,255,0.22); }
+.arena-cell.present .cell-abbr,
+.arena-cell.natural .cell-abbr { opacity:0.2; }
+.arena-cell.missing .tooth-svg { opacity:0.25; }
+.arena-cell.missing .tooth-svg polygon { fill:rgba(75,85,99,0.3); }
+.arena-cell.implant .tooth-svg polygon,
+.arena-cell.impl_fixture .tooth-svg polygon { fill:rgba(16,185,129,0.25); stroke:rgba(16,185,129,0.4); }
+.arena-cell.impl_cover .tooth-svg polygon { fill:rgba(16,185,129,0.35); stroke:rgba(16,185,129,0.5); }
+.arena-cell.impl_healing .tooth-svg polygon { fill:rgba(16,185,129,0.45); stroke:rgba(16,185,129,0.6); }
+.arena-cell.impl_abutment .tooth-svg polygon { fill:rgba(16,185,129,0.50); stroke:rgba(16,185,129,0.65); }
+.arena-cell.impl_restored .tooth-svg polygon { fill:rgba(16,185,129,0.55); stroke:rgba(16,185,129,0.7); }
+.arena-cell.attrition .tooth-svg polygon { fill:rgba(234,179,8,0.2); stroke:rgba(234,179,8,0.4); }
+.arena-cell.impl_temp_abut .tooth-svg polygon { fill:rgba(16,185,129,0.42); stroke:rgba(16,185,129,0.55); }
+.arena-cell.impl_provisional .tooth-svg polygon { fill:rgba(16,185,129,0.48); stroke:rgba(16,185,129,0.6); }
+.arena-cell.crowned .tooth-svg polygon,
+.arena-cell.crown .tooth-svg polygon { fill:rgba(245,158,11,0.35); stroke:rgba(245,158,11,0.5); }
+.arena-cell.root .tooth-svg polygon { fill:rgba(239,68,68,0.25); stroke:rgba(239,68,68,0.4); }
+.arena-cell.impacted .tooth-svg polygon { fill:rgba(139,92,246,0.25); stroke:rgba(139,92,246,0.4); }
+.arena-cell.bridge .tooth-svg polygon,
+.arena-cell.bridge_pontic .tooth-svg polygon { fill:rgba(34,211,238,0.25); stroke:rgba(34,211,238,0.4); }
+.arena-cell.cantilever .tooth-svg polygon { fill:rgba(34,211,238,0.35); stroke:rgba(34,211,238,0.5); }
+.arena-cell.bar .tooth-svg polygon { fill:rgba(168,162,158,0.15); stroke:rgba(168,162,158,0.4); }
+.arena-cell.endo .tooth-svg polygon { fill:rgba(168,85,247,0.15); stroke:rgba(168,85,247,0.3); }
+.arena-cell.endo .tooth-svg polygon.sf-o { fill:rgba(168,85,247,0.5); }
+.arena-cell.endo .tooth-svg polygon.on { fill:rgba(168,85,247,0.55); }
+.arena-cell.post .tooth-svg polygon { fill:rgba(217,119,6,0.25); stroke:rgba(217,119,6,0.4); }
+.arena-cell.uncertain .tooth-svg polygon { fill:rgba(234,179,8,0.15); stroke:rgba(234,179,8,0.3); }
+
+/* ── Кариес/пломба — контур, .on = закрашено ── */
+.arena-cell.caries .tooth-svg polygon { fill:transparent; stroke:rgba(251,146,60,0.4); }
+.arena-cell.caries .tooth-svg polygon.on { fill:rgba(251,146,60,0.55); }
+.arena-cell.caries .tooth-svg line { stroke:rgba(251,146,60,0.4); }
+.arena-cell.restored .tooth-svg polygon,
+.arena-cell.filling .tooth-svg polygon { fill:transparent; stroke:rgba(59,130,246,0.35); }
+.arena-cell.restored .tooth-svg polygon.on,
+.arena-cell.filling .tooth-svg polygon.on { fill:rgba(59,130,246,0.5); }
+.arena-cell.restored .tooth-svg line,
+.arena-cell.filling .tooth-svg line { stroke:rgba(59,130,246,0.35); }
+
+.arena-cell.match { }
+.arena-cell.mismatch { box-shadow:inset 0 0 0 2px var(--red); }
+
+/* ═══ Tooth status picker popup ═══ */
+.tooth-picker {
+    position:fixed; z-index:10001; background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; padding:8px; box-shadow:0 12px 40px rgba(0,0,0,0.7);
+    display:none; width:260px; max-height:80vh; overflow-y:auto;
+}
+.tooth-picker.open { display:block; }
+.tooth-picker .tp-title { font-size:12px; font-weight:600; color:var(--text); padding:2px 4px 6px; text-align:center; border-bottom:1px solid var(--border); margin-bottom:6px; cursor:grab; user-select:none; }
+.tooth-picker .tp-title:active { cursor:grabbing; }
+.tooth-picker .tp-group { margin-bottom:4px; }
+.tooth-picker .tp-group-label { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.5px; padding:2px 4px; margin-bottom:2px; }
+.tooth-picker .tp-grid { display:flex; flex-wrap:wrap; gap:3px; }
+.tooth-picker .tp-btn {
+    display:flex; align-items:center; gap:5px; padding:5px 8px; border-radius:6px;
+    cursor:pointer; font-size:12px; transition:all 0.1s; border:1px solid transparent;
+    white-space:nowrap;
+}
+.tooth-picker .tp-btn:hover { border-color:var(--text-dim); transform:scale(1.04); }
+.tooth-picker .tp-btn.active { box-shadow:0 0 0 2px var(--blue); }
+.tooth-picker .tp-btn .tp-icon { font-weight:700; min-width:16px; text-align:center; }
+.tooth-picker .tp-btn .tp-key { font-size:9px; color:var(--text-dim); font-family:monospace; margin-left:auto; opacity:0.6; }
+
+.arena-formula-row.ground-truth .arena-cell {
+    cursor:pointer; user-select:none; -webkit-user-select:none; -webkit-user-drag:none;
+    /* ── Видимые границы ячеек: врач должен видеть куда кликать ── */
+    border:1px solid rgba(255,255,255,0.13);
+    border-radius:3px;
+    background:rgba(255,255,255,0.03);
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.arena-formula-row.ground-truth .arena-cell img,
+.arena-formula-row.ground-truth .arena-cell svg { -webkit-user-drag:none; }
+.arena-formula-row.ground-truth .arena-cell:hover {
+    border-color:rgba(59,130,246,0.5);
+    background:rgba(59,130,246,0.10);
+    box-shadow:0 0 10px rgba(59,130,246,0.3);
+}
+.arena-cell.drag-selected { outline:2px solid var(--blue) !important; outline-offset:-1px; filter:brightness(1.4); }
+
+/* ── Bridge connector bar ── */
+/* Bridge/bar connector — динамически позиционируется JS на уровне SVG коронки.
+   Содержит дочерний .conn-bar, который ставится через _alignConnectors(). */
+.bridge-connector-bar, .bar-connector-bar { width:0; flex:0 0 0; position:relative; }
+.bridge-connector-bar .conn-bar, .bar-connector-bar .conn-bar {
+    position:absolute; left:-4px; width:8px; border-radius:1px; z-index:2;
+    /* fallback если JS не сработал */
+    top:35%; height:30%;
+}
+.bridge-connector-bar .conn-bar { background:rgba(34,211,238,0.8); }
+.bar-connector-bar .conn-bar { background:rgba(168,162,158,0.8); }
+
+/* ── Bridge context menu ── */
+.bridge-ctx-menu { position:fixed; z-index:10002; background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; padding:4px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:140px; }
+.bridge-ctx-menu button { display:block; width:100%; text-align:left; padding:6px 10px; background:none;
+    border:none; color:var(--text); font-size:11px; cursor:pointer; border-radius:4px; }
+.bridge-ctx-menu button:hover { background:rgba(255,255,255,0.08); }
+
+/* ── Tooth note indicator ── */
+.note-dot {
+    position:absolute; top:2px; right:2px; width:6px; height:6px;
+    background:rgba(251,191,36,0.85); border-radius:50%; z-index:3;
+    pointer-events:none; box-shadow:0 0 3px rgba(251,191,36,0.5);
+}
+.note-dot.severity-critical {
+    background:rgba(239,68,68,0.9); box-shadow:0 0 4px rgba(239,68,68,0.6);
+    width:7px; height:7px; animation: alertPulse 2s infinite;
+}
+.note-dot.severity-warning {
+    background:rgba(245,158,11,0.9); box-shadow:0 0 3px rgba(245,158,11,0.5);
+}
+@keyframes alertPulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50% { opacity:0.6; transform:scale(1.3); }
+}
+.arena-cell { position:relative; overflow:visible; }
+
+/* ── Note visual arrows — SVG overlay centered on tooth SVG ── */
+/* Wrapper ensures arrows are positioned over the tooth SVG, not the full cell */
+.note-arrows-wrap {
+    position:relative; display:inline-block; order:2;
+}
+.note-arrows-svg {
+    position:absolute; z-index:4; pointer-events:none;
+    top:50%; left:50%; transform:translate(-50%, -50%);
+    width:32px; height:32px;
+    filter:drop-shadow(0 0 2px rgba(0,0,0,0.9));
+}
+
+/* Note context menu (reuses bridge-ctx-menu styling) */
+.note-ctx-menu { position:fixed; z-index:10002; background:var(--surface); border:1px solid var(--border);
+    border-radius:8px; padding:4px; box-shadow:0 8px 24px rgba(0,0,0,0.5); min-width:180px; max-height:320px; overflow-y:auto; }
+.note-ctx-menu button { display:block; width:100%; text-align:left; padding:5px 10px; background:none;
+    border:none; color:var(--text); font-size:11px; cursor:pointer; border-radius:4px; white-space:nowrap; }
+.note-ctx-menu button:hover { background:rgba(255,255,255,0.08); }
+.note-ctx-menu .note-input-row { display:flex; gap:4px; padding:4px 6px; }
+.note-ctx-menu .note-input-row input { flex:1; background:var(--bg); border:1px solid var(--border); color:var(--text);
+    border-radius:4px; padding:3px 6px; font-size:11px; outline:none; }
+.note-ctx-menu .note-input-row button { flex:0 0 auto; width:auto; padding:3px 8px; font-size:11px; }
+
+/* ── Surface picker (second step for caries/restored) — SVG квадрат с трапециями ── */
+.tp-surfaces { display:none; margin-top:6px; padding-top:6px; border-top:1px solid var(--border); text-align:center; }
+.tp-surfaces.active { display:block; }
+.tp-surfaces .tp-surf-title { font-size:11px; color:var(--text-dim); margin-bottom:6px; }
+.tp-surf-svg { width:90px; height:90px; display:block; margin:0 auto; }
+.tp-surf-svg polygon { stroke:rgba(255,255,255,0.25); stroke-width:0.6; fill:transparent; cursor:pointer; transition:all 0.15s; }
+.tp-surf-svg polygon:hover { stroke:rgba(255,255,255,0.7); filter:brightness(1.3); }
+.tp-surf-svg line { stroke:rgba(255,255,255,0.2); stroke-width:0.5; pointer-events:none; }
+.tp-surf-svg text { font-size:4px; fill:var(--text-dim); text-anchor:middle; dominant-baseline:central; pointer-events:none; }
+.tp-surf-done { margin-top:8px; background:var(--green); color:#fff; border:none; padding:6px 16px;
+    border-radius:6px; cursor:pointer; font-size:12px; font-weight:600; }
+
+/* Layer chips and add-layer button */
+.tp-layer-info { padding:0 4px; }
+.tp-layer-chip { display:inline-block; padding:1px 5px; background:rgba(255,255,255,0.08); border-radius:3px;
+    font-size:10px; color:var(--text); font-weight:600; border:1px solid rgba(255,255,255,0.12); }
+.tp-add-layer-btn { background:rgba(59,130,246,0.2); color:var(--blue); border:1px solid rgba(59,130,246,0.3);
+    border-radius:3px; padding:1px 6px; font-size:9px; cursor:pointer; white-space:nowrap; }
+.tp-add-layer-btn:hover { background:rgba(59,130,246,0.35); }
+.layer-add-mode .tp-title { border-bottom:2px solid var(--blue); }
+.layer-add-mode .tp-btn { border-color:rgba(59,130,246,0.25); }
+.layer-add-mode .tp-btn:hover { border-color:var(--blue); background:rgba(59,130,246,0.15); }
+
+/* Layered tooth cell indicator */
+.arena-cell.layered .cell-abbr { font-size:9px; font-weight:700; letter-spacing:-0.2px; color:rgba(255,255,255,0.75); }
+.arena-cell.layered { border-bottom:2px solid rgba(168,85,247,0.4); }
+
+.jaw-sep { width:100%; height:0; border-top:2px solid rgba(255,255,255,0.15); margin:3px 0; background:none; }
+
+.row-score { order:3; width:44px; min-width:44px; padding:4px 4px; text-align:center; font-size:12px; font-weight:700; }
+
+/* ── Кнопка добавления кейса ── */
+.arena-add-case { text-align:center; padding:20px 0; }
+.arena-add-btn { display:inline-flex; flex-direction:column; align-items:center; gap:4px;
+    padding:16px 32px; border:2px dashed rgba(255,255,255,0.12); border-radius:12px;
+    background:none; color:var(--text-dim); cursor:pointer; transition:all 0.2s; }
+.arena-add-btn:hover { border-color:var(--blue); color:var(--blue); background:rgba(59,130,246,0.05); }
+
+/* ── Диалог добавления кейса ── */
+.arena-add-dialog-overlay { display:none; position:fixed; inset:0; z-index:10002;
+    background:rgba(0,0,0,0.6); align-items:center; justify-content:center; }
+.arena-add-dialog-box { background:var(--surface); border:1px solid var(--border);
+    border-radius:12px; padding:16px; width:440px; max-width:90vw; max-height:80vh;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+
+.arena-legend { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0; padding:6px 8px; background:rgba(255,255,255,0.02); border-radius:4px; font-size:10px; }
+.arena-legend .leg-item { display:flex; align-items:center; gap:3px; color:var(--text-dim); }
+.arena-legend .leg-dot { width:10px; height:10px; border-radius:2px; font-size:7px; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.7); }
+
+.arena-explainer { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px 16px; margin-bottom:16px; }
+.arena-explainer h3 { font-size:13px; margin-bottom:6px; }
+.arena-explainer p { font-size:12px; color:var(--text-dim); line-height:1.5; }
+.arena-explainer .step { display:flex; gap:8px; align-items:flex-start; margin-bottom:5px; }
+.arena-explainer .step-num { width:22px; height:22px; border-radius:50%; background:var(--blue); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11px; flex-shrink:0; }
+.arena-explainer .step-text { font-size:12px; color:var(--text); }
+
+/* ═══ Hover tooltip on tree nodes ═══ */
+.node-tooltip {
+    position:fixed; z-index:9999; pointer-events:none;
+    background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:14px; width:360px; box-shadow:0 12px 40px rgba(0,0,0,0.6);
+    transition:opacity 0.15s; opacity:0;
+}
+.node-tooltip.visible { opacity:1; pointer-events:auto; }
+.node-tooltip .tt-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+.node-tooltip .tt-name { font-weight:700; font-size:14px; }
+.node-tooltip .tt-meta { font-size:11px; color:var(--text-dim); }
+.node-tooltip .tt-metrics { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+.node-tooltip .tt-metrics .tm { padding:3px 8px; border-radius:4px; background:var(--bg); font-size:11px; }
+.node-tooltip .tt-crops { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:10px; }
+.node-tooltip .tt-crops img { width:80px; height:50px; object-fit:cover; border-radius:4px; border:1px solid var(--border); }
+.node-tooltip .tt-formula { margin-bottom:6px; }
+.node-tooltip .tt-findings { font-size:10px; color:var(--text-dim); max-height:60px; overflow:hidden; }
+
+/* ═══ Mini dental formula grid ═══ */
+.mini-formula { display:grid; grid-template-columns:repeat(16,1fr); gap:1px; }
+.mini-formula .mf-cell { width:100%; aspect-ratio:1; border-radius:2px; font-size:6px;
+    display:flex; align-items:center; justify-content:center; font-weight:700; }
+.mf-cell.present { background:var(--surface2); color:var(--text-dim); }
+.mf-cell.missing { background:rgba(75,85,99,0.3); color:var(--gray); }
+.mf-cell.implant { background:rgba(16,185,129,0.3); color:var(--green); }
+.mf-cell.crown { background:rgba(245,158,11,0.3); color:var(--gold); }
+.mf-cell.root_only { background:rgba(239,68,68,0.3); color:var(--red); }
+.mf-cell.filling { background:rgba(59,130,246,0.3); color:var(--blue); }
+.mf-cell.bridge { background:rgba(139,92,246,0.3); color:var(--purple); }
+
+/* ═══ Expert voting buttons ═══ */
+.vote-bar { display:flex; gap:6px; padding:12px; background:var(--bg); border-radius:8px; margin:12px 0; flex-wrap:wrap; }
+.vote-btn { flex:1; padding:10px 8px; border:2px solid transparent; border-radius:8px;
+    cursor:pointer; font-size:13px; font-weight:600; text-align:center; transition:0.2s;
+    display:flex; flex-direction:column; align-items:center; gap:4px; min-width:70px; }
+.vote-btn .vote-icon { font-size:22px; }
+.vote-btn .vote-label { font-size:10px; }
+.vote-btn.boost { background:rgba(16,185,129,0.1); color:var(--green); border-color:rgba(16,185,129,0.2); }
+.vote-btn.boost:hover { background:rgba(16,185,129,0.25); border-color:var(--green); }
+.vote-btn.kill { background:rgba(239,68,68,0.1); color:var(--red); border-color:rgba(239,68,68,0.2); }
+.vote-btn.kill:hover { background:rgba(239,68,68,0.25); border-color:var(--red); }
+.vote-btn.champion { background:rgba(245,158,11,0.1); color:var(--gold); border-color:rgba(245,158,11,0.2); }
+.vote-btn.champion:hover { background:rgba(245,158,11,0.25); border-color:var(--gold); }
+.vote-btn.revive { background:rgba(59,130,246,0.1); color:var(--blue); border-color:rgba(59,130,246,0.2); }
+.vote-btn.revive:hover { background:rgba(59,130,246,0.25); border-color:var(--blue); }
+.vote-btn:active { transform:scale(0.95); }
+
+/* ═══ Crop preview in detail panel ═══ */
+.crop-preview { margin:12px 0; }
+.crop-preview h4 { font-size:12px; color:var(--text-dim); margin-bottom:8px; text-transform:uppercase; letter-spacing:1px; }
+.crop-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:6px; }
+.crop-card { position:relative; border-radius:6px; overflow:hidden; border:1px solid var(--border); cursor:pointer; transition:0.2s; }
+.crop-card:hover { border-color:var(--blue); transform:scale(1.03); }
+.crop-card img { width:100%; height:70px; object-fit:cover; display:block; }
+.crop-card .crop-label { position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.7);
+    font-size:9px; padding:2px 4px; text-align:center; color:var(--text-dim); }
+
+/* ═══ Formula in detail panel ═══ */
+.detail-formula { margin:12px 0; }
+.detail-formula h4 { font-size:12px; color:var(--text-dim); margin-bottom:8px; text-transform:uppercase; letter-spacing:1px; }
+.formula-grid { display:grid; grid-template-columns:repeat(16,1fr); gap:2px; }
+.formula-grid .fc { aspect-ratio:1; border-radius:3px; display:flex; align-items:center;
+    justify-content:center; font-size:8px; font-weight:600; cursor:default; position:relative; }
+.formula-grid .fc .fc-num { position:absolute; top:-1px; font-size:5px; color:var(--text-dim); }
+.formula-grid .fc-sep { grid-column:1/-1; height:2px; background:var(--border); margin:2px 0; }
+.formula-legend { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.formula-legend .fl-item { display:flex; align-items:center; gap:3px; font-size:9px; color:var(--text-dim); }
+.formula-legend .fl-dot { width:8px; height:8px; border-radius:2px; }
+
+/* ═══ Score display ═══ */
+.score-display { display:flex; align-items:center; gap:8px; padding:8px 12px; background:var(--bg); border-radius:6px; margin:8px 0; }
+.score-bar { flex:1; height:8px; background:var(--surface2); border-radius:4px; overflow:hidden; }
+.score-fill { height:100%; border-radius:4px; transition:width 0.3s; }
+.score-value { font-size:14px; font-weight:700; min-width:45px; text-align:right; }
+
+/* ═══ Crop Carousel — веер кропов зубов над/под формулой ═══ */
+.crop-carousel {
+    display:flex; align-items:flex-end; min-height:54px; overflow:visible;
+    transition:min-height 0.3s ease, opacity 0.3s; position:relative; z-index:10; padding:2px 0;
+}
+.crop-carousel-lower { align-items:flex-start; }
+.crop-carousel.collapsed { min-height:0; height:0; overflow:hidden; padding:0; opacity:0; pointer-events:none; }
+
+.carousel-card {
+    width:40px; flex:0 0 40px; position:relative; cursor:pointer;
+    transition:all 0.25s ease-out; z-index:1;
+    display:flex; flex-direction:column; align-items:center;
+}
+.carousel-card .cc-canvas {
+    width:36px; height:auto; border-radius:4px; display:block;
+    border:1px solid rgba(255,255,255,0.15); box-shadow:0 2px 6px rgba(0,0,0,0.35);
+    transition:width 0.25s ease-out, border 0.15s, box-shadow 0.2s, margin 0.25s ease-out; background:#111;
+}
+.carousel-card .cc-label {
+    font-size:7px; text-align:center; opacity:0.5; color:var(--text-dim);
+    transition:opacity 0.2s; white-space:nowrap; margin-top:1px;
+}
+.carousel-card .cc-cls {
+    font-size:6px; opacity:0; transition:opacity 0.2s;
+}
+/* Implant cards — green border */
+.carousel-card.is-implant .cc-canvas { border-color:rgba(16,185,129,0.6); }
+
+/* Active card — expands smoothly */
+.carousel-card.active { z-index:100; }
+.carousel-card.active .cc-canvas {
+    width:220px; height:auto; flex-shrink:0;
+    border:2px solid rgba(59,130,246,0.8);
+    box-shadow:0 8px 32px rgba(0,0,0,0.6), 0 0 20px rgba(59,130,246,0.3);
+    margin-left:-90px;
+}
+.carousel-card.active.is-implant .cc-canvas {
+    border-color:rgba(16,185,129,0.8);
+    box-shadow:0 8px 32px rgba(0,0,0,0.6), 0 0 20px rgba(16,185,129,0.3);
+}
+.carousel-card.active .cc-label { opacity:1; font-size:10px; font-weight:600; }
+.carousel-card.active .cc-cls { opacity:1; font-size:9px; }
+/* Modified badge on resized card */
+.carousel-card.active .cc-modified-badge {
+    position:absolute; top:-6px; right:-6px; width:14px; height:14px;
+    background:rgba(245,158,11,0.9); border-radius:50%; border:2px solid var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    font-size:8px; color:#000; font-weight:700; z-index:110;
+}
+
+/* Upper carousel — active card rises up */
+.crop-carousel-upper .carousel-card.active { align-self:flex-end; }
+/* Lower carousel — active card drops down */
+.crop-carousel-lower .carousel-card.active { align-self:flex-start; }
+
+/* Neighbors of active — shift away */
+.carousel-card.nb-left  { transform:translateX(-6px) scale(0.92); opacity:0.8; }
+.carousel-card.nb-right { transform:translateX(6px) scale(0.92); opacity:0.8; }
+/* Distant cards */
+.carousel-card.distant { transform:scale(0.8); opacity:0.55; }
+/* Hover feedback on non-active cards — invite click to activate */
+.carousel-card:not(.active):hover { opacity:0.9 !important; cursor:pointer; }
+.carousel-card:not(.active):hover .cc-canvas { border-color:rgba(59,130,246,0.5); }
+
+/* Drag-resize visual feedback */
+.carousel-card.active .cc-canvas.resizing {
+    border-color:rgba(245,158,11,0.9) !important;
+    box-shadow:0 8px 32px rgba(0,0,0,0.6), 0 0 24px rgba(245,158,11,0.4) !important;
+}
+/* Edge highlight zones on active canvas */
+.cc-edge-hint {
+    position:absolute; z-index:102; opacity:0; transition:opacity 0.15s;
+    background:rgba(245,158,11,0.15); pointer-events:none;
+}
+.carousel-card.active:hover .cc-edge-hint { opacity:1; }
+.cc-edge-hint.edge-n { top:0; left:4px; right:4px; height:8px; cursor:n-resize; }
+.cc-edge-hint.edge-s { bottom:0; left:4px; right:4px; height:8px; cursor:s-resize; }
+.cc-edge-hint.edge-w { left:0; top:4px; bottom:4px; width:8px; cursor:w-resize; }
+.cc-edge-hint.edge-e { right:0; top:4px; bottom:4px; width:8px; cursor:e-resize; }
+/* No-detection placeholder */
+.carousel-card.no-det .cc-canvas { opacity:0.2; border-style:dashed; }
+
+/* Implant analysis button — inline in annotation toolbar, not floating */
+.cc-implant-btn {
+    padding:2px 6px; font-size:8px; font-weight:600; line-height:1.3;
+    border:1px solid rgba(16,185,129,0.4); border-radius:8px; white-space:nowrap;
+    background:rgba(16,185,129,0.15); color:#10b981;
+    cursor:pointer; transition:background 0.12s;
+}
+.cc-implant-btn:hover { background:rgba(16,185,129,0.3); }
+
+/* Add-object button under expanded card */
+.cc-add-btn {
+    position:absolute; bottom:-18px; left:50%; transform:translateX(-50%); z-index:101;
+    background:rgba(59,130,246,0.15); color:var(--blue); border:1px solid rgba(59,130,246,0.3);
+    border-radius:8px; padding:1px 8px; font-size:8px; cursor:pointer;
+    opacity:0; pointer-events:none; transition:opacity 0.2s; white-space:nowrap;
+}
+.carousel-card.active .cc-add-btn { opacity:1; pointer-events:auto; }
+.cc-add-btn:hover { background:rgba(59,130,246,0.3); }
+/* ── Crop nav arrows — positioned in empty space beside the active crop ── */
+.cc-nav-arrow {
+    position:absolute; top:50%; z-index:105; transform:translateY(-50%);
+    width:28px; height:48px; border-radius:8px;
+    background:rgba(30,41,59,0.5); border:1px solid rgba(255,255,255,0.08);
+    color:rgba(148,163,184,0.6); font-size:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; transition:all 0.25s ease;
+    backdrop-filter:blur(4px);
+}
+.carousel-card.active .cc-nav-arrow { opacity:1; pointer-events:auto; }
+.cc-nav-arrow:hover {
+    background:rgba(37,99,235,0.25); border-color:rgba(59,130,246,0.5);
+    color:rgba(96,165,250,0.95); box-shadow:0 0 12px rgba(59,130,246,0.2);
+    transform:translateY(-50%) scale(1.08);
+}
+.cc-nav-arrow:active { transform:translateY(-50%) scale(0.95); background:rgba(37,99,235,0.4); }
+/* Nav arrows are now rendered on the formula row edges, not inside crop cards.
+   See .arena-crop-nav below. Legacy .cc-nav-arrow hidden. */
+.cc-nav-arrow { display:none !important; }
+
+/* ── Crop nav arrows — inside row-formula-wrap at left/right edges ── */
+.arena-crop-nav {
+    position:absolute; z-index:120; top:50%; transform:translateY(-50%);
+    width:32px; height:56px; border-radius:10px;
+    background:rgba(37,99,235,0.3); border:2px solid rgba(96,165,250,0.45);
+    color:rgba(180,210,255,0.85); font-size:20px; font-weight:400;
+    cursor:pointer; align-items:center; justify-content:center;
+    backdrop-filter:blur(8px); transition:all 0.2s ease;
+    display:none;
+    box-shadow:0 2px 12px rgba(0,0,0,0.3);
+}
+.arena-crop-nav:hover {
+    background:rgba(37,99,235,0.5); border-color:rgba(96,165,250,0.8);
+    color:#fff; box-shadow:0 0 20px rgba(59,130,246,0.35);
+    transform:translateY(-50%) scale(1.08);
+}
+.arena-crop-nav:active { transform:translateY(-50%) scale(0.93); }
+.arena-crop-nav.visible { display:flex; }
+.arena-crop-nav.nav-left { left:2px; }
+.arena-crop-nav.nav-right { right:2px; }
+.arena-crop-nav[disabled] { opacity:0.15; pointer-events:none; }
+.cc-nav-arrow[disabled] { opacity:0.15 !important; pointer-events:none; }
+
+/* Toggle button for carousel visibility */
+.crop-toggle-btn {
+    display:inline-block; font-size:9px; padding:1px 6px; border-radius:4px;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+    color:var(--text-dim); cursor:pointer; margin-left:4px; transition:0.15s;
+}
+.crop-toggle-btn:hover { background:rgba(59,130,246,0.15); border-color:rgba(59,130,246,0.4); color:var(--blue); }
+.crop-toggle-btn.active { background:rgba(59,130,246,0.2); border-color:rgba(59,130,246,0.5); color:var(--blue); }
+
+/* Bridge connector spacing in carousel */
+.crop-carousel .bridge-spacer, .crop-carousel .bar-spacer {
+    width:8px; flex:0 0 8px;
+}
+
+/* ── Side panel: toolbar + filters + status — single vertical column RIGHT of crop ── */
+/* All three (.cc-annot-toolbar, .cc-filter-bar, .cc-status-bar) stack inside the card's
+   absolutely-positioned space. 16px gap from canvas visual right edge (130px from card).
+   Left offset = 130 + 16 = 146px from card origin. */
+
+.cc-annot-toolbar {
+    display:none; gap:2px; padding:6px 6px;
+    flex-direction:column; align-items:stretch;
+    background:rgba(15,23,42,0.92); backdrop-filter:blur(6px);
+    border-radius:8px; border:1px solid rgba(255,255,255,0.06);
+    position:absolute; top:0; left:146px; z-index:102;
+    min-width:52px;
+}
+.carousel-card.active .cc-annot-toolbar {
+    display:flex; width:auto; margin-left:0;
+}
+.cc-annot-btn {
+    padding:3px 8px; font-size:9px; font-weight:600; line-height:1.4;
+    border:none; border-radius:6px; white-space:nowrap;
+    background:transparent; color:var(--dot-color, #94a3b8);
+    cursor:pointer; transition:background 0.15s, box-shadow 0.15s;
+    text-align:center;
+}
+.cc-annot-btn:hover { background:rgba(255,255,255,0.1); }
+.cc-annot-btn.active {
+    background:rgba(255,255,255,0.12);
+    box-shadow:inset -2px 0 0 0 var(--dot-color, #3b82f6);
+}
+
+/* Filter bar — directly below toolbar via normal flow (not overlapping) */
+.cc-filter-bar {
+    display:none; gap:3px; padding:6px 6px; flex-direction:column; align-items:stretch;
+    background:rgba(15,23,42,0.85); backdrop-filter:blur(4px);
+    border-radius:0 0 8px 8px; border:1px solid rgba(255,255,255,0.04);
+    border-top:1px solid rgba(255,255,255,0.06);
+    margin-top:-1px; /* seamless join with toolbar */
+}
+.carousel-card.active .cc-filter-bar {
+    display:flex; width:auto;
+    /* NOT absolutely positioned — flows after toolbar in normal document flow.
+       But toolbar IS absolute. So we also make this absolute, positioned just below. */
+    position:absolute; left:146px; z-index:102;
+}
+.cc-filter-bar label {
+    font-size:8px; color:#64748b; white-space:nowrap; cursor:default; user-select:none;
+}
+.cc-filter-bar input[type=range] {
+    width:72px; height:3px; accent-color:#94a3b8; cursor:pointer;
+    -webkit-appearance:none; appearance:none; background:rgba(255,255,255,0.08); border-radius:2px;
+}
+.cc-filter-bar input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:10px; height:10px; border-radius:50%;
+    background:#94a3b8; cursor:pointer; border:none;
+}
+.cc-filter-bar input[type=range]::-webkit-slider-thumb:hover { background:#e2e8f0; }
+.cc-filter-bar .cc-filter-reset {
+    font-size:9px; padding:2px 4px; background:none; border:none;
+    color:#475569; cursor:pointer; line-height:1; text-align:center;
+}
+.cc-filter-bar .cc-filter-reset:hover { color:#e2e8f0; }
+.cc-filter-bar .cc-filter-val {
+    font-size:8px; color:#64748b; min-width:20px; text-align:center; font-variant-numeric:tabular-nums;
+}
+
+/* Status bar — small hint at canvas bottom */
+.cc-status-bar {
+    display:none; font-size:7px; letter-spacing:0.02em;
+    color:rgba(148,163,184,0.6); padding:2px 6px; text-align:center;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    transition:color 0.3s;
+    /* Position below canvas, aligned with canvas visual extent */
+    position:absolute; left:-90px; width:220px; z-index:102;
+}
+.carousel-card.active .cc-status-bar { display:block; margin-left:0; }
+.cc-status-bar.success { color:rgba(34,197,94,0.9); }
+
+/* GT layers panel — positioned right of annotation toolbar when crop active */
+.cc-gt-layers {
+    display:none; flex-direction:column; gap:1px; padding:5px 8px;
+    background:rgba(15,23,42,0.92); backdrop-filter:blur(6px);
+    border-radius:8px; border:1px solid rgba(34,197,94,0.25);
+    position:absolute; top:0; left:210px; z-index:102;
+    min-width:100px; font-size:9px;
+}
+.carousel-card.active .cc-gt-layers { display:flex; }
+.cc-gt-layers .gt-layer-item {
+    display:flex; align-items:center; gap:5px; padding:2px 4px; color:#e2e8f0;
+    border-radius:4px; cursor:default; transition:background 0.12s;
+}
+.cc-gt-layers .gt-layer-item:hover { background:rgba(255,255,255,0.08); }
+.cc-gt-layers .gt-layer-item.gt-has-det { cursor:pointer; }
+.cc-gt-layers .gt-layer-item.gt-has-det:hover { background:rgba(34,197,94,0.15); }
+.cc-gt-layers .gt-layer-dot {
+    width:7px; height:7px; border-radius:50%; flex-shrink:0;
+}
+.cc-gt-layers .gt-layer-surf { color:#94a3b8; font-size:8px; }
+.cc-gt-layers .gt-match-icon { margin-left:auto; font-size:8px; font-weight:700; }
+.cc-gt-layers .gt-layer-item.gt-matched .gt-match-icon { color:#4ade80; }
+.cc-gt-layers .gt-layer-item.gt-missing .gt-match-icon { color:#f59e0b; }
+.cc-gt-layers .gt-layer-item.gt-missing {
+    border:1px dashed rgba(245,158,11,0.4); cursor:cell !important;
+}
+.cc-gt-layers .gt-layer-item.gt-missing:hover {
+    background:rgba(245,158,11,0.18) !important; border-color:rgba(245,158,11,0.7);
+}
+.cc-gt-layers .gt-sub-hdr {
+    display:flex; align-items:center; gap:5px; padding:2px 4px 1px;
+    color:#94a3b8; font-size:8px; font-weight:600; margin-top:3px;
+}
+.cc-gt-layers .gt-group-sep {
+    margin-top:3px; border-top:1px dotted rgba(100,116,139,0.15); padding-top:2px;
+}
+.cc-gt-layers .gt-child-item { padding-left:16px !important; font-size:8.5px; }
+.cc-gt-layers .gt-opt-badge { font-size:7px; color:#64748b; font-style:italic; margin-left:2px; }
+.cc-gt-layers .gt-layer-item.gt-optional-missing {
+    border:1px dashed rgba(100,116,139,0.35); cursor:cell !important; opacity:0.55;
+}
+.cc-gt-layers .gt-layer-item.gt-optional-missing:hover {
+    background:rgba(245,158,11,0.12) !important; border-color:rgba(245,158,11,0.5); opacity:1;
+}
+.cc-gt-layers .gt-add-row { position:relative; padding:2px 4px; margin-top:2px; }
+.cc-gt-layers .gt-add-btn {
+    font-size:10px; color:#64748b; cursor:pointer; padding:1px 6px;
+    border-radius:3px; border:1px dashed rgba(100,116,139,0.3); transition:all 0.15s;
+}
+.cc-gt-layers .gt-add-btn:hover {
+    color:#e2e8f0; border-color:rgba(96,165,250,0.5); background:rgba(96,165,250,0.1);
+}
+.cc-gt-layers .gt-add-dropdown {
+    position:absolute; left:0; bottom:100%; background:rgba(15,23,42,0.97);
+    backdrop-filter:blur(8px); border:1px solid rgba(71,85,105,0.6); border-radius:6px;
+    padding:4px 0; z-index:250; min-width:130px; box-shadow:0 4px 16px rgba(0,0,0,0.5);
+}
+.cc-gt-layers .gt-add-option {
+    display:flex; align-items:center; gap:5px; padding:3px 8px;
+    font-size:9px; color:#cbd5e1; cursor:pointer; transition:background 0.1s;
+}
+.cc-gt-layers .gt-add-option:hover { background:rgba(96,165,250,0.2); color:#f1f5f9; }
+.cc-gt-layers .gt-layer-nodet { color:#64748b; font-size:8px; font-style:italic; margin-left:auto; }
+.cc-gt-layers .gt-hdr {
+    font-size:8px; color:#4ade80; font-weight:600; letter-spacing:0.03em; padding-bottom:2px;
+    border-bottom:1px solid rgba(34,197,94,0.15); margin-bottom:2px;
+}
+
+/* Child info popup */
+.cc-child-popup {
+    position:absolute; background:rgba(15,23,42,0.95); backdrop-filter:blur(8px);
+    border:1px solid rgba(71,85,105,0.6); border-radius:8px;
+    padding:6px 10px; font-size:10px; color:#e2e8f0; z-index:200; pointer-events:auto;
+    box-shadow:0 4px 16px rgba(0,0,0,0.5); max-width:200px; white-space:nowrap;
+}
+.cc-child-popup .popup-label { font-weight:600; }
+.cc-child-popup .popup-conf { color:#94a3b8; margin-left:4px; }
+.cc-child-popup .popup-manual { color:#f59e0b; margin-left:4px; font-size:9px; }
+.cc-child-popup .del-btn {
+    color:#ef4444; cursor:pointer; margin-left:8px; font-size:11px;
+    border:none; background:none; padding:0 2px; transition:opacity 0.12s;
+}
+.cc-child-popup .del-btn:hover { opacity:0.7; }
+
+/* Draw mode cursor on canvas */
+.cc-canvas.draw-mode { cursor:crosshair !important; }
+
+/* GT History panel */
+.gt-history-panel { margin:4px 0; }
+.gt-history-panel summary {
+    font-size:10px; color:#94a3b8; cursor:pointer; padding:2px 6px;
+    border-radius:4px; transition:0.15s;
+}
+.gt-history-panel summary:hover { background:rgba(255,255,255,0.05); color:#e2e8f0; }
+.gt-history-list { max-height:200px; overflow-y:auto; padding:4px 0; }
+.gt-history-item {
+    display:flex; align-items:center; gap:6px; padding:2px 8px;
+    font-size:9px; color:#94a3b8; border-left:2px solid transparent;
+    cursor:pointer; transition:0.12s;
+}
+.gt-history-item:hover { background:rgba(255,255,255,0.04); border-left-color:#3b82f6; color:#e2e8f0; }
+.gt-history-item .h-time { color:#64748b; min-width:50px; }
+.gt-history-item .h-fdi { color:#06b6d4; font-weight:600; min-width:24px; }
+.gt-history-item .h-arrow { color:#475569; }
+.gt-history-item .h-old { color:#ef4444; text-decoration:line-through; }
+.gt-history-item .h-new { color:#22c55e; }
+.gt-history-item .h-source { font-size:7px; padding:0 3px; border-radius:3px;
+    background:rgba(255,255,255,0.06); color:#64748b; }
+.gt-history-item.bulk { border-left-color:#a855f7; }
+
+/* Time Machine */
+.gt-timemachine { padding:6px 8px; background:rgba(139,92,246,0.08); border:1px solid rgba(139,92,246,0.2);
+    border-radius:6px; margin:4px 0; display:flex; align-items:center; gap:8px; }
+.gt-timemachine input[type=range] { flex:1; accent-color:#8b5cf6; height:4px; }
+.gt-timemachine .tm-btn { background:none; border:1px solid rgba(139,92,246,0.3); color:#a78bfa;
+    border-radius:4px; padding:1px 6px; font-size:9px; cursor:pointer; transition:0.12s; }
+.gt-timemachine .tm-btn:hover { background:rgba(139,92,246,0.15); color:#c4b5fd; }
+.gt-timemachine .tm-label { font-size:8px; color:#a78bfa; white-space:nowrap; }
+.gt-tm-active { outline:2px solid rgba(139,92,246,0.4); outline-offset:2px; }
+
+/* GT save status indicator */
+.gt-save-indicator { font-size:12px; margin-left:4px; display:inline-block; min-width:14px; text-align:center; transition:color 0.2s; }
+
+/* Time Machine trigger button */
+.gt-tm-btn { background:none; border:1px solid rgba(139,92,246,0.25); color:rgba(167,139,250,0.6);
+    border-radius:4px; padding:1px 4px; font-size:11px; cursor:pointer; margin-left:2px;
+    transition:all 0.15s; line-height:1; }
+.gt-tm-btn:hover { background:rgba(139,92,246,0.12); color:#c4b5fd; border-color:rgba(139,92,246,0.5); }
+
+/* ═══ Fullscreen OPG Viewer ═══ */
+.opg-fs-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.95);
+    z-index:9999; display:none; flex-direction:column; }
+.opg-fs-overlay.open { display:flex; }
+.opg-fs-toolbar { height:40px; background:#1e293b; display:flex; align-items:center; gap:6px;
+    padding:0 12px; border-bottom:1px solid #334155; flex-shrink:0; }
+.opg-fs-toolbar button { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+    color:#94a3b8; border-radius:4px; padding:3px 10px; font-size:11px; cursor:pointer; }
+.opg-fs-toolbar button:hover { background:rgba(255,255,255,0.12); color:#e2e8f0; }
+.opg-fs-toolbar button.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+.opg-fs-toolbar .sep { width:1px; height:18px; background:rgba(255,255,255,0.1); }
+.opg-fs-toolbar .info { font-size:11px; color:#64748b; margin-left:auto; }
+.opg-fs-viewport { flex:1; overflow:hidden; position:relative; cursor:grab; }
+.opg-fs-viewport.dragging { cursor:grabbing; }
+.opg-fs-canvas { position:absolute; top:0; left:0; transform-origin:0 0; }
+
+/* ═══ Fullscreen Crop Editor ═══ */
+.crop-fs-overlay { position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.96);
+    z-index:10003; display:none; flex-direction:column; }
+.crop-fs-overlay.open { display:flex; }
+.crop-fs-toolbar { height:42px; background:#1e293b; display:flex; align-items:center; gap:6px;
+    padding:0 12px; border-bottom:1px solid #334155; flex-shrink:0; flex-wrap:nowrap; overflow-x:auto; }
+.crop-fs-toolbar button { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12);
+    color:#94a3b8; border-radius:4px; padding:3px 10px; font-size:11px; cursor:pointer; white-space:nowrap; }
+.crop-fs-toolbar button:hover { background:rgba(255,255,255,0.12); color:#e2e8f0; }
+.crop-fs-toolbar button.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+.crop-fs-toolbar .cfs-sep { width:1px; height:18px; background:rgba(255,255,255,0.1); flex-shrink:0; }
+.crop-fs-toolbar .cfs-info { font-size:11px; color:#64748b; margin-left:auto; white-space:nowrap; }
+.crop-fs-toolbar .cfs-annot-btn { position:relative; padding-left:14px; }
+.crop-fs-toolbar .cfs-annot-btn::before { content:''; position:absolute; left:4px; top:50%; width:6px; height:6px;
+    border-radius:50%; transform:translateY(-50%); background:var(--dot-color, #888); }
+.crop-fs-toolbar .cfs-annot-btn.drawing { background:var(--dot-color); color:#fff; border-color:var(--dot-color); }
+.crop-fs-body { flex:1; display:flex; overflow:hidden; }
+.crop-fs-canvas-wrap { flex:1; display:flex; align-items:center; justify-content:center; overflow:auto; padding:16px; position:relative; }
+.crop-fs-canvas-wrap canvas { cursor:crosshair; border:1px solid rgba(255,255,255,0.15);
+    border-radius:4px; box-shadow:0 0 40px rgba(0,0,0,0.5); transition:width 0.15s, height 0.15s; }
+.crop-fs-sidebar { width:240px; flex-shrink:0; background:#0f172a; border-left:1px solid #334155;
+    padding:12px; overflow-y:auto; font-size:11px; color:#cbd5e1; }
+.crop-fs-sidebar h4 { font-size:12px; color:#e2e8f0; margin:0 0 8px; font-weight:600; }
+.crop-fs-child-item { padding:6px 8px; border-radius:4px; cursor:pointer; margin:4px 0;
+    border:1px solid transparent; display:flex; gap:8px; align-items:center; transition:all 0.15s; }
+.crop-fs-child-item:hover { background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.1); }
+.crop-fs-child-item.selected { background:rgba(59,130,246,0.15); border-color:rgba(59,130,246,0.4); }
+.crop-fs-child-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.crop-fs-child-label { flex:1; }
+.crop-fs-child-conf { color:#64748b; font-size:10px; }
+.cfs-eye { cursor:pointer; font-size:12px; opacity:0.7; flex-shrink:0; user-select:none; }
+.cfs-eye:hover { opacity:1; }
+.crop-fs-child-item.cfs-hidden { opacity:0.4; }
+.crop-fs-child-item.cfs-hidden .crop-fs-child-dot { opacity:0.3; }
+.crop-fs-child-item.cfs-hidden .cfs-eye { opacity:0.4; }
+.crop-fs-child-item.cfs-focused { background:rgba(168,85,247,0.2); border-color:rgba(168,85,247,0.5); }
+.cfs-focus-btn { cursor:pointer; font-size:12px; opacity:0.4; flex-shrink:0; user-select:none; margin-left:auto; }
+.cfs-focus-btn:hover { opacity:1; color:#c084fc; }
+.crop-fs-gt-badge { display:inline-block; background:rgba(37,99,235,0.25); color:#93c5fd; padding:2px 8px;
+    border-radius:4px; font-size:10px; margin-top:8px; }
+.crop-fs-nav { display:flex; gap:4px; }
+.crop-fs-nav button { font-size:14px; padding:3px 8px; }
+.crop-fs-zoom-info { font-size:10px; color:#64748b; min-width:36px; text-align:center; }
+.crop-fs-help { background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.2); border-radius:6px;
+    padding:10px 12px; margin-bottom:12px; font-size:10px; line-height:1.6; color:#94a3b8; }
+.crop-fs-help b { color:#cbd5e1; }
+.crop-fs-help kbd { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);
+    border-radius:3px; padding:1px 5px; font-size:9px; color:#e2e8f0; font-family:inherit; }

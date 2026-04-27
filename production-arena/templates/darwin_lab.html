@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧬 Darwin Lab — Эволюция алгоритмов</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<link rel="stylesheet" href="/static/css/darwin_lab.css">
+</head>
+<body>
+<!-- Back-nav: compact link back to main site -->
+<div style="background:#0f172a;border-bottom:1px solid rgba(255,255,255,0.06);padding:4px 16px;display:flex;align-items:center;gap:12px;font-size:12px;flex-shrink:0">
+    <a href="/" style="color:#94a3b8;text-decoration:none;display:flex;align-items:center;gap:4px" onmouseover="this.style.color='#f1f5f9'" onmouseout="this.style.color='#94a3b8'">
+        <span style="font-size:14px">←</span> Patient Viewer
+    </a>
+    <span style="color:rgba(255,255,255,0.15)">›</span>
+    <span style="color:rgba(139,92,246,0.6)">🔬 Рентген</span>
+    <span style="color:rgba(255,255,255,0.15)">›</span>
+    <span style="color:#f1f5f9;font-weight:500">Darwin Lab</span>
+    <span style="flex:1"></span>
+    <a href="/dissertation-cases" style="color:#94a3b8;text-decoration:none;font-size:11px" onmouseover="this.style.color='#f59e0b'" onmouseout="this.style.color='#94a3b8'">🎓 Диссертация</a>
+    <a href="/panorama-workspace" style="color:#94a3b8;text-decoration:none;font-size:11px" onmouseover="this.style.color='#8b5cf6'" onmouseout="this.style.color='#94a3b8'">🩺 Клинический обзор</a>
+</div>
+<div class="app">
+    <!-- Top bar -->
+    <div class="topbar">
+        <h1>🧬 Darwin Lab <span>Исследовательская лаборатория — эволюция алгоритмов, оценка имплантатов, наложение масок</span></h1>
+        <div class="nav">
+            <a href="/">📋 Пациенты</a>
+            <a href="/panorama-workspace">🩺 Клинический обзор</a>
+            <a href="/panorama-monitor">📊 Монитор</a>
+            <a href="/darwin-lab" class="active" onclick="showView('tree');return false;">🧬 Эволюция</a>
+            <a href="#" onclick="showView('evaluate');return false;" id="nav-evaluate">🧪 Оценка</a>
+            <a href="#" onclick="showView('metrics');return false;" id="nav-metrics">📊 Метрики</a>
+            <a href="#" onclick="showView('implant-lab');return false;" id="nav-implant">🦴 Имплант-анализ</a>
+            <a href="#" onclick="showView('arena');return false;" id="nav-arena">🎯 Арена</a>
+        </div>
+    </div>
+
+    <!-- Left sidebar: algorithm list -->
+    <div class="sidebar" id="sidebar">
+        <h3>Алгоритмы</h3>
+        <div id="algo-list"></div>
+    </div>
+
+    <!-- Center: D3 tree -->
+    <div class="tree-area" id="tree-area">
+        <div class="tree-controls">
+            <button class="active" onclick="setLayout('horizontal')">Кладограмма</button>
+            <button onclick="setLayout('radial')">Радиальное</button>
+            <button onclick="setLayout('vertical')">Вертикальное</button>
+        </div>
+        <div class="tree-info" id="tree-info">Загрузка...</div>
+        <svg id="tree-svg"></svg>
+    </div>
+
+    <!-- Right panel: experiment detail -->
+    <div class="detail-panel" id="detail-panel">
+        <div class="empty">
+            <div>
+                <div style="font-size:48px;margin-bottom:12px;">🧬</div>
+                <div>Выберите алгоритм на дереве<br>или в списке слева</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hover tooltip -->
+    <div class="node-tooltip" id="node-tooltip"></div>
+
+    <!-- Implant Assessment Lab -->
+    <div class="implant-lab" id="implant-lab">
+        <div class="impl-header">
+            <h2>🦴 Лаборатория оценки имплантатов — 4 метода 2D-анализа</h2>
+            <p>Научно обоснованная комплексная оценка состояния имплантатов на панорамных снимках.
+               Каждый метод имеет научные ссылки и описание ограничений.</p>
+        </div>
+
+        <!-- Method cards -->
+        <div class="methods-grid">
+            <div class="method-card" onclick="selectMethod('mbl')" id="mc-mbl">
+                <div class="m-icon">📏</div>
+                <div class="m-title">MBL <span class="method-warn" title="Schwarz 2020: ICC=0.66 на OPG (умеренная воспроизводимость). Только для скрининга — не для окончательной оценки. CBCT даёт ICC=0.85+">⚠</span></div>
+                <div class="m-subtitle">Marginal Bone Level — уровень маргинальной кости</div>
+                <div class="m-status ready">Albrektsson & Zarb 1986</div>
+            </div>
+            <div class="method-card" onclick="selectMethod('gray_value')" id="mc-gray_value">
+                <div class="m-icon">🔬</div>
+                <div class="m-title">Gray Value <span class="method-warn" title="Значения относительные. Не калибруются в Hounsfield Units на OPG (только CBCT). Сравнения возможны только внутри одного снимка — не между разными аппаратами или экспозициями">⚠</span></div>
+                <div class="m-subtitle">Анализ интенсивности пикселей (прокси Romexis HU)</div>
+                <div class="m-status ready">Misch D1-D4 / Planmeca</div>
+            </div>
+            <div class="method-card" onclick="selectMethod('fractal')" id="mc-fractal">
+                <div class="m-icon">🌿</div>
+                <div class="m-title">Fractal Dimension <span class="method-warn" title="Чувствителен к разрешению снимка, ROI и порогу бинаризации. Норма 1.2–1.4 валидна только при стандартизованных условиях. Малая база панорамной литературы (Goodarzi Pour 2014, n=18)">⚠</span></div>
+                <div class="m-subtitle">Фрактальный анализ трабекулярной кости (box-counting)</div>
+                <div class="m-status ready">Goodarzi Pour 2014</div>
+            </div>
+            <div class="method-card" onclick="selectMethod('radiolucency')" id="mc-radiolucency">
+                <div class="m-icon">🔍</div>
+                <div class="m-title">Radiolucency <span class="method-warn" title="Эвристический алгоритм по интенсивности (порог 0.75). Не ML-модель. Класс I-II по Schwarz 2007. Для финальной диагностики peri-implantitis нужна клиника + CBCT (Berglundh 2018)">⚠</span></div>
+                <div class="m-subtitle">Детекция перимплантной рентгенопрозрачности</div>
+                <div class="m-status ready">Schwarz 2007 / Froum 2012</div>
+            </div>
+        </div>
+
+        <!-- Batch progress mini-dashboard -->
+        <div id="batch-progress-bar" style="margin-bottom:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 16px;display:none;">
+            <div style="display:flex;align-items:center;gap:16px;font-size:12px;">
+                <span style="font-weight:600;color:var(--text);">📊 Батч-анализ</span>
+                <span id="bp-progress" style="color:var(--text-dim);">—</span>
+                <div style="flex:1;background:var(--bg);border-radius:4px;height:6px;overflow:hidden;">
+                    <div id="bp-bar" style="height:100%;background:var(--green);transition:width .3s;width:0%"></div>
+                </div>
+                <span id="bp-k081" style="color:var(--yellow);font-size:11px;">—</span>
+            </div>
+        </div>
+
+        <!-- Test case selector + Notation switcher -->
+        <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <label style="font-size:13px;color:var(--text-dim);">Тест-кейс:</label>
+            <select id="impl-test-case" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:13px;" onchange="loadImplantAssessment()">
+                <option value="">Выберите пациента...</option>
+            </select>
+            <button onclick="loadImplantAssessment()" style="background:var(--green);border:none;color:#000;padding:6px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">
+                🔬 Анализировать
+            </button>
+            <span id="impl-status" style="font-size:12px;color:var(--text-dim)"></span>
+
+            <div class="notation-switcher" id="notation-switcher">
+                <button class="active" data-notation="fdi" onclick="switchNotation('fdi')" title="ISO 3950 — Европа, Россия, Международная">FDI</button>
+                <button data-notation="universal" onclick="switchNotation('universal')" title="ADA — США, Канада (номера 1-32)">Universal</button>
+                <button data-notation="palmer" onclick="switchNotation('palmer')" title="Zsigmondy-Palmer — Великобритания (символы ┘└┌┐)">Palmer</button>
+            </div>
+        </div>
+
+        <!-- Results area -->
+        <div class="impl-results">
+            <div class="impl-results-main" id="impl-results-main">
+                <div style="color:var(--text-dim);text-align:center;padding:60px 20px;">
+                    <div style="font-size:48px;margin-bottom:12px;">🦴</div>
+                    <div>Выберите тест-кейс и нажмите «Анализировать»<br>
+                    для запуска 4 методов оценки имплантатов</div>
+                </div>
+            </div>
+            <div class="impl-results-refs" id="impl-results-refs">
+                <h3 style="font-size:15px;margin-bottom:12px;">📚 Научная база</h3>
+                <div id="refs-content">Загрузка источников...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evaluate view (replaces tree+detail when active) -->
+    <div class="evaluate-area" id="evaluate-area">
+        <h2 style="font-size:20px;margin-bottom:4px;">🧪 Экспертная оценка тест-кейсов EXP-002</h2>
+        <p style="color:var(--text-dim);font-size:13px;margin-bottom:20px;">
+            Посмотрите OPG-снимки и укажите реальное количество имплантатов. Нажмите на снимок для увеличения. После сохранения — алгоритмы будут оценены по точности.
+        </p>
+        <div id="eval-cases"></div>
+    </div>
+
+    <!-- Metrics view: Precision/Recall/F1 per algorithm -->
+    <div class="evaluate-area" id="metrics-area" style="display:none">
+        <h2 style="font-size:20px;margin-bottom:4px;">📊 Метрики качества алгоритмов</h2>
+        <p style="color:var(--text-dim);font-size:13px;margin-bottom:14px;">
+            Объективные метрики (Precision, Recall, Specificity, F1) на снимках с экспертным ground truth.
+            Бинарная классификация по 9 категориям. Для публикации в диссертации.
+        </p>
+        <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <label style="font-size:12px;color:var(--text-dim)">Категория:</label>
+            <select id="metrics-category-filter" onchange="loadMetrics()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:#ddd;padding:4px 8px;border-radius:4px;font-size:12px">
+                <option value="">Все категории</option>
+                <option value="tooth_present">tooth_present (зуб присутствует)</option>
+                <option value="missing">missing (отсутствует)</option>
+                <option value="implant">implant (имплантат)</option>
+                <option value="crowned">crowned (коронка)</option>
+                <option value="endo">endo (эндо)</option>
+                <option value="restored">restored (пломба)</option>
+                <option value="caries">caries (кариес)</option>
+                <option value="bridge">bridge (мост)</option>
+                <option value="root_only">root_only (только корень)</option>
+            </select>
+            <label style="font-size:12px;color:var(--text-dim);margin-left:12px"><input type="checkbox" id="metrics-min-n" checked onchange="loadMetrics()"> Скрыть алгоритмы с n&lt;5</label>
+            <button onclick="loadMetrics()" style="margin-left:auto;padding:4px 12px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.4);color:#86efac;border-radius:4px;cursor:pointer;font-size:12px">↻ Обновить</button>
+        </div>
+        <div id="metrics-content" style="font-size:12px"></div>
+
+        <!-- MMoral external benchmark panel -->
+        <div style="margin-top:28px;padding:14px;background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.2);border-radius:8px">
+            <h3 style="margin:0 0 4px;font-size:14px;color:#93c5fd">🌐 MMOral-OPG-Bench (внешний бенчмарк)</h3>
+            <p style="margin:0 0 12px;font-size:11px;color:var(--text-dim)">
+                Closed-ended VQA от международного консорциума MMOral.
+                Независимые вопросы по OPG-снимкам с GT — позволяет сравнить нашу модель с международными стандартами.
+            </p>
+            <div id="mmoral-content" style="font-size:11px"></div>
+        </div>
+    </div>
+
+    <!-- Arena view -->
+    <div class="arena-area" id="arena-area">
+        <!-- Sandbox selector bar -->
+        <div class="arena-sandbox-bar" id="arena-sandbox-bar">
+            <span class="sbx-label">Источник:</span>
+            <select id="arena-sandbox-select" onchange="switchSandbox(this.value)">
+                <option value="RUDN">Synthetic Demo Sandbox</option>
+            </select>
+            <span class="sbx-count" id="arena-sandbox-count"></span>
+            <button class="sbx-btn" onclick="openNewSandboxDialog()">+ Новый</button>
+            <button class="sbx-btn" id="sbx-import-btn" onclick="openSandboxImportDialog()" style="display:none">Импорт OPG</button>
+            <button class="sbx-btn" id="sbx-delete-btn" onclick="deleteSandbox()" style="display:none;color:var(--red);border-color:rgba(239,68,68,0.3)">Удалить</button>
+            <span style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <button class="sbx-btn" id="batch-gt-btn" onclick="batchPrepopulateGT('preview')" style="color:var(--purple);border-color:rgba(168,85,247,0.4);" title="Предзаполнить GT из V5b (w8) для всех OPG без GT">🤖 Батч W8→GT</button>
+                <button class="sbx-btn" id="batch-w0-btn" onclick="batchW0ToGT('preview')" style="color:var(--cyan);border-color:rgba(34,211,238,0.4);" title="Предзаполнить GT из YOLO+SemiT-SAM (w0) для K08.1">🧠 W0→GT (K08.1)</button>
+                <span id="batch-gt-status" style="font-size:11px;color:var(--text-dim);"></span>
+            </span>
+        </div>
+        <details class="arena-explainer">
+            <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;">
+                <h3 style="margin:0">🎯 Арена — как это работает</h3>
+                <span style="font-size:10px;color:var(--text-dim)">▸</span>
+            </summary>
+            <div style="margin-top:8px">
+            <div class="step"><div class="step-num">1</div><div class="step-text"><b>Посмотрите на снимок</b> — панорамный рентген (OPG) реального пациента</div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-text"><b>Заполните эталон</b> (синяя строка) — кликайте по ячейкам чтобы отметить что вы видите на снимке.</div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-text"><b>Сравните алгоритмы</b> — каждая строка ниже показывает что думает алгоритм. Красная рамка = ошибка.</div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-text"><b>Голосуйте</b> — 👍 перспективный, 💀 безнадёжный.</div></div>
+            </div>
+        </details>
+        <div id="arena-cases"></div>
+    </div>
+</div>
+
+
+<!-- ═══ Darwin Lab JS Modules ═══ -->
+<script src="/static/js/darwin/tree-view.js"></script>
+<script src="/static/js/darwin/metrics.js"></script>
+<script src="/static/js/darwin/formula-grid.js"></script>
+<script src="/static/js/darwin/opg-viewer.js"></script>
+<script src="/static/js/darwin/implant-lab.js"></script>
+<script src="/static/js/darwin/implant-library.js"></script>
+<script src="/static/js/darwin/arena-core.js"></script>
+<script src="/static/js/darwin/gt-editor.js"></script>
+<script src="/static/js/darwin/tooth-svg.js"></script>
+<script src="/static/js/darwin/tooth-picker.js"></script>
+<script src="/static/js/darwin/arena-ui.js"></script>
+<script src="/static/js/darwin/crop-manager.js"></script>
+<script src="/static/js/darwin/expert-overlay.js"></script>
+
+<script>
+// ═══ Init glue ═══
+window.addEventListener('resize', renderTree);
+init();
+
+// Auto-open Arena if ?file_id= is present
+(function() {
+    var params = new URLSearchParams(location.search);
+    var fileId = params.get('file_id');
+    if (fileId) {
+        // Ensure ALL panoramas for this patient are in Arena before loading
+        fetch('/api/darwin/arena/ensure-patient', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({file_id: parseInt(fileId)})
+        }).catch(function() {});
+        showView('arena');
+        var _targetEl = null;
+        var _scrollDone = false;
+
+        function _findTarget() {
+            // Exact match
+            var el = document.getElementById('arena-case-' + fileId);
+            if (el) return el;
+            // Fallback: find by same patient_id
+            return null; // will resolve after patient_id lookup
+        }
+
+        function _scrollTo(el) {
+            if (!el) return;
+            _targetEl = el;
+            el.scrollIntoView({block: 'start'});
+            if (!_scrollDone) {
+                _scrollDone = true;
+                el.style.outline = '2px solid #6366f1';
+                el.style.outlineOffset = '4px';
+                setTimeout(function() { el.style.outline = ''; el.style.outlineOffset = ''; }, 4000);
+            }
+        }
+
+        function _doScroll() {
+            if (_targetEl) { _scrollTo(_targetEl); return; }
+            var el = _findTarget();
+            if (el) _scrollTo(el);
+        }
+
+        window.addEventListener('arena-loaded', function() {
+            var el = document.getElementById('arena-case-' + fileId);
+            if (el) {
+                // Exact match — scroll with delays for layout stability
+                [100, 400, 800, 1500, 3000].forEach(function(d) { setTimeout(function() { _scrollTo(el); }, d); });
+            } else {
+                // file_id not in Arena — look up patient_id via API
+                fetch('/api/files/' + fileId + '/info').then(function(r) { return r.json(); }).then(function(info) {
+                    var pid = info.patient_id;
+                    if (!pid) return;
+                    // Find any arena case with same patient_id
+                    var match = document.querySelector('.arena-case[data-patient-id="' + pid + '"]');
+                    if (match) {
+                        _scrollTo(match);
+                        // Re-scroll with delays
+                        [200, 600, 1200].forEach(function(d) { setTimeout(function() { _scrollTo(match); }, d); });
+                    } else {
+                        // No case at all — show toast
+                        var toast = document.createElement('div');
+                        toast.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:9999;background:#ef4444;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,0.4)';
+                        toast.textContent = 'Снимок file_id=' + fileId + ' не добавлен в Arena.';
+                        document.body.appendChild(toast);
+                        setTimeout(function() { toast.remove(); }, 5000);
+                    }
+                }).catch(function() {});
+            }
+        });
+        // Fallback
+        setTimeout(_doScroll, 15000);
+    }
+})();
+</script>
+
+
+<!-- ═══ Fullscreen OPG Viewer ═══ -->
+<div class="opg-fs-overlay" id="opg-fs-overlay">
+    <div class="opg-fs-toolbar">
+        <button onclick="_opgFsClose()">✕ Закрыть</button>
+        <div class="sep"></div>
+        <button data-fs-filter="" class="active" onclick="_opgFsFilter('',this)">Ориг.</button>
+        <button data-fs-filter="clahe" onclick="_opgFsFilter('clahe',this)">CLAHE</button>
+        <button data-fs-filter="contrast" onclick="_opgFsFilter('contrast',this)">Контраст</button>
+        <button data-fs-filter="bone" onclick="_opgFsFilter('bone',this)">Кость</button>
+        <button data-fs-filter="invert" onclick="_opgFsFilter('invert',this)">Инверт</button>
+        <button data-fs-filter="sharp" onclick="_opgFsFilter('sharp',this)">Резкость</button>
+        <div class="sep"></div>
+        <label style="color:#64748b;font-size:10px">☀</label>
+        <input type="range" id="opg-fs-brightness" min="0.3" max="2.5" step="0.05" value="1.0"
+               style="width:70px;accent-color:#3b82f6" oninput="_opgFsSliderChange()">
+        <span id="opg-fs-bri-val" style="font-size:10px;color:#94a3b8;min-width:28px">100%</span>
+        <label style="color:#64748b;font-size:10px">◐</label>
+        <input type="range" id="opg-fs-contrast" min="0.3" max="3.0" step="0.05" value="1.0"
+               style="width:70px;accent-color:#3b82f6" oninput="_opgFsSliderChange()">
+        <span id="opg-fs-con-val" style="font-size:10px;color:#94a3b8;min-width:28px">100%</span>
+        <div class="sep"></div>
+        <button onclick="_opgFsFit()">⊞ Вписать</button>
+        <button onclick="_opgFsZoom(1.3)">＋</button>
+        <button onclick="_opgFsZoom(0.7)">－</button>
+        <div class="sep"></div>
+        <button data-fs-overlay="off" class="active" onclick="_opgFsOverlay('off',this)">Чистый</button>
+        <button data-fs-overlay="yolo" onclick="_opgFsOverlay('yolo',this)">YOLO</button>
+        <button data-fs-overlay="expert" onclick="_opgFsOverlay('expert',this)">Эксперт</button>
+        <button data-fs-overlay="both" onclick="_opgFsOverlay('both',this)">Оба</button>
+        <span class="info" id="opg-fs-info"></span>
+    </div>
+    <div class="opg-fs-viewport" id="opg-fs-viewport">
+        <canvas class="opg-fs-canvas" id="opg-fs-canvas"></canvas>
+    </div>
+</div>
+
+<!-- ═══ Fullscreen Crop Editor overlay ═══ -->
+<div class="crop-fs-overlay" id="crop-fs-overlay">
+    <div class="crop-fs-toolbar" id="crop-fs-toolbar">
+        <button onclick="_cropFsClose()">✕ Закрыть</button>
+        <div class="crop-fs-nav">
+            <button onclick="_cropFsNav(-1)" title="Предыдущий зуб (←)">◀</button>
+            <button onclick="_cropFsNav(1)" title="Следующий зуб (→)">▶</button>
+        </div>
+        <span class="cfs-sep"></span>
+        <span id="crop-fs-annot-bar"></span>
+        <span class="cfs-sep"></span>
+        <span id="crop-fs-disp-bar"></span>
+        <span class="cfs-sep"></span>
+        <button onclick="_cropFsUndo()" title="Отменить (Ctrl+Z)">↩</button>
+        <button onclick="_cropFsRedo()" title="Повторить (Ctrl+Shift+Z)">↪</button>
+        <span class="cfs-sep"></span>
+        <button onclick="_cropFsFit()">⊞ Вписать</button>
+        <button onclick="_cropFsZoom(1.3)">＋</button>
+        <button onclick="_cropFsZoom(0.7)">－</button>
+        <span class="crop-fs-zoom-info" id="crop-fs-zoom-info">100%</span>
+        <span class="cfs-sep"></span>
+        <label style="color:#64748b;font-size:10px">☀</label>
+        <input type="range" id="crop-fs-brightness" min="0.3" max="2.5" step="0.05" value="1.0"
+               style="width:80px;accent-color:#3b82f6" oninput="_cropFsFilterChange()">
+        <label style="color:#64748b;font-size:10px">◐</label>
+        <input type="range" id="crop-fs-contrast" min="0.3" max="3.0" step="0.05" value="1.0"
+               style="width:80px;accent-color:#3b82f6" oninput="_cropFsFilterChange()">
+        <span class="cfs-info" id="crop-fs-info"></span>
+    </div>
+    <div class="crop-fs-body">
+        <div class="crop-fs-canvas-wrap" id="crop-fs-canvas-wrap">
+            <canvas id="crop-fs-canvas" width="900"></canvas>
+        </div>
+        <div class="crop-fs-sidebar" id="crop-fs-sidebar"></div>
+    </div>
+</div>
+
+<script src="/static/js/darwin/fullscreen.js"></script>
+
+</body>
+</html>

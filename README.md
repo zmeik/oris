@@ -25,26 +25,38 @@ ORIS provides a **structured digital format** for what radiologists describe in 
 
 ORIS **does not** perform diagnosis. It structures the descriptive *imaging findings* component of the report (Step 5 in the 8-step ADA/AAOMR diagnostic workflow). Diagnosis remains the clinician's task and integrates anamnesis + intra-oral examination + radiographic interpretation per the ALARA principle.
 
-## Quick start — Web demo (no install)
+## Quick start — two demo options
 
-The fastest way to see what ORIS looks like is the in-browser **test mode** included in this repository:
+### Option 1: Production Arena clone with mock backend (RECOMMENDED — full UI)
+
+A **byte-for-byte clone** of the real Darwin-Lab Arena UI from the X-RayAnalizer project (14 JavaScript modules, ~960 KB) running against a Flask mock backend with synthetic data:
+
+```bash
+git clone https://github.com/zmeik/oris.git
+cd oris/production-arena
+pip install -r requirements.txt
+python3 mock_app.py
+# then open http://localhost:5050/darwin-lab
+```
+
+The 3 synthetic ORIS examples auto-load. You get the **full clinical interface** — 18-status cycle picker, surface markup (m/d/o/v/l), anatomy/TMJ/airway panels, algorithm comparison, time-machine GT history, D3 evolutionary tree.
+
+Read [`production-arena/README.md`](production-arena/README.md) for details on what's included, what's mocked, and what's intentionally disabled.
+
+### Option 2: Schema test mode (lightweight, no install — for schema exploration only)
+
+A simplified single-page browser tool for poking at the schema without any backend:
 
 ```bash
 git clone https://github.com/zmeik/oris.git
 cd oris/web-demo
 python3 -m http.server 8080
-# then open http://localhost:8080 in your browser
+# then open http://localhost:8080
 ```
 
-The demo runs entirely in your browser (no server, no data leaves your machine). You can:
+This is a **simplified** test surface (no algorithm comparison, no anatomy SVGs, no D3 tree) — just enough to click cells, pick statuses + surfaces, and see live JSON. Use Option 1 for the full clinical interface.
 
-- Click any of the 32 dental cells, pick a status from the cycle, choose surfaces (m/d/o/v/l)
-- Fill the anatomy panel (mandibular canal, sinuses, TMJ)
-- See the live JSON output build as you click
-- Toggle UI language between **English** and **Русский**
-- Export the resulting ORIS document as a JSON file
-
-⚠️ **The demo uses synthetic data only.** Do not enter real patient information. See [PRIVACY.md](PRIVACY.md) for compliance details (Russian Federal Law 152-FZ, GDPR, HIPAA-equivalent practices).
+⚠️ **Both demos use synthetic data only.** Do not enter real patient information. See [PRIVACY.md](PRIVACY.md) for compliance (Russian Federal Law 152-FZ, GDPR, HIPAA-equivalent practices).
 
 ## Quick start — Python parser
 
@@ -113,7 +125,9 @@ oris/
 ├── bridges/ ......................... FHIR Dental, DICOM-SR, MIS, MMOral converters
 ├── examples/ ........................ 3 synthetic ORIS documents
 ├── tests/ ........................... pytest unit tests
-└── web-demo/ ........................ in-browser test mode (EN + RU)
+├── web-demo/ ........................ simplified in-browser test mode (EN + RU)
+└── production-arena/ ................ full Arena clone with Flask mock backend
+                                       — 14 JS modules, full UI, synthetic data
 ```
 
 ## The schema in 60 seconds
