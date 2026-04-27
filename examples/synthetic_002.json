@@ -1,0 +1,327 @@
+{
+  "$schema": "https://github.com/zmeik/oris/schema/oris-v0.1.json",
+  "oris_version": "0.1.0",
+  "document_id": "SYNTHETIC_OPG_002_2026-02-20T00:00:00Z",
+  "patient": {
+    "anonymized_id": "P_0002_SYNTHETIC",
+    "age_years": 62,
+    "sex": "F"
+  },
+  "imaging": {
+    "modality": "OPG",
+    "device": "Synthetic Reference Device v1",
+    "acquisition_date": "2026-02-20T14:15:00Z",
+    "kvp": 70,
+    "ma": 10,
+    "exposure_seconds": 13.0,
+    "image_quality_score": 5
+  },
+  "teeth": {
+    "UR3PMA": {
+      "fdi": "1.8",
+      "occupant": "A",
+      "status_layers": "missing"
+    },
+    "UR2PMF": {
+      "fdi": "1.7",
+      "occupant": "F",
+      "status_layers": "impl_restored",
+      "implant": {
+        "system": "Synthetic",
+        "diameter_mm": 4.5,
+        "length_mm": 8.0,
+        "level": "bone",
+        "marginal_bone_level_mm": 0.8,
+        "complications": []
+      }
+    },
+    "UR1PMF": {
+      "fdi": "1.6",
+      "occupant": "F",
+      "status_layers": "impl_restored",
+      "implant": {
+        "system": "Synthetic",
+        "diameter_mm": 5.0,
+        "length_mm": 10.0,
+        "level": "bone",
+        "marginal_bone_level_mm": 2.5,
+        "complications": [
+          "RBL_PROGRESS",
+          "PERI_MOD"
+        ]
+      }
+    },
+    "UR2PPB": {
+      "fdi": "1.5",
+      "occupant": "B",
+      "status_layers": "bridge",
+      "bridge_link": [
+        "UR1PMF",
+        "UR1PPN"
+      ]
+    },
+    "UR1PPN": {
+      "fdi": "1.4",
+      "occupant": "N",
+      "status_layers": "crowned"
+    },
+    "URXPCN": {
+      "fdi": "1.3",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "URLPIN": {
+      "fdi": "1.2",
+      "occupant": "N",
+      "status_layers": "endo:m+crowned"
+    },
+    "URCPIN": {
+      "fdi": "1.1",
+      "occupant": "N",
+      "status_layers": "crowned"
+    },
+    "ULCPIN": {
+      "fdi": "2.1",
+      "occupant": "N",
+      "status_layers": "crowned"
+    },
+    "ULLPIN": {
+      "fdi": "2.2",
+      "occupant": "N",
+      "status_layers": "endo:m+crowned"
+    },
+    "ULXPCN": {
+      "fdi": "2.3",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UL1PPN": {
+      "fdi": "2.4",
+      "occupant": "N",
+      "status_layers": "crowned"
+    },
+    "UL2PPB": {
+      "fdi": "2.5",
+      "occupant": "B",
+      "status_layers": "bridge",
+      "bridge_link": [
+        "UL1PPN",
+        "UL1PMN"
+      ]
+    },
+    "UL1PMN": {
+      "fdi": "2.6",
+      "occupant": "N",
+      "status_layers": "crowned"
+    },
+    "UL2PMA": {
+      "fdi": "2.7",
+      "occupant": "A",
+      "status_layers": "missing"
+    },
+    "UL3PMA": {
+      "fdi": "2.8",
+      "occupant": "A",
+      "status_layers": "missing"
+    },
+    "LL3PMA": {
+      "fdi": "3.8",
+      "occupant": "A",
+      "status_layers": "missing"
+    },
+    "LL2PMA": {
+      "fdi": "3.7",
+      "occupant": "A",
+      "status_layers": "missing"
+    },
+    "LL1PMF": {
+      "fdi": "3.6",
+      "occupant": "F",
+      "status_layers": "impl_restored",
+      "implant": {
+        "system": "Synthetic",
+        "diameter_mm": 4.5,
+        "length_mm": 10.0,
+        "level": "bone",
+        "marginal_bone_level_mm": 1.0,
+        "complications": []
+      }
+    },
+    "LL2PPN": {
+      "fdi": "3.5",
+      "occupant": "N",
+      "status_layers": "restored:od"
+    },
+    "LL1PPN": {
+      "fdi": "3.4",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LLXPCN": {
+      "fdi": "3.3",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LLLPIN": {
+      "fdi": "3.2",
+      "occupant": "N",
+      "status_layers": "restored:m"
+    },
+    "LLCPIN": {
+      "fdi": "3.1",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LRCPIN": {
+      "fdi": "4.1",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LRLPIN": {
+      "fdi": "4.2",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LRXPCN": {
+      "fdi": "4.3",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LR1PPN": {
+      "fdi": "4.4",
+      "occupant": "N",
+      "status_layers": "restored:o"
+    },
+    "LR2PPN": {
+      "fdi": "4.5",
+      "occupant": "N",
+      "status_layers": "endo:mo+post+crowned",
+      "root_data": {
+        "variant": "1r",
+        "vertucci": {
+          "0": "I"
+        },
+        "fillStates": {
+          "0_0": 3
+        },
+        "periapical": {
+          "0": {
+            "pai": 3,
+            "type": "small_lesion",
+            "diameter_mm": 3.0
+          }
+        }
+      }
+    },
+    "LR1PMF": {
+      "fdi": "4.6",
+      "occupant": "F",
+      "status_layers": "impl_restored",
+      "implant": {
+        "system": "Synthetic",
+        "diameter_mm": 5.0,
+        "length_mm": 10.0,
+        "level": "bone",
+        "marginal_bone_level_mm": 0.9,
+        "complications": []
+      }
+    },
+    "LR2PMA": {
+      "fdi": "4.7",
+      "occupant": "A",
+      "status_layers": "missing"
+    },
+    "LR3PMA": {
+      "fdi": "4.8",
+      "occupant": "A",
+      "status_layers": "missing"
+    }
+  },
+  "bridge_links": {
+    "1.4-1.5-1.6": "conventional",
+    "2.4-2.5-2.6": "conventional"
+  },
+  "anatomical_landmarks": {
+    "mandibular_canal": {
+      "visibility_right": "clearly_visible",
+      "visibility_left": "clearly_visible",
+      "course_right": "normal",
+      "course_left": "low",
+      "distance_to_alveolar_crest_mm_right": 8.0,
+      "distance_to_alveolar_crest_mm_left": 6.5
+    },
+    "mental_foramen": {
+      "location_right": "premolar_region",
+      "location_left": "premolar_region",
+      "visible_right": true,
+      "visible_left": true
+    },
+    "maxillary_sinus": {
+      "status_right": "mucosal_thickening",
+      "status_left": "normal",
+      "floor_integrity_right": "intact",
+      "floor_integrity_left": "intact",
+      "pneumatization_right": "increased",
+      "pneumatization_left": "normal",
+      "floor_to_alveolar_crest_mm_right": 5.5,
+      "floor_to_alveolar_crest_mm_left": 9.2
+    },
+    "nasal_cavity": {
+      "septum_position": "deviated_left",
+      "septum_deviation_angle_deg": 8,
+      "nasal_airway_patency": "partially_obstructed"
+    }
+  },
+  "tmj_findings": {
+    "condyle_right": {
+      "morphology": "flattened",
+      "surface_contour": "smooth",
+      "bone_density": "normal"
+    },
+    "condyle_left": {
+      "morphology": "normal",
+      "surface_contour": "smooth",
+      "bone_density": "normal"
+    },
+    "joint_space": {
+      "symmetry": "asymmetric",
+      "assessment": "normal"
+    },
+    "pathology": {
+      "ankylosis": false,
+      "disc_displacement": "indeterminate",
+      "osteoarthritis_signs": "early"
+    }
+  },
+  "pathology": [
+    {
+      "type": "periapical_radiolucency",
+      "fdi": "4.5",
+      "size_mm": "3.0",
+      "density": "radiolucent",
+      "icd10_candidate": "K04.5",
+      "remarks": "PAI 3 — small periapical lesion at 4.5 apex"
+    },
+    {
+      "type": "carotid_artery_calcification",
+      "side": "left",
+      "size_mm": "4",
+      "density": "radiopaque",
+      "morphology": "linear",
+      "remarks": "incidental finding at C3-C4 level — recommend referral"
+    }
+  ],
+  "tooth_notes": {
+    "1.6": "Implant with peri-implant mucositis and progressive bone loss",
+    "4.5": "Endo+post+crown with PAI grade 3 periapical lesion — recommend re-treatment evaluation"
+  },
+  "ground_truth_meta": {
+    "source": "ai_prefill_then_manual",
+    "ai_prefill_source": "Synthetic AI prefill v0.1",
+    "expert_corrections": 4,
+    "session_id": "00000000-0000-0000-0000-000000000002",
+    "sequence_num": 14,
+    "last_modified": "2026-02-20T15:30:00Z"
+  },
+  "notes": "Synthetic example — More complex case: multiple implants (one with peri-implantitis), two conventional bridges, an endo retreatment case with periapical lesion, mucosal thickening of right maxillary sinus, septal deviation, early TMJ-OA on the right, and an incidental carotid calcification. Not derived from any real patient."
+}

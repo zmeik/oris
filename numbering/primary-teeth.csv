@@ -1,0 +1,21 @@
+oris_position_code,fdi,universal,palmer,anatomical_en,anatomical_ru,layperson_en,layperson_ru
+UR2DM,5.5,A,⌐E,Upper Right Second Primary Molar,Верхний правый второй молочный моляр,upper right second baby molar,верхний правый второй молочный моляр
+UR1DM,5.4,B,⌐D,Upper Right First Primary Molar,Верхний правый первый молочный моляр,upper right first baby molar,верхний правый первый молочный моляр
+URXDC,5.3,C,⌐C,Upper Right Primary Canine,Верхний правый молочный клык,upper right baby canine,верхний правый молочный клык
+URLDI,5.2,D,⌐B,Upper Right Lateral Primary Incisor,Верхний правый латеральный молочный резец,upper right lateral baby incisor,верхний правый молочный боковой резец
+URCDI,5.1,E,⌐A,Upper Right Central Primary Incisor,Верхний правый центральный молочный резец,upper right central baby incisor,верхний правый молочный центральный резец
+ULCDI,6.1,F,LA,Upper Left Central Primary Incisor,Верхний левый центральный молочный резец,upper left central baby incisor,верхний левый молочный центральный резец
+ULLDI,6.2,G,LB,Upper Left Lateral Primary Incisor,Верхний левый латеральный молочный резец,upper left lateral baby incisor,верхний левый молочный боковой резец
+ULXDC,6.3,H,LC,Upper Left Primary Canine,Верхний левый молочный клык,upper left baby canine,верхний левый молочный клык
+UL1DM,6.4,I,LD,Upper Left First Primary Molar,Верхний левый первый молочный моляр,upper left first baby molar,верхний левый первый молочный моляр
+UL2DM,6.5,J,LE,Upper Left Second Primary Molar,Верхний левый второй молочный моляр,upper left second baby molar,верхний левый второй молочный моляр
+LL2DM,7.5,K,⌐̲E,Lower Left Second Primary Molar,Нижний левый второй молочный моляр,lower left second baby molar,нижний левый второй молочный моляр
+LL1DM,7.4,L,⌐̲D,Lower Left First Primary Molar,Нижний левый первый молочный моляр,lower left first baby molar,нижний левый первый молочный моляр
+LLXDC,7.3,M,⌐̲C,Lower Left Primary Canine,Нижний левый молочный клык,lower left baby canine,нижний левый молочный клык
+LLLDI,7.2,N,⌐̲B,Lower Left Lateral Primary Incisor,Нижний левый латеральный молочный резец,lower left lateral baby incisor,нижний левый молочный боковой резец
+LLCDI,7.1,O,⌐̲A,Lower Left Central Primary Incisor,Нижний левый центральный молочный резец,lower left central baby incisor,нижний левый молочный центральный резец
+LRCDI,8.1,P,L̲A,Lower Right Central Primary Incisor,Нижний правый центральный молочный резец,lower right central baby incisor,нижний правый молочный центральный резец
+LRLDI,8.2,Q,L̲B,Lower Right Lateral Primary Incisor,Нижний правый латеральный молочный резец,lower right lateral baby incisor,нижний правый молочный боковой резец
+LRXDC,8.3,R,L̲C,Lower Right Primary Canine,Нижний правый молочный клык,lower right baby canine,нижний правый молочный клык
+LR1DM,8.4,S,L̲D,Lower Right First Primary Molar,Нижний правый первый молочный моляр,lower right first baby molar,нижний правый первый молочный моляр
+LR2DM,8.5,T,L̲E,Lower Right Second Primary Molar,Нижний правый второй молочный моляр,lower right second baby molar,нижний правый второй молочный моляр

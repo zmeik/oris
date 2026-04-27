@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ORIS v0.1 — Test Mode / Тестовый режим</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <strong>ORIS v0.1</strong>
+      <span class="subtitle" data-i18n="subtitle">Open Radiographic Imaging Schema · Test Mode</span>
+    </div>
+    <div class="controls">
+      <label class="lang-toggle">
+        <span data-i18n="lang_label">Language:</span>
+        <button id="lang-en" class="lang-btn active">English</button>
+        <button id="lang-ru" class="lang-btn">Русский</button>
+      </label>
+    </div>
+  </header>
+
+  <div class="privacy-banner">
+    <strong>⚠️</strong>
+    <span data-i18n="privacy_banner">This demo runs entirely in your browser. Use only synthetic data — no real patient information. See PRIVACY.md.</span>
+    <a href="../PRIVACY.md" target="_blank" data-i18n="privacy_link">PRIVACY.md</a>
+  </div>
+
+  <main>
+    <!-- Patient + imaging meta panel -->
+    <section class="panel meta-panel">
+      <h2 data-i18n="meta_title">Patient &amp; Imaging Metadata (synthetic)</h2>
+      <div class="meta-row">
+        <label>
+          <span data-i18n="meta_pid">Anonymized ID</span>
+          <input type="text" id="meta-pid" placeholder="P_DEMO_SYNTHETIC" value="P_DEMO_SYNTHETIC">
+        </label>
+        <label>
+          <span data-i18n="meta_age">Age (years)</span>
+          <input type="number" id="meta-age" min="0" max="120" value="40">
+        </label>
+        <label>
+          <span data-i18n="meta_sex">Sex</span>
+          <select id="meta-sex">
+            <option value="">—</option>
+            <option value="M">M</option>
+            <option value="F">F</option>
+            <option value="O">O</option>
+            <option value="U">U</option>
+          </select>
+        </label>
+        <label>
+          <span data-i18n="meta_date">Acquisition date</span>
+          <input type="datetime-local" id="meta-date" value="2026-01-15T10:00">
+        </label>
+        <label>
+          <span data-i18n="meta_quality">Image quality (1-5)</span>
+          <input type="number" id="meta-quality" min="1" max="5" value="4">
+        </label>
+      </div>
+    </section>
+
+    <!-- Dental formula -->
+    <section class="panel formula-panel">
+      <h2 data-i18n="formula_title">Dental Formula</h2>
+      <p class="hint" data-i18n="formula_hint">Click any cell to cycle through statuses. Right-click (or long-press) to choose surfaces. Drag through cells to mark a range.</p>
+      <div class="formula-container">
+        <div class="jaw upper-jaw">
+          <div class="quadrant q1" data-quadrant="1"></div>
+          <div class="midline-divider">|</div>
+          <div class="quadrant q2" data-quadrant="2"></div>
+        </div>
+        <div class="jaw-separator"><span data-i18n="upper_lower">Upper ▲ / ▼ Lower</span></div>
+        <div class="jaw lower-jaw">
+          <div class="quadrant q4" data-quadrant="4"></div>
+          <div class="midline-divider">|</div>
+          <div class="quadrant q3" data-quadrant="3"></div>
+        </div>
+      </div>
+      <div class="legend">
+        <strong data-i18n="legend_title">Legend:</strong>
+        <span class="legend-item"><span class="cell-swatch swatch-present"></span> <span data-i18n="legend_present">present</span></span>
+        <span class="legend-item"><span class="cell-swatch swatch-restored"></span> <span data-i18n="legend_restored">restored</span></span>
+        <span class="legend-item"><span class="cell-swatch swatch-crowned"></span> <span data-i18n="legend_crowned">crowned</span></span>
+        <span class="legend-item"><span class="cell-swatch swatch-endo"></span> <span data-i18n="legend_endo">endo</span></span>
+        <span class="legend-item"><span class="cell-swatch swatch-caries"></span> <span data-i18n="legend_caries">caries</span></span>
+        <span class="legend-item"><span class="cell-swatch swatch-implant"></span> <span data-i18n="legend_implant">implant</span></span>
+        <span class="legend-item"><span class="cell-swatch swatch-missing"></span> <span data-i18n="legend_missing">missing</span></span>
+        <span class="legend-item"><span class="cell-swatch swatch-impacted"></span> <span data-i18n="legend_impacted">impacted</span></span>
+        <span class="legend-item"><span class="cell-swatch swatch-uncertain"></span> <span data-i18n="legend_uncertain">uncertain</span></span>
+      </div>
+    </section>
+
+    <!-- Anatomy panel -->
+    <section class="panel anatomy-panel">
+      <h2 data-i18n="anatomy_title">Anatomical Landmarks · TMJ · Airway</h2>
+
+      <details open>
+        <summary data-i18n="anatomy_canal">Mandibular canal (нижнечелюстной канал)</summary>
+        <div class="grid-2col">
+          <label><span data-i18n="anatomy_visibility_r">Visibility right</span>
+            <select data-anatomy-key="mandibular_canal.visibility_right">
+              <option value="">—</option><option>clearly_visible</option><option>partially_visible</option><option>not_visible</option><option>obscured_by_artifact</option>
+            </select>
+          </label>
+          <label><span data-i18n="anatomy_visibility_l">Visibility left</span>
+            <select data-anatomy-key="mandibular_canal.visibility_left">
+              <option value="">—</option><option>clearly_visible</option><option>partially_visible</option><option>not_visible</option><option>obscured_by_artifact</option>
+            </select>
+          </label>
+          <label><span data-i18n="anatomy_course_r">Course right</span>
+            <select data-anatomy-key="mandibular_canal.course_right">
+              <option value="">—</option><option>normal</option><option>high</option><option>low</option><option>tortuous</option><option>interrupted</option>
+            </select>
+          </label>
+          <label><span data-i18n="anatomy_course_l">Course left</span>
+            <select data-anatomy-key="mandibular_canal.course_left">
+              <option value="">—</option><option>normal</option><option>high</option><option>low</option><option>tortuous</option><option>interrupted</option>
+            </select>
+          </label>
+        </div>
+      </details>
+
+      <details>
+        <summary data-i18n="anatomy_sinus">Maxillary sinus (верхнечелюстная пазуха)</summary>
+        <div class="grid-2col">
+          <label><span data-i18n="anatomy_sinus_status_r">Status right</span>
+            <select data-anatomy-key="maxillary_sinus.status_right">
+              <option value="">—</option><option>normal</option><option>mucosal_thickening</option><option>opacification</option><option>polyp</option><option>antrolith</option><option>post_operative_change</option><option>sinusitis</option>
+            </select>
+          </label>
+          <label><span data-i18n="anatomy_sinus_status_l">Status left</span>
+            <select data-anatomy-key="maxillary_sinus.status_left">
+              <option value="">—</option><option>normal</option><option>mucosal_thickening</option><option>opacification</option><option>polyp</option><option>antrolith</option><option>post_operative_change</option><option>sinusitis</option>
+            </select>
+          </label>
+          <label><span data-i18n="anatomy_pneuma_r">Pneumatization right</span>
+            <select data-anatomy-key="maxillary_sinus.pneumatization_right">
+              <option value="">—</option><option>normal</option><option>increased</option><option>decreased</option>
+            </select>
+          </label>
+          <label><span data-i18n="anatomy_pneuma_l">Pneumatization left</span>
+            <select data-anatomy-key="maxillary_sinus.pneumatization_left">
+              <option value="">—</option><option>normal</option><option>increased</option><option>decreased</option>
+            </select>
+          </label>
+        </div>
+      </details>
+
+      <details>
+        <summary data-i18n="anatomy_mental">Mental foramen (ментальное отверстие)</summary>
+        <div class="grid-2col">
+          <label><span data-i18n="anatomy_mental_loc_r">Location right</span>
+            <select data-anatomy-key="mental_foramen.location_right">
+              <option value="">—</option><option>premolar_region</option><option>between_1st_2nd_premolar</option><option>anterior_to_1st_premolar</option><option>posterior_to_2nd_premolar</option><option>not_visible</option>
+            </select>
+          </label>
+          <label><span data-i18n="anatomy_mental_loc_l">Location left</span>
+            <select data-anatomy-key="mental_foramen.location_left">
+              <option value="">—</option><option>premolar_region</option><option>between_1st_2nd_premolar</option><option>anterior_to_1st_premolar</option><option>posterior_to_2nd_premolar</option><option>not_visible</option>
+            </select>
+          </label>
+        </div>
+      </details>
+
+      <details>
+        <summary data-i18n="anatomy_tmj">TMJ — condyle morphology + joint space</summary>
+        <div class="grid-2col">
+          <label><span data-i18n="anatomy_condyle_r">Condyle right morphology</span>
+            <select data-anatomy-key="tmj_findings.condyle_right.morphology">
+              <option value="">—</option><option>normal</option><option>flattened</option><option>osteophyte</option><option>erosion</option><option>resorption</option><option>hypoplastic</option><option>hyperplastic</option>
+            </select>
+          </label>
+          <label><span data-i18n="anatomy_condyle_l">Condyle left morphology</span>
+            <select data-anatomy-key="tmj_findings.condyle_left.morphology">
+              <option value="">—</option><option>normal</option><option>flattened</option><option>osteophyte</option><option>erosion</option><option>resorption</option><option>hypoplastic</option><option>hyperplastic</option>
+            </select>
+          </label>
+          <label><span data-i18n="anatomy_oa">Osteoarthritis signs</span>
+            <select data-anatomy-key="tmj_findings.pathology.osteoarthritis_signs">
+              <option value="">—</option><option>absent</option><option>early</option><option>moderate</option><option>advanced</option>
+            </select>
+          </label>
+          <label><span data-i18n="anatomy_disc">Disc displacement</span>
+            <select data-anatomy-key="tmj_findings.pathology.disc_displacement">
+              <option value="">—</option><option>no</option><option>anterior</option><option>lateral</option><option>posterior</option><option>indeterminate</option>
+            </select>
+          </label>
+        </div>
+      </details>
+
+      <details>
+        <summary data-i18n="anatomy_airway">Airway / pharyngeal space</summary>
+        <div class="grid-2col">
+          <label><span data-i18n="anatomy_airway_class">Pharyngeal airway space</span>
+            <select data-anatomy-key="airway_assessment.pharyngeal_airway.space_classification">
+              <option value="">—</option><option>normal</option><option>reduced</option><option>severely_compromised</option><option>not_assessed</option>
+            </select>
+          </label>
+          <label><span data-i18n="anatomy_septum">Nasal septum</span>
+            <select data-anatomy-key="anatomical_landmarks.nasal_cavity.septum_position">
+              <option value="">—</option><option>midline</option><option>deviated_right</option><option>deviated_left</option>
+            </select>
+          </label>
+        </div>
+      </details>
+    </section>
+
+    <!-- JSON output -->
+    <section class="panel output-panel">
+      <h2 data-i18n="output_title">ORIS Document (live JSON)</h2>
+      <p class="hint" data-i18n="output_hint">Updates as you click. Validate with the Python parser or directly against schema/oris-v0.1.json.</p>
+      <pre id="json-output"></pre>
+      <div class="actions">
+        <button id="btn-copy" data-i18n="btn_copy">Copy JSON</button>
+        <button id="btn-export" data-i18n="btn_export">Export JSON file</button>
+        <button id="btn-load-001" data-i18n="btn_load_001">Load synthetic_001</button>
+        <button id="btn-clear" class="btn-danger" data-i18n="btn_clear">Clear all</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>
+      <span data-i18n="footer_text">ORIS v0.1 · MIT licence · No PII · No telemetry · Runs entirely in your browser. Source:</span>
+      <a href="https://github.com/zmeik/oris" target="_blank">github.com/zmeik/oris</a>
+    </p>
+  </footer>
+
+  <!-- Surface picker modal -->
+  <div id="surface-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3 data-i18n="surface_modal_title">Choose surfaces</h3>
+      <p data-i18n="surface_modal_hint">Mark all that apply for this layer.</p>
+      <div class="surface-buttons">
+        <button class="surface-btn" data-surface="m">m <small data-i18n="surface_m">mesial</small></button>
+        <button class="surface-btn" data-surface="d">d <small data-i18n="surface_d">distal</small></button>
+        <button class="surface-btn" data-surface="o">o <small data-i18n="surface_o">occlusal</small></button>
+        <button class="surface-btn" data-surface="v">v <small data-i18n="surface_v">vestibular</small></button>
+        <button class="surface-btn" data-surface="l">l <small data-i18n="surface_l">lingual</small></button>
+      </div>
+      <div class="modal-actions">
+        <button id="btn-surface-clear" data-i18n="btn_surface_clear">No surfaces</button>
+        <button id="btn-surface-done" data-i18n="btn_surface_done">Done</button>
+        <button id="btn-surface-cancel" data-i18n="btn_surface_cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="oris.js"></script>
+</body>
+</html>

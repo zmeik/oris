@@ -1,0 +1,536 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zmeik/oris/schema/oris-v0.1.json",
+  "title": "ORIS v0.1 — Open Radiographic Imaging Schema for Dental Panoramic Reports",
+  "description": "Structured digital format for the imaging-findings section of dental panoramic radiograph (OPG) reports. ORIS structures descriptive findings; it does NOT perform diagnosis. Diagnosis is the clinician's task and integrates anamnesis + intra-oral examination + radiographic interpretation per the ALARA principle (ADA/AAOMR 2026 update).",
+  "type": "object",
+  "required": ["oris_version", "document_id", "imaging", "teeth"],
+  "additionalProperties": false,
+
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "format": "uri",
+      "description": "Optional pointer to the JSON Schema this document conforms to."
+    },
+    "oris_version": {
+      "type": "string",
+      "const": "0.1.0",
+      "description": "ORIS specification version. Current release: 0.1.0."
+    },
+
+    "document_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "description": "Document identifier. MUST NOT contain personally identifiable information. Recommended format: <institution>_OPG_<file-id>_<iso8601-utc> (institution and file-id should be opaque, non-reidentifying tokens)."
+    },
+
+    "patient": {
+      "type": "object",
+      "description": "Patient block. MUST NOT contain real identifiers. Use opaque internal IDs only.",
+      "additionalProperties": false,
+      "properties": {
+        "anonymized_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,64}$",
+          "description": "Opaque, non-reidentifying patient identifier (e.g. P_0001_SYNTHETIC). NEVER store name, DOB, address, passport, SSN, or insurance ID here."
+        },
+        "age_years": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 120
+        },
+        "sex": {
+          "type": ["string", "null"],
+          "enum": ["M", "F", "O", "U", null],
+          "description": "M=male, F=female, O=other, U=unknown."
+        }
+      }
+    },
+
+    "imaging": {
+      "type": "object",
+      "required": ["modality", "acquisition_date"],
+      "additionalProperties": false,
+      "properties": {
+        "modality": {
+          "type": "string",
+          "enum": ["OPG", "PAN"],
+          "description": "Imaging modality. ORIS v0.1 supports panoramic 2D only. CBCT/3D extension is in v0.2+ scope."
+        },
+        "device": {
+          "type": ["string", "null"],
+          "description": "Acquisition device model (e.g. 'Vatech Pax-i SC', 'Planmeca ProMax')."
+        },
+        "acquisition_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 UTC datetime of acquisition."
+        },
+        "kvp": { "type": ["number", "null"], "minimum": 0 },
+        "ma": { "type": ["number", "null"], "minimum": 0 },
+        "exposure_seconds": { "type": ["number", "null"], "minimum": 0 },
+        "image_quality_score": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Subjective acquisition-quality score per AAOMR 2020 panoramic-quality position paper. 5=excellent, 1=non-diagnostic."
+        }
+      }
+    },
+
+    "teeth": {
+      "type": "object",
+      "description": "Tooth findings, keyed by 6-character ORIS code: [Jaw=U|L][Side=L|R][Position=C|L|X|1|2|3][Dentition=P|D][Class=I|C|P|M][Occupant=N|F|T|B|D|H|O|A|R|S|U|C|M|I].",
+      "patternProperties": {
+        "^[UL][LR][CL123XPM][PD][ICPM][NFTBDHOARSUCMI]$": {
+          "$ref": "#/$defs/tooth_finding"
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "anatomical_landmarks": { "$ref": "#/$defs/anatomical_landmarks" },
+    "tmj_findings": { "$ref": "#/$defs/tmj_findings" },
+    "airway_assessment": { "$ref": "#/$defs/airway_assessment" },
+
+    "bridge_links": {
+      "type": "object",
+      "description": "Bridge / cantilever links between FDI positions. Key format: 'X.Y-Z.W' or 'X.Y-Z.W-Q.R'.",
+      "patternProperties": {
+        "^[1-4]\\.[1-8](-[1-4]\\.[1-8])+$": {
+          "type": "string",
+          "enum": ["conventional", "cantilever", "maryland", "inlay_bonded"]
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "tooth_notes": {
+      "type": "object",
+      "description": "Free-text notes per FDI position. Keep short and clinical — no PII.",
+      "patternProperties": {
+        "^[1-8]\\.[1-8]$": { "type": "string", "maxLength": 500 }
+      },
+      "additionalProperties": false
+    },
+
+    "pathology": {
+      "type": "array",
+      "description": "Pathological findings in non-tooth structures (cysts, fractures, calcifications, etc.).",
+      "items": { "$ref": "#/$defs/pathology_finding" }
+    },
+
+    "confidence": {
+      "type": "object",
+      "description": "Per-FDI confidence score in [0, 1].",
+      "patternProperties": {
+        "^[1-8]\\.[1-8]$": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    },
+
+    "ground_truth_meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "enum": ["manual", "ai_prefill", "ai_prefill_then_manual"],
+          "description": "Origin of the document content. Multi-source variants (card_prefill / snapshot_prefill / hybrid_prefill) are reserved for ORIS v0.2+."
+        },
+        "ai_prefill_source": {
+          "type": ["string", "null"],
+          "description": "Free-text identifier of the AI model used (e.g. 'YOLOv8+SemiT-SAM-2026Q1')."
+        },
+        "expert_corrections": { "type": "integer", "minimum": 0 },
+        "session_id": { "type": "string", "format": "uuid" },
+        "sequence_num": { "type": "integer", "minimum": 0 },
+        "last_modified": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_compliant": { "type": "boolean" },
+        "warnings": { "type": "array", "items": { "type": "string" } },
+        "errors": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "notes": {
+      "type": "string",
+      "description": "Document-level free-text notes (e.g. for synthetic-example contributions, the synthetic-data declaration). MUST NOT contain PII.",
+      "maxLength": 1000
+    }
+  },
+
+  "$defs": {
+
+    "tooth_finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fdi", "occupant"],
+      "properties": {
+        "fdi": {
+          "type": "string",
+          "pattern": "^[1-8]\\.[1-8]$|^([56789])\\.[1-5]$",
+          "description": "FDI two-digit notation per ISO 3950 (1.1–4.8 permanent, 5.1–8.5 primary)."
+        },
+        "universal": { "type": ["string", "null"] },
+        "palmer": { "type": ["string", "null"] },
+        "anatomical": { "type": ["string", "null"] },
+        "anatomical_ru": { "type": ["string", "null"] },
+        "layperson": { "type": ["string", "null"] },
+        "occupant": {
+          "type": "string",
+          "enum": ["N", "F", "T", "B", "D", "H", "O", "A", "R", "S", "U", "C", "M", "I"],
+          "description": "Object occupying the dental position. See numbering/occupants.md for full definitions."
+        },
+        "status_layers": {
+          "type": "string",
+          "pattern": "^$|^([a-z_]+(:[mdovl]+)?)(\\+([a-z_]+(:[mdovl]+)?))*$",
+          "description": "Layered status formula. Examples: 'present', 'endo:mo+post+crowned', 'restored:mod+caries:d'. Empty string for unannotated."
+        },
+        "surfaces": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["m", "d", "o", "v", "l"] },
+          "uniqueItems": true,
+          "description": "Aggregated surface list across all layers (convenience field)."
+        },
+        "root_data": { "$ref": "#/$defs/root_data" },
+        "implant": { "$ref": "#/$defs/implant_data" },
+        "bridge_link": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[UL][LR][CL123XPM][PD][ICPM][NFTBDHOARSUCMI]$" },
+          "description": "ORIS codes of teeth this position is bridge-linked to."
+        }
+      }
+    },
+
+    "root_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "variant": {
+          "type": "string",
+          "enum": ["1r", "2r", "3r", "4r", "fused"],
+          "description": "Root count variant: 1r=single, 2r=two, 3r=three, 4r=four, fused=fused roots."
+        },
+        "vertucci": {
+          "type": "object",
+          "patternProperties": {
+            "^[0-9]$": { "type": "string", "enum": ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"] }
+          },
+          "description": "Vertucci canal classification per root index (0=mesial, 1=distal, 2=palatal/lingual, etc.). Vertucci 1984."
+        },
+        "fillStates": {
+          "type": "object",
+          "description": "Endodontic filling state per canal. Key: '<root_index>_<canal_index>'. Values: 0=unknown, 1=third (apical third), 2=twothird, 3=full, 4=over (overfilling).",
+          "patternProperties": {
+            "^[0-9]_[0-9]$": { "type": "integer", "enum": [0, 1, 2, 3, 4] }
+          }
+        },
+        "periapical": {
+          "type": "object",
+          "description": "Periapical findings per root. PAI grade per Ørstavik 1986 (1=Normal, 2=Widened PDL, 3=Small lesion <5mm, 4=Large ≥5mm, 5=Severe >10mm).",
+          "patternProperties": {
+            "^[0-9]$": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "pai": { "type": "integer", "minimum": 1, "maximum": 5 },
+                "type": {
+                  "type": "string",
+                  "enum": ["normal", "widened_pdl", "small_lesion", "large_lesion", "severe_lesion", "unspecified"]
+                },
+                "diameter_mm": { "type": ["number", "null"], "minimum": 0 }
+              }
+            }
+          }
+        },
+        "lateral": {
+          "type": "object",
+          "description": "Lateral defects keyed by '<root_index>_<surface>' (surface in {m,d}).",
+          "patternProperties": {
+            "^[0-9]_[md]$": {
+              "type": "string",
+              "enum": ["none", "vertical", "horizontal", "crater", "j_shaped", "halo", "combined"]
+            }
+          }
+        },
+        "furcation": {
+          "type": "object",
+          "description": "Furcation involvement per Glickman 1953 (I–IV).",
+          "patternProperties": {
+            "^[bl]$": { "type": "string", "enum": ["I", "II", "III", "IV"] }
+          }
+        }
+      }
+    },
+
+    "implant_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "system": { "type": ["string", "null"], "description": "Implant system, e.g. 'Nobel Biocare Active', 'Straumann SLA', 'DURAVIT'." },
+        "diameter_mm": { "type": ["number", "null"], "minimum": 0 },
+        "length_mm": { "type": ["number", "null"], "minimum": 0 },
+        "level": { "type": ["string", "null"], "enum": ["bone", "tissue", "subcrestal", "supracrestal", null] },
+        "surface": { "type": ["string", "null"], "enum": ["machined", "moderately_rough", "rough", "hydrophilic", null] },
+        "occlusal": { "type": ["string", "null"], "enum": ["screw_retained_crown", "cement_retained_crown", "bridge_abutment", "overdenture_attachment", "healing_abutment", "cover_screw", null] },
+        "marginal_bone_level_mm": { "type": ["number", "null"] },
+        "complications": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "SCR_LOOSE", "ABT_MISFIT", "VEN_CHIP", "RET_LOSS",
+              "PERI_MUC", "PERI_EARLY", "PERI_MOD", "PERI_ADV", "OSSEO_FAIL",
+              "MALPOS", "OVERLOAD", "FX_FIX", "FX_ABT", "FX_VEN",
+              "MARG_LEAK", "MUCOSITIS_PERSISTENT", "RECESSION", "EMERGENCE_POOR",
+              "BIOFILM_CALC", "RBL_PROGRESS", "INF_ACUTE",
+              "OCCL_INTERFERENCE", "BRUX_DAMAGE"
+            ]
+          },
+          "uniqueItems": true,
+          "description": "23-code prosthetic-complication ontology mapped to Pjetursson 2012, Misch 2008, Froum 2012, AAP 2017, Schwarz 2020. Full descriptions in grammar/complications.md."
+        }
+      }
+    },
+
+    "anatomical_landmarks": {
+      "type": "object",
+      "description": "Non-tooth anatomical structures visible on OPG. Per AAOMR 2018 'Normal Radiographic Anatomy of the Jaws' position paper.",
+      "additionalProperties": false,
+      "properties": {
+        "mandibular_canal": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "visibility_right": { "type": "string", "enum": ["clearly_visible", "partially_visible", "not_visible", "obscured_by_artifact"] },
+            "visibility_left":  { "type": "string", "enum": ["clearly_visible", "partially_visible", "not_visible", "obscured_by_artifact"] },
+            "course_right":     { "type": "string", "enum": ["normal", "high", "low", "tortuous", "interrupted"] },
+            "course_left":      { "type": "string", "enum": ["normal", "high", "low", "tortuous", "interrupted"] },
+            "distance_to_alveolar_crest_mm_right": { "type": ["number", "null"], "minimum": 0 },
+            "distance_to_alveolar_crest_mm_left":  { "type": ["number", "null"], "minimum": 0 }
+          }
+        },
+        "mental_foramen": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "location_right":   { "type": "string", "enum": ["premolar_region", "between_1st_2nd_premolar", "anterior_to_1st_premolar", "posterior_to_2nd_premolar", "not_visible"] },
+            "location_left":    { "type": "string", "enum": ["premolar_region", "between_1st_2nd_premolar", "anterior_to_1st_premolar", "posterior_to_2nd_premolar", "not_visible"] },
+            "visible_right":    { "type": "boolean" },
+            "visible_left":     { "type": "boolean" }
+          }
+        },
+        "maxillary_sinus": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status_right":              { "type": "string", "enum": ["normal", "mucosal_thickening", "opacification", "polyp", "antrolith", "post_operative_change", "sinusitis"] },
+            "status_left":               { "type": "string", "enum": ["normal", "mucosal_thickening", "opacification", "polyp", "antrolith", "post_operative_change", "sinusitis"] },
+            "floor_integrity_right":     { "type": "string", "enum": ["intact", "dehiscent", "eroded"] },
+            "floor_integrity_left":      { "type": "string", "enum": ["intact", "dehiscent", "eroded"] },
+            "pneumatization_right":      { "type": "string", "enum": ["normal", "increased", "decreased"] },
+            "pneumatization_left":       { "type": "string", "enum": ["normal", "increased", "decreased"] },
+            "floor_to_alveolar_crest_mm_right": { "type": ["number", "null"], "minimum": 0 },
+            "floor_to_alveolar_crest_mm_left":  { "type": ["number", "null"], "minimum": 0 }
+          }
+        },
+        "nasal_cavity": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "septum_position": { "type": "string", "enum": ["midline", "deviated_right", "deviated_left"] },
+            "septum_deviation_angle_deg": { "type": ["number", "null"], "minimum": 0, "maximum": 90 },
+            "nasal_airway_patency": { "type": "string", "enum": ["patent", "partially_obstructed", "obstructed"] }
+          }
+        },
+        "incisive_canal": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "visible": { "type": "boolean" },
+            "diameter_mm": { "type": ["number", "null"], "minimum": 0 },
+            "position": { "type": "string", "enum": ["anterior_to_incisors", "between_central_incisors", "not_assessed"] }
+          }
+        },
+        "ramus": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "height_right_mm":      { "type": ["number", "null"], "minimum": 0 },
+            "height_left_mm":       { "type": ["number", "null"], "minimum": 0 },
+            "angulation_right_deg": { "type": ["number", "null"] },
+            "angulation_left_deg":  { "type": ["number", "null"] }
+          }
+        },
+        "coronoid_process": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "visible_right":   { "type": "boolean" },
+            "visible_left":    { "type": "boolean" },
+            "height_right_mm": { "type": ["number", "null"], "minimum": 0 },
+            "height_left_mm":  { "type": ["number", "null"], "minimum": 0 }
+          }
+        },
+        "zygomatic_arch": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "visible_right": { "type": "boolean" },
+            "visible_left":  { "type": "boolean" },
+            "remarks":       { "type": ["string", "null"], "maxLength": 200 }
+          }
+        },
+        "cervical_spine_projection": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "visible": { "type": "boolean" },
+            "remarks": { "type": ["string", "null"], "maxLength": 200 }
+          }
+        }
+      }
+    },
+
+    "tmj_findings": {
+      "type": "object",
+      "description": "Temporomandibular joint findings. OPG has limited TMJ assessment power; CBCT/MRI may be required for definitive diagnosis.",
+      "additionalProperties": false,
+      "properties": {
+        "condyle_right":    { "$ref": "#/$defs/condyle" },
+        "condyle_left":     { "$ref": "#/$defs/condyle" },
+        "articular_eminence": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "prominence_right": { "type": "string", "enum": ["normal", "prominent", "flat"] },
+            "prominence_left":  { "type": "string", "enum": ["normal", "prominent", "flat"] },
+            "osteophyte_right": { "type": "boolean" },
+            "osteophyte_left":  { "type": "boolean" }
+          }
+        },
+        "joint_space": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "width_anterior_right_mm":  { "type": ["number", "null"], "minimum": 0 },
+            "width_anterior_left_mm":   { "type": ["number", "null"], "minimum": 0 },
+            "width_posterior_right_mm": { "type": ["number", "null"], "minimum": 0 },
+            "width_posterior_left_mm":  { "type": ["number", "null"], "minimum": 0 },
+            "symmetry":   { "type": "string", "enum": ["symmetric", "asymmetric"] },
+            "assessment": { "type": "string", "enum": ["normal", "narrowed", "widened"] }
+          }
+        },
+        "pathology": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "ankylosis":           { "type": "boolean" },
+            "disc_displacement":   { "type": "string", "enum": ["no", "anterior", "lateral", "posterior", "indeterminate"] },
+            "osteoarthritis_signs":{ "type": "string", "enum": ["absent", "early", "moderate", "advanced"] }
+          }
+        }
+      }
+    },
+
+    "condyle": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "morphology": {
+          "type": "string",
+          "enum": ["normal", "flattened", "osteophyte", "erosion", "resorption", "hypoplastic", "hyperplastic"]
+        },
+        "surface_contour": { "type": "string", "enum": ["smooth", "irregular", "erosive_defect"] },
+        "bone_density":    { "type": "string", "enum": ["normal", "sclerotic", "osteoporotic"] },
+        "height_mm":       { "type": ["number", "null"], "minimum": 0 },
+        "anterior_posterior_position": {
+          "type": "string",
+          "enum": ["normal", "anteriorly_positioned", "posteriorly_positioned"]
+        }
+      }
+    },
+
+    "airway_assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pharyngeal_airway": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "width_mm":     { "type": ["number", "null"], "minimum": 0 },
+            "depth_mm":     { "type": ["number", "null"], "minimum": 0 },
+            "space_classification": {
+              "type": "string",
+              "enum": ["normal", "reduced", "severely_compromised", "not_assessed"]
+            },
+            "obstruction_sites": {
+              "type": "array",
+              "items": { "type": "string", "enum": ["soft_palate", "base_of_tongue", "epiglottis", "lateral_wall"] },
+              "uniqueItems": true
+            }
+          }
+        },
+        "nasal_cavity_extra": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "septal_deviation": { "type": "string", "enum": ["midline", "deviated_right", "deviated_left"] },
+            "deviation_severity": { "type": "string", "enum": ["mild", "moderate", "severe", "absent"] }
+          }
+        }
+      }
+    },
+
+    "pathology_finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "periapical_radiolucency",
+            "radicular_cyst",
+            "dentigerous_cyst",
+            "residual_cyst",
+            "odontogenic_keratocyst",
+            "fibrous_dysplasia",
+            "osteoma",
+            "torus_mandibularis",
+            "torus_palatinus",
+            "carotid_artery_calcification",
+            "stylohyoid_calcification",
+            "sialolith",
+            "phlebolith",
+            "lymph_node_calcification",
+            "antrolith",
+            "mandibular_fracture",
+            "condylar_fracture",
+            "maxillary_fracture",
+            "foreign_body",
+            "unspecified"
+          ]
+        },
+        "location": { "type": ["string", "null"], "maxLength": 200 },
+        "fdi": { "type": ["string", "null"], "pattern": "^[1-8]\\.[1-8]$" },
+        "side": { "type": ["string", "null"], "enum": ["right", "left", "midline", "bilateral", null] },
+        "size_mm": { "type": ["string", "null"], "description": "e.g. '8x6' or '4.5'." },
+        "density": { "type": ["string", "null"], "enum": ["radiolucent", "radiopaque", "mixed", null] },
+        "morphology": { "type": ["string", "null"], "enum": ["linear", "nodular", "clustered", "diffuse", null] },
+        "icd10_candidate": { "type": ["string", "null"], "description": "Candidate ICD-10 code at the diagnosis stage (e.g. 'K04.5'). NOT a diagnosis itself." },
+        "remarks": { "type": ["string", "null"], "maxLength": 500 }
+      }
+    }
+  }
+}

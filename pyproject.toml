@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "oris"
+version = "0.1.0"
+description = "Open Radiographic Imaging Schema — a structured digital format for imaging findings in dental panoramic reports"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Sergo G. Manukov", email = "see-orcid@profile" },
+]
+keywords = [
+    "dental", "radiology", "panoramic", "OPG", "structured-reporting",
+    "imaging-findings", "schema", "FHIR", "DICOM-SR", "open-standard",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+dependencies = [
+    "jsonschema>=4.20",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "black>=24.0",
+    "ruff>=0.3",
+    "mypy>=1.8",
+]
+fhir = [
+    "fhir.resources>=7.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/zmeik/oris"
+Repository = "https://github.com/zmeik/oris"
+Issues = "https://github.com/zmeik/oris/issues"
+Changelog = "https://github.com/zmeik/oris/blob/main/CHANGELOG.md"
+
+[tool.setuptools]
+packages = ["oris", "oris.parser", "oris.bridges"]
+package-dir = { "oris" = "parser", "oris.parser" = "parser", "oris.bridges" = "bridges" }
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "W", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --tb=short"
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true

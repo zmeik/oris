@@ -1,0 +1,255 @@
+{
+  "$schema": "https://github.com/zmeik/oris/schema/oris-v0.1.json",
+  "oris_version": "0.1.0",
+  "document_id": "SYNTHETIC_OPG_003_2026-03-10T00:00:00Z",
+  "patient": {
+    "anonymized_id": "P_0003_SYNTHETIC",
+    "age_years": 8,
+    "sex": "F"
+  },
+  "imaging": {
+    "modality": "OPG",
+    "device": "Synthetic Reference Device v1",
+    "acquisition_date": "2026-03-10T09:00:00Z",
+    "kvp": 65,
+    "ma": 8,
+    "exposure_seconds": 11.0,
+    "image_quality_score": 4
+  },
+  "teeth": {
+    "UR1PMN": {
+      "fdi": "1.6",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UR2PPU": {
+      "fdi": "1.5",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "UR1PPU": {
+      "fdi": "1.4",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "URXPCU": {
+      "fdi": "1.3",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "URLPIN": {
+      "fdi": "1.2",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "URCPIN": {
+      "fdi": "1.1",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "ULCPIN": {
+      "fdi": "2.1",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "ULLPIN": {
+      "fdi": "2.2",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "ULXPCU": {
+      "fdi": "2.3",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "UL1PPU": {
+      "fdi": "2.4",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "UL2PPU": {
+      "fdi": "2.5",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "UL1PMN": {
+      "fdi": "2.6",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UR2DMN": {
+      "fdi": "5.5",
+      "occupant": "N",
+      "status_layers": "restored:o"
+    },
+    "UR1DMN": {
+      "fdi": "5.4",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "URXDCN": {
+      "fdi": "5.3",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "URLDIN": {
+      "fdi": "5.2",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "URCDIN": {
+      "fdi": "5.1",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "ULCDIN": {
+      "fdi": "6.1",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "ULLDIN": {
+      "fdi": "6.2",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "ULXDCN": {
+      "fdi": "6.3",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UL1DMN": {
+      "fdi": "6.4",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UL2DMN": {
+      "fdi": "6.5",
+      "occupant": "N",
+      "status_layers": "restored:o"
+    },
+    "LR1PMN": {
+      "fdi": "4.6",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LR2PPU": {
+      "fdi": "4.5",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LR1PPU": {
+      "fdi": "4.4",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LRXPCU": {
+      "fdi": "4.3",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LRLPIN": {
+      "fdi": "4.2",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LRCPIN": {
+      "fdi": "4.1",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LLCPIN": {
+      "fdi": "3.1",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LLLPIN": {
+      "fdi": "3.2",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LLXPCU": {
+      "fdi": "3.3",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LL1PPU": {
+      "fdi": "3.4",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LL2PPU": {
+      "fdi": "3.5",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LL1PMN": {
+      "fdi": "3.6",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LR2DMN": {
+      "fdi": "8.5",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LR1DMN": {
+      "fdi": "8.4",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LRXDCN": {
+      "fdi": "8.3",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LRLDIA": {
+      "fdi": "8.2",
+      "occupant": "A",
+      "status_layers": "missing"
+    },
+    "LRCDIA": {
+      "fdi": "8.1",
+      "occupant": "A",
+      "status_layers": "missing"
+    },
+    "LLCDIA": {
+      "fdi": "7.1",
+      "occupant": "A",
+      "status_layers": "missing"
+    },
+    "LLLDIA": {
+      "fdi": "7.2",
+      "occupant": "A",
+      "status_layers": "missing"
+    },
+    "LLXDCN": {
+      "fdi": "7.3",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LL1DMN": {
+      "fdi": "7.4",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LL2DMN": {
+      "fdi": "7.5",
+      "occupant": "N",
+      "status_layers": "present"
+    }
+  },
+  "tooth_notes": {
+    "8.2": "Primary lateral incisor exfoliated; permanent successor (4.2) erupting",
+    "7.2": "Primary lateral incisor exfoliated; permanent successor (3.2) erupted",
+    "5.5": "Occlusal filling, primary",
+    "6.5": "Occlusal filling, primary"
+  },
+  "ground_truth_meta": {
+    "source": "manual",
+    "expert_corrections": 0,
+    "session_id": "00000000-0000-0000-0000-000000000003",
+    "sequence_num": 1,
+    "last_modified": "2026-03-10T09:30:00Z"
+  },
+  "notes": "Synthetic paediatric example — 8-year-old in mixed dentition. Permanent first molars (1.6, 2.6, 3.6, 4.6), permanent central + lateral incisors erupted (1.1, 1.2, 2.1, 2.2, 3.1, 3.2, 4.1, 4.2). Most other permanent teeth still in development (status=uncertain because of overlapping unerupted positions on OPG). Primary teeth: most retained, 4 exfoliated lower primary incisors. Two primary occlusal fillings on 5.5 and 6.5. Not derived from any real patient."
+}

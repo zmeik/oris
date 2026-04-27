@@ -1,0 +1,67 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Lint with ruff
+        run: ruff check parser/ bridges/ tests/
+
+      - name: Type check with mypy
+        run: mypy parser/ bridges/ || true   # advisory in v0.1
+
+      - name: Run tests
+        run: pytest tests/ -v --cov=parser --cov=bridges --cov-report=term-missing
+
+  schema-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install jsonschema
+        run: pip install jsonschema
+      - name: Validate examples against schema
+        run: |
+          python -c "
+          import json, sys
+          from pathlib import Path
+          from jsonschema import Draft202012Validator
+          schema = json.loads(Path('schema/oris-v0.1.json').read_text())
+          validator = Draft202012Validator(schema)
+          fail = False
+          for f in Path('examples').glob('*.json'):
+              errors = list(validator.iter_errors(json.loads(f.read_text())))
+              if errors:
+                  fail = True
+                  print(f'❌ {f.name}: {len(errors)} validation errors')
+                  for e in errors[:5]:
+                      print(f'   - {e.message}')
+              else:
+                  print(f'✅ {f.name}')
+          sys.exit(1 if fail else 0)
+          "

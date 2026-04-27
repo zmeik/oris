@@ -1,0 +1,33 @@
+oris_position_code,fdi,universal,palmer,anatomical_en,anatomical_ru,layperson_en,layperson_ru
+UR3PM,1.8,1,⌐8,Upper Right Third Permanent Molar,Верхний правый третий постоянный моляр,upper right wisdom tooth,верхний правый зуб мудрости
+UR2PM,1.7,2,⌐7,Upper Right Second Permanent Molar,Верхний правый второй постоянный моляр,upper right second molar,верхний правый второй моляр
+UR1PM,1.6,3,⌐6,Upper Right First Permanent Molar,Верхний правый первый постоянный моляр,upper right first molar,верхний правый первый моляр
+UR2PP,1.5,4,⌐5,Upper Right Second Permanent Premolar,Верхний правый второй постоянный премоляр,upper right second premolar,верхний правый второй премоляр
+UR1PP,1.4,5,⌐4,Upper Right First Permanent Premolar,Верхний правый первый постоянный премоляр,upper right first premolar,верхний правый первый премоляр
+URXPC,1.3,6,⌐3,Upper Right Permanent Canine,Верхний правый постоянный клык,upper right canine,верхний правый клык
+URLPI,1.2,7,⌐2,Upper Right Lateral Permanent Incisor,Верхний правый латеральный постоянный резец,upper right lateral incisor,верхний правый боковой резец
+URCPI,1.1,8,⌐1,Upper Right Central Permanent Incisor,Верхний правый центральный постоянный резец,upper right central incisor,верхний правый центральный резец
+ULCPI,2.1,9,L1,Upper Left Central Permanent Incisor,Верхний левый центральный постоянный резец,upper left central incisor,верхний левый центральный резец
+ULLPI,2.2,10,L2,Upper Left Lateral Permanent Incisor,Верхний левый латеральный постоянный резец,upper left lateral incisor,верхний левый боковой резец
+ULXPC,2.3,11,L3,Upper Left Permanent Canine,Верхний левый постоянный клык,upper left canine,верхний левый клык
+UL1PP,2.4,12,L4,Upper Left First Permanent Premolar,Верхний левый первый постоянный премоляр,upper left first premolar,верхний левый первый премоляр
+UL2PP,2.5,13,L5,Upper Left Second Permanent Premolar,Верхний левый второй постоянный премоляр,upper left second premolar,верхний левый второй премоляр
+UL1PM,2.6,14,L6,Upper Left First Permanent Molar,Верхний левый первый постоянный моляр,upper left first molar,верхний левый первый моляр
+UL2PM,2.7,15,L7,Upper Left Second Permanent Molar,Верхний левый второй постоянный моляр,upper left second molar,верхний левый второй моляр
+UL3PM,2.8,16,L8,Upper Left Third Permanent Molar,Верхний левый третий постоянный моляр,upper left wisdom tooth,верхний левый зуб мудрости
+LL3PM,3.8,17,⌐̲8,Lower Left Third Permanent Molar,Нижний левый третий постоянный моляр,lower left wisdom tooth,нижний левый зуб мудрости
+LL2PM,3.7,18,⌐̲7,Lower Left Second Permanent Molar,Нижний левый второй постоянный моляр,lower left second molar,нижний левый второй моляр
+LL1PM,3.6,19,⌐̲6,Lower Left First Permanent Molar,Нижний левый первый постоянный моляр,lower left first molar,нижний левый первый моляр
+LL2PP,3.5,20,⌐̲5,Lower Left Second Permanent Premolar,Нижний левый второй постоянный премоляр,lower left second premolar,нижний левый второй премоляр
+LL1PP,3.4,21,⌐̲4,Lower Left First Permanent Premolar,Нижний левый первый постоянный премоляр,lower left first premolar,нижний левый первый премоляр
+LLXPC,3.3,22,⌐̲3,Lower Left Permanent Canine,Нижний левый постоянный клык,lower left canine,нижний левый клык
+LLLPI,3.2,23,⌐̲2,Lower Left Lateral Permanent Incisor,Нижний левый латеральный постоянный резец,lower left lateral incisor,нижний левый боковой резец
+LLCPI,3.1,24,⌐̲1,Lower Left Central Permanent Incisor,Нижний левый центральный постоянный резец,lower left central incisor,нижний левый центральный резец
+LRCPI,4.1,25,L̲1,Lower Right Central Permanent Incisor,Нижний правый центральный постоянный резец,lower right central incisor,нижний правый центральный резец
+LRLPI,4.2,26,L̲2,Lower Right Lateral Permanent Incisor,Нижний правый латеральный постоянный резец,lower right lateral incisor,нижний правый боковой резец
+LRXPC,4.3,27,L̲3,Lower Right Permanent Canine,Нижний правый постоянный клык,lower right canine,нижний правый клык
+LR1PP,4.4,28,L̲4,Lower Right First Permanent Premolar,Нижний правый первый постоянный премоляр,lower right first premolar,нижний правый первый премоляр
+LR2PP,4.5,29,L̲5,Lower Right Second Permanent Premolar,Нижний правый второй постоянный премоляр,lower right second premolar,нижний правый второй премоляр
+LR1PM,4.6,30,L̲6,Lower Right First Permanent Molar,Нижний правый первый постоянный моляр,lower right first molar,нижний правый первый моляр
+LR2PM,4.7,31,L̲7,Lower Right Second Permanent Molar,Нижний правый второй постоянный моляр,lower right second molar,нижний правый второй моляр
+LR3PM,4.8,32,L̲8,Lower Right Third Permanent Molar,Нижний правый третий постоянный моляр,lower right wisdom tooth,нижний правый зуб мудрости

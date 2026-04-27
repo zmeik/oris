@@ -1,0 +1,41 @@
+(* ORIS v0.1 — Layered tooth status formula
+   Formal grammar in EBNF (ISO/IEC 14977) *)
+
+ToothFormula  = EmptyString | StatusList ;
+
+StatusList    = LayerEntry , { "+" , LayerEntry } ;
+
+LayerEntry    = Status , [ ":" , SurfaceList ] ;
+
+Status        = "present"
+              | "missing"
+              | "implant"
+              | "impl_fixture"
+              | "impl_healing"
+              | "impl_restored"
+              | "post"
+              | "crowned"
+              | "restored"
+              | "caries"
+              | "endo"
+              | "root"
+              | "impacted"
+              | "bridge"
+              | "bar"
+              | "cantilever"
+              | "uncertain" ;
+
+SurfaceList   = Surface , { Surface } ;
+
+Surface       = "m" | "d" | "o" | "v" | "l" ;
+
+EmptyString   = "" ;
+
+(* Notes:
+   - The empty string represents an unannotated tooth.
+   - A status without a surface list applies to the whole tooth.
+   - Surfaces are unordered; the parser canonicalises to m < d < o < v < l.
+   - Statuses are unordered in the source string; the parser preserves source order.
+   - Repeated layers with the same status are allowed and preserved
+     (rare but legal: e.g. multiple distinct fillings could be encoded).
+*)

@@ -1,0 +1,45 @@
+MIT License
+
+Copyright (c) 2026 Sergo G. Manukov and ORIS contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+================================================================================
+ADDITIONAL CLINICAL DISCLAIMER
+================================================================================
+
+This software is provided as a SCHEMA SPECIFICATION and REFERENCE TOOLING
+for academic research and software development. It is NOT a medical device
+under the definitions of:
+
+  - Russian Federation: Federal Law № 323-FZ (медицинские изделия)
+  - European Union: Regulation (EU) 2017/745 (Medical Device Regulation, MDR)
+  - United States: 21 CFR Part 820 (Quality System Regulation)
+
+ORIS does NOT perform diagnosis. ORIS does NOT replace clinical examination
+or radiologist judgment. Any deployment of ORIS in clinical practice
+requires:
+
+  1. Independent clinical validation in your jurisdiction
+  2. Compliance with local medical device regulations
+  3. Compliance with local data protection laws (152-FZ, GDPR, HIPAA, etc.)
+  4. Approval by your institutional review board (IRB) / ethics committee
+
+The authors disclaim all liability for clinical outcomes resulting from use
+of this software.

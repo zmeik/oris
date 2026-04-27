@@ -1,0 +1,281 @@
+{
+  "$schema": "https://github.com/zmeik/oris/schema/oris-v0.1.json",
+  "oris_version": "0.1.0",
+  "document_id": "SYNTHETIC_OPG_001_2026-01-15T00:00:00Z",
+  "patient": {
+    "anonymized_id": "P_0001_SYNTHETIC",
+    "age_years": 45,
+    "sex": "M"
+  },
+  "imaging": {
+    "modality": "OPG",
+    "device": "Synthetic Reference Device v1",
+    "acquisition_date": "2026-01-15T10:30:00Z",
+    "kvp": 73,
+    "ma": 12,
+    "exposure_seconds": 13.5,
+    "image_quality_score": 4
+  },
+  "teeth": {
+    "UR3PMA": {
+      "fdi": "1.8",
+      "occupant": "A",
+      "status_layers": "missing"
+    },
+    "UR2PMN": {
+      "fdi": "1.7",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UR1PMN": {
+      "fdi": "1.6",
+      "occupant": "N",
+      "status_layers": "endo:mo+post+crowned",
+      "surfaces": [
+        "m",
+        "o"
+      ],
+      "root_data": {
+        "variant": "3r",
+        "vertucci": {
+          "0": "IV",
+          "1": "I",
+          "2": "I"
+        },
+        "fillStates": {
+          "0_0": 3,
+          "0_1": 3,
+          "1_0": 3,
+          "2_0": 3
+        },
+        "periapical": {
+          "0": {
+            "pai": 2,
+            "type": "widened_pdl"
+          }
+        }
+      }
+    },
+    "UR2PPN": {
+      "fdi": "1.5",
+      "occupant": "N",
+      "status_layers": "restored:o"
+    },
+    "UR1PPN": {
+      "fdi": "1.4",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "URXPCN": {
+      "fdi": "1.3",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "URLPIN": {
+      "fdi": "1.2",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "URCPIN": {
+      "fdi": "1.1",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "ULCPIN": {
+      "fdi": "2.1",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "ULLPIN": {
+      "fdi": "2.2",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "ULXPCN": {
+      "fdi": "2.3",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UL1PPN": {
+      "fdi": "2.4",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UL2PPN": {
+      "fdi": "2.5",
+      "occupant": "N",
+      "status_layers": "restored:od"
+    },
+    "UL1PMN": {
+      "fdi": "2.6",
+      "occupant": "N",
+      "status_layers": "crowned"
+    },
+    "UL2PMN": {
+      "fdi": "2.7",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UL3PMA": {
+      "fdi": "2.8",
+      "occupant": "A",
+      "status_layers": "missing"
+    },
+    "LL3PMN": {
+      "fdi": "3.8",
+      "occupant": "N",
+      "status_layers": "impacted"
+    },
+    "LL2PMN": {
+      "fdi": "3.7",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LL1PMA": {
+      "fdi": "3.6",
+      "occupant": "A",
+      "status_layers": "missing"
+    },
+    "LL2PPN": {
+      "fdi": "3.5",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LL1PPN": {
+      "fdi": "3.4",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LLXPCN": {
+      "fdi": "3.3",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LLLPIN": {
+      "fdi": "3.2",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LLCPIN": {
+      "fdi": "3.1",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LRCPIN": {
+      "fdi": "4.1",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LRLPIN": {
+      "fdi": "4.2",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LRXPCN": {
+      "fdi": "4.3",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LR1PPN": {
+      "fdi": "4.4",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LR2PPF": {
+      "fdi": "4.5",
+      "occupant": "F",
+      "status_layers": "impl_restored",
+      "implant": {
+        "system": "Synthetic Implant System",
+        "diameter_mm": 4.0,
+        "length_mm": 10.0,
+        "level": "tissue",
+        "surface": "moderately_rough",
+        "occlusal": "screw_retained_crown",
+        "marginal_bone_level_mm": 1.2,
+        "complications": []
+      }
+    },
+    "LR1PMA": {
+      "fdi": "4.6",
+      "occupant": "A",
+      "status_layers": "missing"
+    },
+    "LR2PMN": {
+      "fdi": "4.7",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LR3PMN": {
+      "fdi": "4.8",
+      "occupant": "N",
+      "status_layers": "impacted"
+    }
+  },
+  "anatomical_landmarks": {
+    "mandibular_canal": {
+      "visibility_right": "clearly_visible",
+      "visibility_left": "clearly_visible",
+      "course_right": "normal",
+      "course_left": "normal",
+      "distance_to_alveolar_crest_mm_right": 12.5,
+      "distance_to_alveolar_crest_mm_left": 11.8
+    },
+    "mental_foramen": {
+      "location_right": "premolar_region",
+      "location_left": "premolar_region",
+      "visible_right": true,
+      "visible_left": true
+    },
+    "maxillary_sinus": {
+      "status_right": "normal",
+      "status_left": "normal",
+      "floor_integrity_right": "intact",
+      "floor_integrity_left": "intact",
+      "pneumatization_right": "normal",
+      "pneumatization_left": "normal"
+    },
+    "nasal_cavity": {
+      "septum_position": "midline",
+      "nasal_airway_patency": "patent"
+    }
+  },
+  "tmj_findings": {
+    "condyle_right": {
+      "morphology": "normal",
+      "surface_contour": "smooth",
+      "bone_density": "normal"
+    },
+    "condyle_left": {
+      "morphology": "normal",
+      "surface_contour": "smooth",
+      "bone_density": "normal"
+    },
+    "joint_space": {
+      "symmetry": "symmetric",
+      "assessment": "normal"
+    },
+    "pathology": {
+      "ankylosis": false,
+      "disc_displacement": "no",
+      "osteoarthritis_signs": "absent"
+    }
+  },
+  "airway_assessment": {
+    "pharyngeal_airway": {
+      "space_classification": "normal"
+    }
+  },
+  "tooth_notes": {
+    "1.6": "Endo treatment, post and crown — apparently functional"
+  },
+  "ground_truth_meta": {
+    "source": "manual",
+    "ai_prefill_source": null,
+    "expert_corrections": 0,
+    "session_id": "00000000-0000-0000-0000-000000000001",
+    "sequence_num": 1,
+    "last_modified": "2026-01-15T11:00:00Z"
+  },
+  "notes": "Synthetic example — Patient with one prior endo+post+crown on 1.6, one implant on 4.5, several missing third molars and one missing 4.6, one impacted 3.8. Not derived from any real patient."
+}
