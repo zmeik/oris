@@ -126,6 +126,61 @@ body {
   font-family: "IBM Plex Mono", monospace; font-size: 10px;
   color: var(--text-dim); font-weight: 400;
 }
+.group-head .add-btn {
+  background: rgba(91,141,239,0.10);
+  border: 1px solid rgba(91,141,239,0.45);
+  color: var(--accent);
+  font: inherit; font-size: 10px; font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 99px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-left: 6px;
+}
+.group-head .add-btn:hover {
+  background: rgba(91,141,239,0.30); color: #fff;
+}
+/* Drawing-mode banner — visible when the user is mid-stroke on a new
+   custom structure. Click on canvas adds points; Enter / double-click
+   commits; Esc cancels. */
+#draw-banner {
+  position: absolute;
+  top: 12px; left: 50%; transform: translateX(-50%);
+  background: rgba(91,141,239,0.18);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 8px 14px;
+  color: var(--text);
+  font-size: 12px;
+  z-index: 10;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+  display: none;
+}
+#draw-banner.bbox-hint b { color: var(--amber); }
+#draw-banner.poly-hint b { color: var(--accent); }
+#draw-banner button {
+  margin-left: 10px;
+  background: rgba(15,23,42,0.6);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font: inherit; font-size: 11px;
+  padding: 3px 9px; border-radius: 4px;
+  cursor: pointer;
+}
+#draw-banner button:hover { border-color: var(--accent); color: var(--accent); }
+#draw-banner button.danger:hover { border-color: var(--rose); color: var(--rose); }
+.struct.is-custom .label::after {
+  content: " · custom"; color: var(--text-dim); font-size: 9.5px;
+  letter-spacing: 0.04em;
+}
+.struct .delete-custom {
+  background: transparent; border: 0;
+  color: var(--text-dim);
+  cursor: pointer; font-size: 13px; line-height: 1;
+  padding: 0 4px; margin-left: 2px;
+}
+.struct .delete-custom:hover { color: var(--rose); }
 .group-rows { display: flex; flex-direction: column; }
 .struct {
   display: flex; align-items: center; gap: 6px;
@@ -251,6 +306,11 @@ body {
   <main id="canvas-host">
     <canvas id="opg-canvas"></canvas>
     <div id="hover-tip"></div>
+    <div id="draw-banner">
+      <span id="draw-banner-text">Drawing <b id="draw-banner-name">…</b></span>
+      <button id="draw-banner-commit">Commit (Enter)</button>
+      <button id="draw-banner-cancel" class="danger">Cancel (Esc)</button>
+    </div>
   </main>
 </div>
 
@@ -301,7 +361,24 @@ const S = {
   origImg: null,
   imgW: 2000, imgH: 1058,
   savedSeq: 0,
+  // Drawing mode for newly-added custom structures.
+  // When non-null, every left-click on the canvas appends a point to the
+  // active structure (polyline) or starts/extends a bbox (bbox mode).
+  // Enter / double-click → commit (close polygon if `type=closed`); Esc
+  // → discard the new structure entirely. Triggered by clicking '+ Add'
+  // in the sidebar group header.
+  drawMode: null,        // null | { sid, kind: 'polyline'|'bbox' }
 };
+
+// Palette for auto-cycling custom-structure colours
+const CUSTOM_PALETTE = [
+  '#f87171', '#fbbf24', '#4ade80', '#22d3ee',
+  '#a78bfa', '#f472b6', '#fb7185', '#facc15',
+];
+let _customCounter = 0;
+function nextCustomColour() {
+  return CUSTOM_PALETTE[(_customCounter++) % CUSTOM_PALETTE.length];
+}
 
 // ─────────────────────────────────────────────────────────────
 // DOM refs
@@ -533,7 +610,35 @@ canvas.addEventListener('mousedown', e => {
   const [sx, sy] = eventToCanvas(e);
   const s = S.byId[S.activeId];
 
-  // Right-click: delete vertex / clear bbox
+  // ────────────────────────────────────────────────
+  // Drawing mode for newly-added custom structures
+  // ────────────────────────────────────────────────
+  if (S.drawMode && s) {
+    if (e.button === 2) {           // right-click commits in polyline
+      e.preventDefault();
+      commitDrawing();
+      return;
+    }
+    const [ix, iy] = screenToImg(sx, sy);
+    if (S.drawMode.kind === 'polyline') {
+      s.points = s.points || [];
+      s.points.push([Math.max(0, Math.min(1, ix)),
+                     Math.max(0, Math.min(1, iy))]);
+      markDirty(s);
+      render();
+      return;
+    }
+    if (S.drawMode.kind === 'bbox') {
+      // First click anchors top-left, drag handles the rest via mousemove
+      s.bbox = { x1: ix, y1: iy, x2: ix, y2: iy };
+      S.drag = { type: 'new-bbox', sid: s.id };
+      markDirty(s);
+      render();
+      return;
+    }
+  }
+
+  // Right-click: delete vertex / clear bbox (when not drawing)
   if (e.button === 2) {
     e.preventDefault();
     if (!s) return;
@@ -659,6 +764,7 @@ canvas.addEventListener('mousemove', e => {
 canvas.addEventListener('mouseup',   () => { S.drag = null; host.classList.remove('dragging'); });
 canvas.addEventListener('mouseleave',() => { S.drag = null; host.classList.remove('dragging'); tip.style.display = 'none'; });
 canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('dblclick', () => { if (S.drawMode) commitDrawing(); });
 
 canvas.addEventListener('wheel', e => {
   e.preventDefault();
@@ -680,6 +786,10 @@ window.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 's') {
     e.preventDefault(); save(); return;
   }
+  if (S.drawMode) {
+    if (e.key === 'Enter')  { commitDrawing();  return; }
+    if (e.key === 'Escape') { cancelDrawing();  return; }
+  }
   if (e.key === 'f' || e.key === 'F') { fit(); return; }
   if (e.key === 'b' || e.key === 'B') { setStructMode(S.activeId, 'bbox'); return; }
   if (e.key === 'p' || e.key === 'P') { setStructMode(S.activeId, 'polyline'); return; }
@@ -695,20 +805,27 @@ function renderSidebar() {
     html += `<div class="group" data-group="${escAttr(g.name)}">`;
     html += `<div class="group-head"><span class="icon">${g.icon || '·'}</span>`
           + `<span>${esc(g.name)}</span>`
-          + `<span class="count">${g.structures.length}</span></div>`;
+          + `<span class="count">${g.structures.length}</span>`
+          + `<button class="add-btn" data-add-group="${escAttr(g.name)}" `
+          + `title="Add a new custom polygon or bbox into '${escAttr(g.name)}'">+ Add</button>`
+          + `</div>`;
     html += '<div class="group-rows">';
     for (const s of g.structures) {
       const active = (s.id === S.activeId) ? ' active' : '';
+      const isCustom = !!s._custom;
       const pts = (s.annotation_type === 'bbox')
         ? (s.bbox ? '▭' : '∅')
         : `${(s.points || []).length} pts`;
-      html += `<div class="struct${active}" data-id="${escAttr(s.id)}">`
+      html += `<div class="struct${active}${isCustom ? ' is-custom' : ''}" data-id="${escAttr(s.id)}">`
             + `<span class="swatch" style="background:${escAttr(s.color || '#5b8def')}"></span>`
             + `<span class="label" title="${escAttr(s.hint || s.name)}">${esc(s.name)}</span>`
             + `<span class="pts">${pts}</span>`
             + `<button class="struct-mode ${escAttr(s.annotation_type)}" data-mode-id="${escAttr(s.id)}" title="Toggle bbox / polyline (B / P)">`
             + (s.annotation_type === 'bbox' ? '▭' : '⌒')
             + '</button>'
+            + (isCustom
+                ? `<button class="delete-custom" data-delete-id="${escAttr(s.id)}" title="Delete this custom structure">×</button>`
+                : '')
             + '</div>';
     }
     html += '</div></div>';
@@ -717,7 +834,7 @@ function renderSidebar() {
   // Wire up click handlers
   sidebar.querySelectorAll('.struct').forEach(el => {
     el.addEventListener('click', e => {
-      if (e.target.closest('.struct-mode')) return;
+      if (e.target.closest('.struct-mode') || e.target.closest('.delete-custom')) return;
       S.activeId = el.dataset.id;
       renderSidebar(); render();
     });
@@ -732,7 +849,123 @@ function renderSidebar() {
       setStructMode(sid, next);
     });
   });
+  sidebar.querySelectorAll('.add-btn').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      addCustomStructure(el.dataset.addGroup);
+    });
+  });
+  sidebar.querySelectorAll('.delete-custom').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const sid = el.dataset.deleteId;
+      deleteCustomStructure(sid);
+    });
+  });
 }
+
+// ─────────────────────────────────────────────────────────────
+// Custom structure: add / draw / commit / cancel / delete
+// ─────────────────────────────────────────────────────────────
+function addCustomStructure(groupName) {
+  // Cancel any in-progress drawing first
+  if (S.drawMode) cancelDrawing();
+  const name = (window.prompt(
+    `New custom structure in "${groupName}"\nName:`,
+    'New finding') || '').trim();
+  if (!name) return;
+  // Ask annotation kind
+  const kind = (window.prompt(
+    `Mode? Type "polyline" (default) or "bbox":`,
+    S.globalMode) || S.globalMode).trim().toLowerCase();
+  const annotation_type = (kind === 'bbox') ? 'bbox' : 'polyline';
+  const sid = `custom_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+  const colour = nextCustomColour();
+  const newStruct = {
+    id: sid, name, color: colour,
+    type: 'closed',                            // assume closed; reviewer can edit
+    annotation_type,
+    points: (annotation_type === 'polyline') ? [] : [],
+    bbox:   (annotation_type === 'bbox')     ? null : null,
+    _custom: true, _group: groupName,
+    hint: `Custom ${annotation_type} added by reviewer`,
+  };
+  // Inject into local state and the matching group
+  S.byId[sid] = newStruct;
+  const g = S.groups.find(x => x.name === groupName);
+  if (g) g.structures.push(newStruct);
+  S.activeId = sid;
+  markDirty(newStruct);
+  // Enter drawing mode
+  S.drawMode = { sid, kind: annotation_type };
+  showDrawBanner(newStruct);
+  renderSidebar();
+  render();
+}
+
+function commitDrawing() {
+  if (!S.drawMode) return;
+  const s = S.byId[S.drawMode.sid];
+  if (!s) { S.drawMode = null; hideDrawBanner(); return; }
+  if (s.annotation_type === 'polyline' && (s.points || []).length < 2) {
+    // Not enough points to be a useful polyline — discard.
+    cancelDrawing();
+    return;
+  }
+  if (s.annotation_type === 'bbox' && !s.bbox) {
+    cancelDrawing();
+    return;
+  }
+  S.drawMode = null;
+  hideDrawBanner();
+  render();
+}
+
+function cancelDrawing() {
+  if (!S.drawMode) return;
+  const s = S.byId[S.drawMode.sid];
+  if (s && s._custom) {
+    // Remove the half-drawn custom structure entirely
+    deleteCustomStructure(s.id, /*silent=*/true);
+  }
+  S.drawMode = null;
+  hideDrawBanner();
+  render();
+  renderSidebar();
+}
+
+function deleteCustomStructure(sid, silent) {
+  const s = S.byId[sid];
+  if (!s || !s._custom) return;
+  if (!silent && !confirm(`Delete custom structure "${s.name}"? This is undoable until you press Save.`)) return;
+  delete S.byId[sid];
+  for (const g of S.groups) {
+    g.structures = g.structures.filter(x => x.id !== sid);
+  }
+  // Mark deletion: we need to send a tombstone entry on save so the
+  // server clears the override. Use _deleted flag on a stub kept in
+  // _dirty — buildOverridesPayload picks it up.
+  _dirty.add(sid);
+  _deleted.add(sid);
+  if (S.activeId === sid) S.activeId = null;
+  renderSidebar();
+  render();
+}
+
+function showDrawBanner(s) {
+  const el = document.getElementById('draw-banner');
+  const text = document.getElementById('draw-banner-text');
+  el.className = (s.annotation_type === 'bbox') ? 'bbox-hint' : 'poly-hint';
+  if (s.annotation_type === 'polyline') {
+    text.innerHTML = `Drawing <b>${esc(s.name)}</b> · click to add points · double-click / Enter to commit`;
+  } else {
+    text.innerHTML = `Drawing <b>${esc(s.name)}</b> · click + drag a rectangle on the OPG`;
+  }
+  el.style.display = 'block';
+}
+function hideDrawBanner() { document.getElementById('draw-banner').style.display = 'none'; }
+document.getElementById('draw-banner-commit').addEventListener('click', commitDrawing);
+document.getElementById('draw-banner-cancel').addEventListener('click', cancelDrawing);
 
 function setStructMode(sid, mode) {
   const s = S.byId[sid];
@@ -757,11 +990,19 @@ function escAttr(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<
 // Override tracking and save
 // ─────────────────────────────────────────────────────────────
 const _dirty = new Set();
+const _deleted = new Set();
 function markDirty(s) { _dirty.add(s.id); }
 
 function buildOverridesPayload() {
   const out = {};
   for (const sid of _dirty) {
+    if (_deleted.has(sid)) {
+      // Tombstone: the server treats `_deleted: true` as "drop this id
+      // from the overrides map so the base template (if any) shows
+      // through unchanged". Custom structures vanish entirely.
+      out[sid] = { _deleted: true };
+      continue;
+    }
     const s = S.byId[sid];
     if (!s) continue;
     const rec = { annotation_type: s.annotation_type };
@@ -770,6 +1011,18 @@ function buildOverridesPayload() {
       rec.type   = s.type || 'open';
     } else {
       rec.bbox = s.bbox || null;
+    }
+    if (s._custom) {
+      rec._custom = true;
+      rec._group  = s._group;
+      rec.name    = s.name;
+      rec.color   = s.color;
+      if (s.hint) rec.hint = s.hint;
+    } else {
+      // Allow renaming / re-colouring of base structures too — small
+      // niceity for reviewers but no code cost.
+      if (s.name)  rec.name  = s.name;
+      if (s.color) rec.color = s.color;
     }
     out[sid] = rec;
   }

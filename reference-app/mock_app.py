@@ -929,27 +929,68 @@ def api_anatomy_templates_get(file_id: int):
         except json.JSONDecodeError:
             overrides = {}
 
-    # Compose: walk base groups, replace any structure whose id is in overrides
-    # Default annotation_type is bbox for small landmarks (mental foramina)
-    # — they read better as small rectangles than 4-point closed polygons.
+    # Compose: walk base groups, replace any structure whose id is in overrides.
+    # Default annotation_type is bbox for small landmarks (mental foramina) —
+    # they read better as small rectangles than 4-point closed polygons.
+    # Reviewer-added custom structures (Pathology / Implants / etc.) carry
+    # `_custom: True` + `_group: <group name>` in their override entry; we
+    # append them to the matching group at compose time.
     BBOX_DEFAULT_IDS = {"mf_L", "mf_R"}
     composed_groups = []
+    seen_custom_ids: set[str] = set()
     for g in base.get("groups", []):
         composed_structures = []
+        # 1) base structures with their overrides applied
         for s in g.get("structures", []):
             sid = s.get("id")
             merged = dict(s)
-            # Default annotation_type: polyline for everything except small landmarks
             merged.setdefault("annotation_type",
                               "bbox" if sid in BBOX_DEFAULT_IDS else "polyline")
             ov = overrides.get(sid)
-            if ov:
-                # Override may carry: annotation_type, points, bbox, type
-                for k in ("annotation_type", "points", "bbox", "type"):
+            if ov and not ov.get("_custom"):
+                for k in ("annotation_type", "points", "bbox", "type", "color", "name", "hint"):
                     if k in ov:
                         merged[k] = ov[k]
             composed_structures.append(merged)
+        # 2) custom structures explicitly assigned to this group
+        for sid, ov in overrides.items():
+            if not ov.get("_custom"):
+                continue
+            if ov.get("_group") != g.get("name"):
+                continue
+            seen_custom_ids.add(sid)
+            composed_structures.append({
+                "id": sid,
+                "name": ov.get("name", sid),
+                "color": ov.get("color", "#5b8def"),
+                "type": ov.get("type", "open"),
+                "annotation_type": ov.get("annotation_type", "polyline"),
+                "points": ov.get("points", []),
+                "bbox":   ov.get("bbox"),
+                "hint":   ov.get("hint", ""),
+                "_custom": True,
+                "_group":  g.get("name"),
+            })
         composed_groups.append({**g, "structures": composed_structures})
+
+    # 3) Custom structures whose `_group` doesn't match any base group name
+    # (legacy / typo-protection): drop them into the first empty-by-default
+    # group "Патология / Находки" so they remain visible.
+    orphan_target = next((g for g in composed_groups
+                          if "Патол" in g.get("name", "") or "athol" in g.get("name", "")), None)
+    if orphan_target is not None:
+        for sid, ov in overrides.items():
+            if not ov.get("_custom") or sid in seen_custom_ids:
+                continue
+            orphan_target["structures"].append({
+                "id": sid, "name": ov.get("name", sid),
+                "color": ov.get("color", "#5b8def"),
+                "type": ov.get("type", "open"),
+                "annotation_type": ov.get("annotation_type", "polyline"),
+                "points": ov.get("points", []), "bbox": ov.get("bbox"),
+                "hint": "(orphan custom — fell back to Pathology)",
+                "_custom": True, "_group": orphan_target.get("name"),
+            })
 
     seq_row = get_db().execute(
         "SELECT COALESCE(MAX(sequence_num), 0) AS s FROM history WHERE file_id = ?",
@@ -974,7 +1015,7 @@ def api_anatomy_templates_save(file_id: int):
     'anatomy_template_update' so the change-history strip on /play
     surfaces the edit alongside tooth edits."""
     payload = request.get_json(silent=True) or {}
-    overrides = payload.get("overrides") or {}
+    incoming = payload.get("overrides") or {}
     source = payload.get("source", "manual")
     session_id = payload.get("session_id", str(uuid.uuid4()))
 
@@ -982,6 +1023,25 @@ def api_anatomy_templates_save(file_id: int):
     file_row = db.execute("SELECT 1 FROM files WHERE file_id = ?", (file_id,)).fetchone()
     if not file_row:
         return jsonify({"ok": False, "error": f"unknown file_id {file_id}"}), 404
+
+    # Merge with any existing overrides so a partial save (e.g. one
+    # custom structure deleted) doesn't wipe the rest. `_deleted: True`
+    # tombstones in the incoming dict drop the matching key entirely.
+    existing_row = db.execute(
+        "SELECT anatomy_templates_json FROM ground_truth WHERE file_id = ?",
+        (file_id,),
+    ).fetchone()
+    overrides: dict = {}
+    if existing_row and existing_row["anatomy_templates_json"]:
+        try:
+            overrides = json.loads(existing_row["anatomy_templates_json"]) or {}
+        except json.JSONDecodeError:
+            overrides = {}
+    for sid, val in incoming.items():
+        if isinstance(val, dict) and val.get("_deleted"):
+            overrides.pop(sid, None)
+        else:
+            overrides[sid] = val
 
     db.execute(
         """
@@ -1005,11 +1065,12 @@ def api_anatomy_templates_save(file_id: int):
         VALUES (?, ?, NULL, NULL, ?, 'anatomy_template_update', ?, ?)
         """,
         (file_id, next_seq,
-         json.dumps(sorted(list(overrides.keys()))), source, session_id),
+         json.dumps(sorted(list(incoming.keys()))), source, session_id),
     )
     db.commit()
     return jsonify({"ok": True, "sequence_num": next_seq,
-                    "structures_saved": len(overrides)})
+                    "structures_saved": len(incoming),
+                    "structures_total":  len(overrides)})
 
 
 @app.route("/api/darwin/ground-truth/<int:file_id>/snapshot/<int:seq>")

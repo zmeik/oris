@@ -266,14 +266,13 @@
         </details>
         <div id="arena-cases"></div>
 
-        <!-- ═══ Reference-app extension panels (paper §2.1 Figure 2 caption) ═══
-             Anatomical landmarks side panel + change-history strip.
-             Both populated by /static/js/darwin/anatomy-panel.js, which
-             reads the file_id selected in the production sandbox picker
-             above and refreshes the contents when the user switches case. -->
-        <section id="anatomy-panel-root" class="apan-host" aria-label="Anatomical landmarks">
-            <!-- populated by anatomy-panel.js -->
-        </section>
+        <!-- ═══ Change-history strip (paper §2.1 Figure 2 caption, "bottom") ═══
+             The dedicated anatomy summary panel that used to live above this
+             section was retired in favour of the full-page editor at
+             /play/anatomy/<file_id> (button "🦴 Anatomy · ⌒ Editor" in the
+             topbar action row). Only the change-history strip remains here:
+             it surfaces both tooth GT edits and anatomy_template_update
+             rows in a single chronological view. -->
         <section id="change-history-strip" class="chist-host" aria-label="Change history">
             <!-- populated by anatomy-panel.js -->
         </section>
