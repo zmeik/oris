@@ -46,6 +46,10 @@ CREATE TABLE IF NOT EXISTS panorama_analysis (
     crop_overrides            JSONB NOT NULL DEFAULT '{}'::jsonb,
     diagnostic_sites          JSONB NOT NULL DEFAULT '{}'::jsonb,
     anatomical_landmarks      JSONB NOT NULL DEFAULT '{}'::jsonb,
+    -- Reviewer overrides keyed by structure id; merged at GET time
+    -- with the static base templates loaded from data/anatomy_templates.json.
+    -- Each entry carries {annotation_type: 'bbox'|'polyline', points?, bbox?, type?}.
+    anatomy_templates         JSONB NOT NULL DEFAULT '{}'::jsonb,
     last_modified             TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

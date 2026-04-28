@@ -236,6 +236,12 @@
                 <button class="sbx-btn" id="batch-gt-btn" onclick="batchPrepopulateGT('preview')" style="color:var(--purple);border-color:rgba(168,85,247,0.4);" title="Prefill ground truth from W8 model (V5b) for all OPGs without GT — demonstrates §5.3 AI workflow" hidden>🤖 Batch W8→GT</button>
                 <button class="sbx-btn" id="batch-w0-btn" onclick="batchW0ToGT('preview')" style="color:var(--cyan);border-color:rgba(34,211,238,0.4);" title="Prefill GT from YOLO+SemiT-SAM (W0) on K08.1 cohort" hidden>🧠 W0→GT (K08.1)</button>
                 <span id="batch-gt-status" style="font-size:11px;color:var(--text-dim);" hidden></span>
+                <span style="display:inline-flex;align-items:center;gap:4px;" title="Open the dual-mode (bbox + polyline) anatomy editor for the currently loaded file. Reviewers can drag points or bbox corners to reshape any of the 23 production landmark templates.">
+                    <span style="font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;text-transform:uppercase;">🦴 Anatomy</span>
+                    <button class="sbx-btn" id="open-anatomy-editor-btn"
+                            style="color:var(--cyan,#22d3ee);border-color:rgba(34,211,238,0.45);background:rgba(34,211,238,0.08);"
+                            title="Open the anatomy editor in a new tab for the currently selected file_id (B / P toggle bbox vs polyline mode)">⌒ Editor</button>
+                </span>
                 <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding-left:10px;border-left:1px solid var(--border);" title="ORIS export — runs the bridges/* converters on the saved ground truth of the currently loaded file. No DB writes are triggered.">
                     <span style="font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;text-transform:uppercase;">🌐 ORIS</span>
                     <button class="sbx-btn" data-bridge-fmt="oris" style="color:var(--blue);border-color:rgba(59,130,246,0.45);background:rgba(59,130,246,0.1);" title="Download canonical ORIS v0.1 JSON (validated against schema/oris-v0.1.json)">⬇ ORIS</button>
@@ -993,6 +999,17 @@ init();
     if (m) return parseInt(m[1], 10);
     return 1001;
   }
+  // Wire up the "🦴 Anatomy editor" button — opens /play/anatomy/<file_id>
+  // in a new tab so the reviewer keeps the formula context next to the
+  // editor.
+  const anatomyBtn = document.getElementById('open-anatomy-editor-btn');
+  if (anatomyBtn) {
+    anatomyBtn.addEventListener('click', () => {
+      const id = (typeof window.ARENA_FILE_ID === 'number') ? window.ARENA_FILE_ID : 1001;
+      window.open(`/play/anatomy/${id}`, '_blank', 'noopener');
+    });
+  }
+
   document.querySelectorAll('[data-bridge-fmt]').forEach(btn => {
     btn.addEventListener('click', () => {
       const fmt = btn.dataset.bridgeFmt;

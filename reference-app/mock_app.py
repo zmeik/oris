@@ -115,6 +115,7 @@ CREATE TABLE IF NOT EXISTS ground_truth (
     crop_overrides_json TEXT NOT NULL DEFAULT '{}',
     diagnostic_sites_json TEXT NOT NULL DEFAULT '{}',
     anatomical_landmarks_json TEXT NOT NULL DEFAULT '{}',
+    anatomy_templates_json    TEXT NOT NULL DEFAULT '{}',
     last_modified     TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -207,6 +208,11 @@ def init_db() -> None:
         if "anatomical_landmarks_json" not in existing:
             conn.execute(
                 "ALTER TABLE ground_truth ADD COLUMN anatomical_landmarks_json "
+                "TEXT NOT NULL DEFAULT '{}'"
+            )
+        if "anatomy_templates_json" not in existing:
+            conn.execute(
+                "ALTER TABLE ground_truth ADD COLUMN anatomy_templates_json "
                 "TEXT NOT NULL DEFAULT '{}'"
             )
 
@@ -857,6 +863,153 @@ def api_anatomy_save(file_id: int):
     )
     db.commit()
     return jsonify({"ok": True, "sequence_num": next_seq})
+
+
+# ──────────────────────────────────────────────────────────────────
+# Anatomy markup editor endpoints — feed the dual-mode bbox+polyline
+# editor at /play/anatomy/<file_id> (paper Figure-2 anatomical-
+# landmarks side panel, full-page editor variant).
+#
+# Data model:
+#   - anatomy_templates.json (in data/) — base templates: 23 structures
+#     × 6 groups, normalised [0..1] coordinates, ported verbatim from
+#     production patient_viewer/anatomy_templates.json.
+#   - ground_truth.anatomy_templates_json — per-case override map keyed
+#     by structure id. When non-empty, overrides replace the matching
+#     id in the base template at GET time.
+# ──────────────────────────────────────────────────────────────────
+
+_ANATOMY_TEMPLATES_CACHE: dict | None = None
+
+
+def _load_anatomy_templates() -> dict:
+    """Cache the ~20 KB anatomy_templates.json on first read."""
+    global _ANATOMY_TEMPLATES_CACHE
+    if _ANATOMY_TEMPLATES_CACHE is None:
+        path = HERE / "data" / "anatomy_templates.json"
+        _ANATOMY_TEMPLATES_CACHE = json.loads(path.read_text(encoding="utf-8"))
+    return _ANATOMY_TEMPLATES_CACHE
+
+
+@app.route("/play/anatomy/<int:file_id>")
+def play_anatomy_editor(file_id: int):
+    """Full-page anatomy markup editor (paper §2.1 Figure 2 caption,
+    side-panel block). Renders the dual-mode bbox+polyline editor,
+    pinned with the appropriate file_id via a <meta> tag the editor's
+    bootstrap script reads at boot."""
+    return render_template(
+        "anatomy_editor.html",
+        file_id=file_id,
+    )
+
+
+@app.route("/api/panorama/anatomy-templates")
+def api_anatomy_base_templates():
+    """Return the shared base anatomy templates (23 structures × 6 groups,
+    normalised coords). Reviewers see the same template across cases —
+    per-case overrides come from /api/anatomy/<file_id>/templates."""
+    return jsonify(_load_anatomy_templates())
+
+
+@app.route("/api/anatomy/<int:file_id>/templates", methods=["GET"])
+def api_anatomy_templates_get(file_id: int):
+    """Return the per-case anatomy state: base templates merged with any
+    user overrides stored on this file_id. Each structure has an
+    `annotation_type` field ('polyline' default; 'bbox' for landmarks
+    that read better as rectangles, e.g. mental foramina)."""
+    base = _load_anatomy_templates()
+    override_row = get_db().execute(
+        "SELECT anatomy_templates_json FROM ground_truth WHERE file_id = ?",
+        (file_id,),
+    ).fetchone()
+    overrides: dict = {}
+    if override_row and override_row["anatomy_templates_json"]:
+        try:
+            overrides = json.loads(override_row["anatomy_templates_json"]) or {}
+        except json.JSONDecodeError:
+            overrides = {}
+
+    # Compose: walk base groups, replace any structure whose id is in overrides
+    # Default annotation_type is bbox for small landmarks (mental foramina)
+    # — they read better as small rectangles than 4-point closed polygons.
+    BBOX_DEFAULT_IDS = {"mf_L", "mf_R"}
+    composed_groups = []
+    for g in base.get("groups", []):
+        composed_structures = []
+        for s in g.get("structures", []):
+            sid = s.get("id")
+            merged = dict(s)
+            # Default annotation_type: polyline for everything except small landmarks
+            merged.setdefault("annotation_type",
+                              "bbox" if sid in BBOX_DEFAULT_IDS else "polyline")
+            ov = overrides.get(sid)
+            if ov:
+                # Override may carry: annotation_type, points, bbox, type
+                for k in ("annotation_type", "points", "bbox", "type"):
+                    if k in ov:
+                        merged[k] = ov[k]
+            composed_structures.append(merged)
+        composed_groups.append({**g, "structures": composed_structures})
+
+    seq_row = get_db().execute(
+        "SELECT COALESCE(MAX(sequence_num), 0) AS s FROM history WHERE file_id = ?",
+        (file_id,),
+    ).fetchone()
+
+    return jsonify({
+        "file_id": file_id,
+        "version": base.get("version", 1),
+        "coordinate_system": base.get("coordinate_system",
+                                      "normalized 0..1 (relative to image dimensions)"),
+        "groups": composed_groups,
+        "saved_seq": (seq_row["s"] or 0),
+    })
+
+
+@app.route("/api/anatomy/<int:file_id>/templates", methods=["POST"])
+def api_anatomy_templates_save(file_id: int):
+    """Save reviewer overrides. Body: {overrides: {<structure_id>: {…}}, source?}.
+    Each value carries annotation_type + points (if polyline) and/or
+    bbox (if bbox). Appends one history row of change_type
+    'anatomy_template_update' so the change-history strip on /play
+    surfaces the edit alongside tooth edits."""
+    payload = request.get_json(silent=True) or {}
+    overrides = payload.get("overrides") or {}
+    source = payload.get("source", "manual")
+    session_id = payload.get("session_id", str(uuid.uuid4()))
+
+    db = get_db()
+    file_row = db.execute("SELECT 1 FROM files WHERE file_id = ?", (file_id,)).fetchone()
+    if not file_row:
+        return jsonify({"ok": False, "error": f"unknown file_id {file_id}"}), 404
+
+    db.execute(
+        """
+        INSERT INTO ground_truth (file_id, anatomy_templates_json, last_modified)
+        VALUES (?, ?, datetime('now'))
+        ON CONFLICT(file_id) DO UPDATE SET
+            anatomy_templates_json = excluded.anatomy_templates_json,
+            last_modified = datetime('now')
+        """,
+        (file_id, json.dumps(overrides)),
+    )
+    seq_row = db.execute(
+        "SELECT COALESCE(MAX(sequence_num), 0) AS s FROM history WHERE file_id = ?",
+        (file_id,),
+    ).fetchone()
+    next_seq = (seq_row["s"] or 0) + 1
+    db.execute(
+        """
+        INSERT INTO history (file_id, sequence_num, fdi, old_value, new_value,
+                             change_type, source, session_id)
+        VALUES (?, ?, NULL, NULL, ?, 'anatomy_template_update', ?, ?)
+        """,
+        (file_id, next_seq,
+         json.dumps(sorted(list(overrides.keys()))), source, session_id),
+    )
+    db.commit()
+    return jsonify({"ok": True, "sequence_num": next_seq,
+                    "structures_saved": len(overrides)})
 
 
 @app.route("/api/darwin/ground-truth/<int:file_id>/snapshot/<int:seq>")

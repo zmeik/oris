@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ORIS · Anatomy Editor · file_id {{ file_id }}</title>
+<meta name="oris-file-id" content="{{ file_id }}">
+<meta name="description" content="Dual-mode (bbox + polyline) anatomy markup editor for the ORIS reference application. Paper Figure 2 anatomical-landmarks side panel, full-page editor variant.">
+
+<style>
+:root {
+  --bg:           #0e1014;
+  --surface-1:    #16182040;
+  --surface-2:    #1a1d22;
+  --panel:        #161920;
+  --hairline:     #2a2e36;
+  --border:       #3a3f48;
+  --border-strong:#52596a;
+  --text:         #e6e7eb;
+  --text-muted:   #9aa1ad;
+  --text-dim:     #6a707a;
+  --text-faint:   #4a505a;
+  --accent:       #5b8def;
+  --accent-soft:  rgba(96,165,250,0.18);
+  --emerald:      #10b981;
+  --emerald-soft: rgba(16,185,129,0.18);
+  --rose:         #f87171;
+  --amber:        #fbbf24;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100vh; width: 100%;
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, "Segoe UI", "Inter", system-ui, sans-serif;
+  font-size: 13px;
+  overflow: hidden;
+  user-select: none;
+}
+body {
+  display: flex; flex-direction: column;
+}
+
+/* ──────────────── Top toolbar ──────────────── */
+#topbar {
+  height: 48px; flex-shrink: 0;
+  background: var(--panel);
+  border-bottom: 1px solid var(--hairline);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 14px;
+  font-size: 12px;
+}
+.brand { display: flex; align-items: baseline; gap: 8px; }
+.brand .logo { font-weight: 700; font-size: 15px; }
+.brand .ver  { font-family: "IBM Plex Mono", monospace; font-size: 11px;
+               color: var(--accent); background: var(--accent-soft);
+               padding: 1px 6px; border-radius: 3px; }
+.brand .mode { color: var(--text-muted); font-size: 12px; }
+.brand .sep  { color: var(--text-faint); margin: 0 4px; }
+.tb-spacer { flex: 1 1 auto; }
+.tb-btn {
+  background: rgba(51,65,85,0.45);
+  border: 1px solid rgba(148,163,184,0.25);
+  border-radius: 4px; padding: 6px 12px;
+  color: var(--text); font: inherit; font-size: 11.5px;
+  cursor: pointer; line-height: 1.2;
+}
+.tb-btn:hover { background: rgba(51,65,85,0.85); border-color: var(--accent); }
+.tb-btn.primary {
+  background: var(--emerald-soft); border-color: rgba(16,185,129,0.55);
+  color: #6ee7b7; font-weight: 600;
+}
+.tb-btn.primary:hover { background: rgba(16,185,129,0.32); color: #fff; }
+.tb-btn.back {
+  background: transparent; border-color: var(--hairline);
+  color: var(--text-muted);
+}
+.tb-btn.back:hover { color: var(--accent); }
+.mode-toggle {
+  display: inline-flex; gap: 1px; background: var(--hairline);
+  border-radius: 4px; padding: 2px;
+}
+.mode-toggle button {
+  background: transparent; border: 0;
+  padding: 4px 10px; font: inherit; font-size: 11.5px;
+  color: var(--text-muted); border-radius: 3px;
+  cursor: pointer;
+}
+.mode-toggle button.active {
+  background: var(--surface-2);
+  color: var(--text); font-weight: 600;
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+.tb-meta {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px; color: var(--text-dim);
+}
+.tb-meta b { color: var(--text-muted); font-weight: 500; }
+
+/* ──────────────── Layout: sidebar + canvas ──────────────── */
+#workspace {
+  flex: 1 1 auto; display: flex; min-height: 0; min-width: 0;
+}
+#sidebar {
+  width: 280px; flex-shrink: 0;
+  background: var(--panel); border-right: 1px solid var(--hairline);
+  overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.group {
+  border-bottom: 1px solid var(--hairline);
+}
+.group-head {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 12px;
+  background: rgba(11,15,23,0.6);
+  font-size: 11px; font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  user-select: none;
+}
+.group-head .icon { font-size: 13px; }
+.group-head .count {
+  margin-left: auto;
+  font-family: "IBM Plex Mono", monospace; font-size: 10px;
+  color: var(--text-dim); font-weight: 400;
+}
+.group-rows { display: flex; flex-direction: column; }
+.struct {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 12px 5px 16px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.struct:hover { background: rgba(91,141,239,0.06); color: var(--text); }
+.struct.active {
+  background: rgba(91,141,239,0.10);
+  border-left-color: var(--accent);
+  color: var(--text);
+}
+.struct .swatch {
+  width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
+}
+.struct .label  { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.struct .pts   {
+  font-family: "IBM Plex Mono", monospace; font-size: 9.5px;
+  color: var(--text-dim);
+}
+.struct-mode {
+  background: rgba(15,23,42,0.5);
+  border: 1px solid var(--hairline);
+  color: var(--text-dim);
+  font: inherit; font-size: 10px;
+  padding: 1px 5px; border-radius: 3px;
+  cursor: pointer; line-height: 1;
+}
+.struct-mode:hover { color: var(--accent); border-color: var(--accent); }
+.struct-mode.bbox      { color: var(--amber); border-color: rgba(251,191,36,0.4); }
+.struct-mode.polyline  { color: var(--accent); border-color: rgba(91,141,239,0.4); }
+
+/* ──────────────── Canvas area ──────────────── */
+#canvas-host {
+  flex: 1 1 auto;
+  position: relative;
+  background: #050608;
+  overflow: hidden;
+  cursor: grab;
+}
+#canvas-host.dragging { cursor: grabbing; }
+#opg-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+}
+#hover-tip {
+  position: absolute; pointer-events: none;
+  background: rgba(15,23,42,0.92);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--text);
+  z-index: 5;
+  display: none;
+}
+
+/* ──────────────── Status bar (bottom) ──────────────── */
+#statusbar {
+  height: 24px; flex-shrink: 0;
+  background: var(--surface-2);
+  border-top: 1px solid var(--hairline);
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 14px;
+  font-family: "IBM Plex Mono", monospace; font-size: 10px;
+  color: var(--text-dim);
+}
+#statusbar b { color: var(--text-muted); font-weight: 500; }
+#statusbar .sb-ok { color: var(--emerald); }
+#statusbar .sb-warn { color: var(--amber); }
+
+/* ──────────────── Disclaimer footer ──────────────── */
+#disclaimer {
+  flex-shrink: 0;
+  background: rgba(11,15,23,0.85);
+  border-top: 1px solid rgba(148,163,184,0.18);
+  padding: 10px 14px;
+  font-size: 10.5px; line-height: 1.55;
+  color: var(--text-dim);
+  max-height: 22vh; overflow-y: auto;
+}
+#disclaimer p { margin-bottom: 4px; }
+#disclaimer p:last-child { margin-bottom: 0; }
+#disclaimer strong { color: var(--text-muted); }
+#disclaimer a { color: var(--accent); text-decoration: none; }
+#disclaimer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     TOP TOOLBAR
+     ============================================================ -->
+<header id="topbar">
+  <div class="brand">
+    <span class="logo">ORIS</span>
+    <span class="ver">v0.1</span>
+    <span class="sep">·</span>
+    <span class="mode">Anatomy editor</span>
+  </div>
+  <a href="/play" class="tb-btn back">← /play</a>
+  <span class="tb-meta">file_id <b id="meta-file-id">{{ file_id }}</b></span>
+  <div class="tb-spacer"></div>
+  <div class="mode-toggle" role="tablist" aria-label="Annotation mode">
+    <button id="mode-polyline" class="active" data-mode="polyline">⌒ Polyline</button>
+    <button id="mode-bbox" data-mode="bbox">▭ Bbox</button>
+  </div>
+  <span class="tb-meta">zoom <b id="meta-zoom">100%</b></span>
+  <button class="tb-btn" id="btn-fit" title="Fit image to viewport (F)">Fit</button>
+  <button class="tb-btn" id="btn-reset" title="Discard reviewer overrides on this file">Reset</button>
+  <button class="tb-btn primary" id="btn-save" title="Save reviewer overrides (Ctrl+S)">✓ Save anatomy</button>
+</header>
+
+<!-- ============================================================
+     WORKSPACE: SIDEBAR + CANVAS
+     ============================================================ -->
+<div id="workspace">
+  <aside id="sidebar"></aside>
+  <main id="canvas-host">
+    <canvas id="opg-canvas"></canvas>
+    <div id="hover-tip"></div>
+  </main>
+</div>
+
+<!-- ============================================================
+     STATUS BAR
+     ============================================================ -->
+<div id="statusbar">
+  <span>active <b id="sb-active">—</b></span>
+  <span>mode <b id="sb-mode">polyline</b></span>
+  <span>vertices <b id="sb-vertices">0</b></span>
+  <span>last save <b id="sb-saved">—</b></span>
+  <span style="margin-left:auto" id="sb-hint">drag points · click segment to insert · right-click point to delete · B / P toggle mode</span>
+</div>
+
+<!-- ============================================================
+     DISCLAIMER (mandatory per plan §"Disclaimer footer")
+     ============================================================ -->
+<footer id="disclaimer">
+  <p><strong>Disclaimer.</strong> Drag-to-reshape and vertex add/delete affect only the in-browser preview state shown in this editor; they do not modify any clinical record, do not constitute a diagnosis, and have no clinical or legal effect. The panoramic radiographs displayed here are anonymised synthetic reference cases shown with the appropriate patient consent (RUDN K08.1 cohort, ethical approval FAS-РУДН-2024-K08-1, see <a href="/PRIVACY.md">PRIVACY.md</a>). All processing — EXIF strip, 5 % all-side crop, watermark — was performed in accordance with Russian Federal Law 152-FZ on personal data, GDPR-equivalent practice and HIPAA Safe-Harbor de-identification.</p>
+  <p><strong>Дисклеймер.</strong> Перетаскивание точек и добавление/удаление вершин изменяют только просмотровое состояние редактора в браузере; они не влияют на клиническую запись, не являются диагнозом и не имеют клинических или юридических последствий. Показанные снимки — это анонимизированные синтетические референсные кейсы, представленные с надлежащего согласия пациента (когорта РУДН К08.1, этическое одобрение FAS-РУДН-2024-К08-1, см. <a href="/PRIVACY.md">PRIVACY.md</a>). Вся обработка (удаление EXIF, обрезка по 5 % с каждой стороны, водяной знак) проведена в соответствии с № 152-ФЗ РФ о персональных данных, практикой GDPR и принципом Safe-Harbor де-идентификации HIPAA.</p>
+</footer>
+
+<script>
+'use strict';
+
+/* ============================================================
+   anatomy_editor.html — embedded controller
+   Adapted from production _sam2_temp/interactive/multi_editor.html
+   (519 LOC). Adaptations:
+     - data feed: /api/anatomy/<file_id>/templates instead of localStorage
+     - dual-mode rendering: each structure has annotation_type 'polyline'
+       or 'bbox'. bbox has 4 corner handles, polyline has N point handles.
+     - save: POST /api/anatomy/<file_id>/templates
+     - hot-keys: B / P flip current structure mode
+   ============================================================ */
+
+const FILE_ID = parseInt(document.querySelector('meta[name="oris-file-id"]').content, 10);
+
+// State (single source of truth — render() is a pure function of this)
+const S = {
+  groups:    [],         // [{name, icon, structures: [...]}, ...]
+  byId:      {},         // {sid: structure}
+  activeId:  null,       // currently selected structure (highlighted)
+  globalMode:'polyline', // 'polyline' | 'bbox' — default mode for new strokes
+  zoom: 1, panX: 0, panY: 0,
+  drag: null,            // { type: 'point'|'corner'|'pan'|'translate'|'new', ... }
+  hoverPoint: null,      // index of hovered vertex on activeId
+  origImg: null,
+  imgW: 2000, imgH: 1058,
+  savedSeq: 0,
+};
+
+// ─────────────────────────────────────────────────────────────
+// DOM refs
+// ─────────────────────────────────────────────────────────────
+const canvas = document.getElementById('opg-canvas');
+const ctx    = canvas.getContext('2d');
+const sidebar= document.getElementById('sidebar');
+const host   = document.getElementById('canvas-host');
+const tip    = document.getElementById('hover-tip');
+const sbActive   = document.getElementById('sb-active');
+const sbMode     = document.getElementById('sb-mode');
+const sbVertices = document.getElementById('sb-vertices');
+const sbSaved    = document.getElementById('sb-saved');
+const metaZoom   = document.getElementById('meta-zoom');
+
+function fitCanvasSize() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = host.clientWidth  * dpr;
+  canvas.height = host.clientHeight * dpr;
+  canvas.style.width  = host.clientWidth  + 'px';
+  canvas.style.height = host.clientHeight + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', () => { fitCanvasSize(); render(); });
+
+// ─────────────────────────────────────────────────────────────
+// Coordinate transforms
+// ─────────────────────────────────────────────────────────────
+function imgToScreen(nx, ny) {
+  // (nx, ny) are normalised [0..1]; convert to screen px via current zoom/pan
+  return [ S.panX + nx * S.imgW * S.zoom,
+           S.panY + ny * S.imgH * S.zoom ];
+}
+function screenToImg(sx, sy) {
+  return [ (sx - S.panX) / (S.imgW * S.zoom),
+           (sy - S.panY) / (S.imgH * S.zoom) ];
+}
+
+// ─────────────────────────────────────────────────────────────
+// Render
+// ─────────────────────────────────────────────────────────────
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (S.origImg) {
+    const w = S.imgW * S.zoom;
+    const h = S.imgH * S.zoom;
+    ctx.drawImage(S.origImg, S.panX, S.panY, w, h);
+  }
+
+  // Render every structure that has data
+  for (const g of S.groups) {
+    for (const s of g.structures) {
+      drawStructure(s);
+    }
+  }
+
+  metaZoom.textContent = Math.round(S.zoom * 100) + '%';
+  if (S.activeId) {
+    const s = S.byId[S.activeId];
+    if (s) {
+      sbActive.textContent   = s.name;
+      sbMode.textContent     = s.annotation_type;
+      sbVertices.textContent = (s.annotation_type === 'bbox')
+        ? (s.bbox ? '4 corners' : 'no bbox')
+        : ((s.points || []).length);
+    }
+  } else {
+    sbActive.textContent   = '—';
+    sbMode.textContent     = '—';
+    sbVertices.textContent = '0';
+  }
+}
+
+function drawStructure(s) {
+  const isActive = (s.id === S.activeId);
+  const colour = s.color || '#5b8def';
+  ctx.lineWidth = isActive ? 3 : 2;
+  ctx.strokeStyle = colour;
+
+  if (s.annotation_type === 'bbox') {
+    if (!s.bbox) return;
+    const [x1, y1] = imgToScreen(s.bbox.x1, s.bbox.y1);
+    const [x2, y2] = imgToScreen(s.bbox.x2, s.bbox.y2);
+    const w = x2 - x1, h = y2 - y1;
+    ctx.setLineDash(isActive ? [] : [8, 4]);
+    ctx.strokeRect(x1, y1, w, h);
+    ctx.setLineDash([]);
+    if (isActive) {
+      // 4 corner handles
+      const handles = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]];
+      ctx.fillStyle = colour;
+      handles.forEach(([hx, hy]) => {
+        ctx.beginPath();
+        ctx.rect(hx - 4, hy - 4, 8, 8);
+        ctx.fill();
+        ctx.strokeStyle = '#0e1014';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.strokeStyle = colour;
+        ctx.lineWidth = isActive ? 3 : 2;
+      });
+      drawLabel(x1, y1 - 6, s.name, colour);
+    } else {
+      drawLabel(x1, y1 - 6, s.name, colour);
+    }
+    return;
+  }
+
+  // polyline
+  const pts = s.points || [];
+  if (!pts.length) return;
+  ctx.beginPath();
+  pts.forEach((p, i) => {
+    const [sx, sy] = imgToScreen(p[0], p[1]);
+    if (i === 0) ctx.moveTo(sx, sy);
+    else         ctx.lineTo(sx, sy);
+  });
+  if (s.type === 'closed' && pts.length > 2) {
+    ctx.closePath();
+    ctx.fillStyle = colour + '22';
+    ctx.fill();
+  }
+  ctx.setLineDash(isActive ? [] : [8, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  if (isActive) {
+    pts.forEach((p, i) => {
+      const [sx, sy] = imgToScreen(p[0], p[1]);
+      ctx.beginPath();
+      ctx.arc(sx, sy, (S.hoverPoint === i) ? 6 : 4, 0, Math.PI * 2);
+      ctx.fillStyle = colour;
+      ctx.fill();
+      ctx.strokeStyle = '#0e1014';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.strokeStyle = colour;
+      ctx.lineWidth = 3;
+    });
+    if (pts.length > 0) {
+      const [lx, ly] = imgToScreen(pts[0][0], pts[0][1]);
+      drawLabel(lx + 6, ly - 6, s.name, colour);
+    }
+  }
+}
+
+function drawLabel(x, y, text, colour) {
+  ctx.font = '600 12px "IBM Plex Mono", monospace';
+  const m = ctx.measureText(text);
+  ctx.fillStyle = colour;
+  ctx.fillRect(x - 2, y - 14, m.width + 8, 16);
+  ctx.fillStyle = '#0e1014';
+  ctx.fillText(text, x + 2, y - 2);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Hit testing
+// ─────────────────────────────────────────────────────────────
+const HIT_PX_POINT = 9;
+const HIT_PX_EDGE  = 6;
+
+function findPointHit(s, sx, sy) {
+  const pts = s.points || [];
+  for (let i = 0; i < pts.length; i++) {
+    const [px, py] = imgToScreen(pts[i][0], pts[i][1]);
+    if (Math.abs(sx - px) <= HIT_PX_POINT && Math.abs(sy - py) <= HIT_PX_POINT) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function findEdgeHit(s, sx, sy) {
+  const pts = s.points || [];
+  if (pts.length < 2) return -1;
+  let best = -1, bestD = HIT_PX_EDGE + 0.5;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [x1, y1] = imgToScreen(pts[i][0],   pts[i][1]);
+    const [x2, y2] = imgToScreen(pts[i+1][0], pts[i+1][1]);
+    const d = pointToSegmentDist(sx, sy, x1, y1, x2, y2);
+    if (d < bestD) { best = i; bestD = d; }
+  }
+  // Also test closing edge if closed
+  if (s.type === 'closed' && pts.length >= 3) {
+    const [x1, y1] = imgToScreen(pts[pts.length-1][0], pts[pts.length-1][1]);
+    const [x2, y2] = imgToScreen(pts[0][0], pts[0][1]);
+    const d = pointToSegmentDist(sx, sy, x1, y1, x2, y2);
+    if (d < bestD) { best = pts.length - 1; bestD = d; }
+  }
+  return best;
+}
+
+function pointToSegmentDist(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len2 = dx * dx + dy * dy;
+  if (len2 === 0) return Math.hypot(px - x1, py - y1);
+  let t = ((px - x1) * dx + (py - y1) * dy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+
+function findBboxCorner(s, sx, sy) {
+  if (!s.bbox) return -1;
+  const [x1, y1] = imgToScreen(s.bbox.x1, s.bbox.y1);
+  const [x2, y2] = imgToScreen(s.bbox.x2, s.bbox.y2);
+  const corners = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]];
+  for (let i = 0; i < 4; i++) {
+    const [cx, cy] = corners[i];
+    if (Math.abs(sx - cx) <= HIT_PX_POINT && Math.abs(sy - cy) <= HIT_PX_POINT) return i;
+  }
+  return -1;
+}
+
+function bboxContains(s, sx, sy) {
+  if (!s.bbox) return false;
+  const [x1, y1] = imgToScreen(s.bbox.x1, s.bbox.y1);
+  const [x2, y2] = imgToScreen(s.bbox.x2, s.bbox.y2);
+  return sx > x1 && sx < x2 && sy > y1 && sy < y2;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Mouse interactions
+// ─────────────────────────────────────────────────────────────
+function eventToCanvas(e) {
+  const r = canvas.getBoundingClientRect();
+  return [e.clientX - r.left, e.clientY - r.top];
+}
+
+canvas.addEventListener('mousedown', e => {
+  const [sx, sy] = eventToCanvas(e);
+  const s = S.byId[S.activeId];
+
+  // Right-click: delete vertex / clear bbox
+  if (e.button === 2) {
+    e.preventDefault();
+    if (!s) return;
+    if (s.annotation_type === 'polyline') {
+      const idx = findPointHit(s, sx, sy);
+      if (idx >= 0 && (s.points || []).length > 0) {
+        s.points.splice(idx, 1);
+        markDirty(s);
+        render();
+      }
+    } else if (s.annotation_type === 'bbox' && bboxContains(s, sx, sy)) {
+      s.bbox = null;
+      markDirty(s);
+      render();
+    }
+    return;
+  }
+
+  // Try interaction with active structure first
+  if (s) {
+    if (s.annotation_type === 'polyline') {
+      const idx = findPointHit(s, sx, sy);
+      if (idx >= 0) {
+        S.drag = { type: 'point', sid: s.id, idx };
+        return;
+      }
+      const edge = findEdgeHit(s, sx, sy);
+      if (edge >= 0) {
+        const [ix, iy] = screenToImg(sx, sy);
+        s.points.splice(edge + 1, 0, [ix, iy]);
+        markDirty(s);
+        S.drag = { type: 'point', sid: s.id, idx: edge + 1 };
+        render();
+        return;
+      }
+    } else if (s.annotation_type === 'bbox') {
+      const corner = findBboxCorner(s, sx, sy);
+      if (corner >= 0) {
+        S.drag = { type: 'corner', sid: s.id, corner };
+        return;
+      }
+      if (bboxContains(s, sx, sy)) {
+        S.drag = { type: 'translate', sid: s.id, lastSx: sx, lastSy: sy };
+        return;
+      }
+      // Empty space + bbox missing → start drawing new bbox
+      if (!s.bbox) {
+        const [ix, iy] = screenToImg(sx, sy);
+        s.bbox = { x1: ix, y1: iy, x2: ix, y2: iy };
+        S.drag = { type: 'new-bbox', sid: s.id };
+        markDirty(s);
+        render();
+        return;
+      }
+    }
+  }
+
+  // Fall back to pan
+  S.drag = { type: 'pan', startX: sx - S.panX, startY: sy - S.panY };
+  host.classList.add('dragging');
+});
+
+canvas.addEventListener('mousemove', e => {
+  const [sx, sy] = eventToCanvas(e);
+  const d = S.drag;
+  if (d) {
+    if (d.type === 'pan') {
+      S.panX = sx - d.startX;
+      S.panY = sy - d.startY;
+      render();
+      return;
+    }
+    const s = S.byId[d.sid];
+    if (!s) return;
+    const [ix, iy] = screenToImg(sx, sy);
+    if (d.type === 'point') {
+      s.points[d.idx] = [Math.max(0, Math.min(1, ix)), Math.max(0, Math.min(1, iy))];
+      markDirty(s);
+      render();
+    } else if (d.type === 'corner') {
+      const corners = [['x1','y1'], ['x2','y1'], ['x2','y2'], ['x1','y2']];
+      const [kx, ky] = corners[d.corner];
+      s.bbox[kx] = Math.max(0, Math.min(1, ix));
+      s.bbox[ky] = Math.max(0, Math.min(1, iy));
+      markDirty(s);
+      render();
+    } else if (d.type === 'translate') {
+      const [lx, ly] = screenToImg(d.lastSx, d.lastSy);
+      const dx = ix - lx, dy = iy - ly;
+      s.bbox.x1 += dx; s.bbox.x2 += dx;
+      s.bbox.y1 += dy; s.bbox.y2 += dy;
+      d.lastSx = sx; d.lastSy = sy;
+      markDirty(s);
+      render();
+    } else if (d.type === 'new-bbox') {
+      s.bbox.x2 = Math.max(0, Math.min(1, ix));
+      s.bbox.y2 = Math.max(0, Math.min(1, iy));
+      markDirty(s);
+      render();
+    }
+    return;
+  }
+
+  // No drag: hover hit-testing for cursor feedback on active structure
+  const s = S.byId[S.activeId];
+  if (s && s.annotation_type === 'polyline') {
+    const idx = findPointHit(s, sx, sy);
+    if (idx !== S.hoverPoint) {
+      S.hoverPoint = idx;
+      render();
+    }
+    if (idx >= 0) {
+      tip.textContent = `${s.name} · point ${idx + 1}/${(s.points || []).length}`;
+      tip.style.left = (sx + 12) + 'px';
+      tip.style.top  = (sy + 12) + 'px';
+      tip.style.display = 'block';
+      return;
+    }
+  }
+  tip.style.display = 'none';
+});
+
+canvas.addEventListener('mouseup',   () => { S.drag = null; host.classList.remove('dragging'); });
+canvas.addEventListener('mouseleave',() => { S.drag = null; host.classList.remove('dragging'); tip.style.display = 'none'; });
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const [sx, sy] = eventToCanvas(e);
+  const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+  const newZoom = Math.max(0.1, Math.min(8, S.zoom * factor));
+  // Zoom around cursor: keep image pixel under cursor stable
+  S.panX = sx - (sx - S.panX) * (newZoom / S.zoom);
+  S.panY = sy - (sy - S.panY) * (newZoom / S.zoom);
+  S.zoom = newZoom;
+  render();
+}, { passive: false });
+
+// ─────────────────────────────────────────────────────────────
+// Keyboard
+// ─────────────────────────────────────────────────────────────
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault(); save(); return;
+  }
+  if (e.key === 'f' || e.key === 'F') { fit(); return; }
+  if (e.key === 'b' || e.key === 'B') { setStructMode(S.activeId, 'bbox'); return; }
+  if (e.key === 'p' || e.key === 'P') { setStructMode(S.activeId, 'polyline'); return; }
+  if (e.key === 'Escape') { S.activeId = null; renderSidebar(); render(); return; }
+});
+
+// ─────────────────────────────────────────────────────────────
+// Sidebar render
+// ─────────────────────────────────────────────────────────────
+function renderSidebar() {
+  let html = '';
+  for (const g of S.groups) {
+    html += `<div class="group" data-group="${escAttr(g.name)}">`;
+    html += `<div class="group-head"><span class="icon">${g.icon || '·'}</span>`
+          + `<span>${esc(g.name)}</span>`
+          + `<span class="count">${g.structures.length}</span></div>`;
+    html += '<div class="group-rows">';
+    for (const s of g.structures) {
+      const active = (s.id === S.activeId) ? ' active' : '';
+      const pts = (s.annotation_type === 'bbox')
+        ? (s.bbox ? '▭' : '∅')
+        : `${(s.points || []).length} pts`;
+      html += `<div class="struct${active}" data-id="${escAttr(s.id)}">`
+            + `<span class="swatch" style="background:${escAttr(s.color || '#5b8def')}"></span>`
+            + `<span class="label" title="${escAttr(s.hint || s.name)}">${esc(s.name)}</span>`
+            + `<span class="pts">${pts}</span>`
+            + `<button class="struct-mode ${escAttr(s.annotation_type)}" data-mode-id="${escAttr(s.id)}" title="Toggle bbox / polyline (B / P)">`
+            + (s.annotation_type === 'bbox' ? '▭' : '⌒')
+            + '</button>'
+            + '</div>';
+    }
+    html += '</div></div>';
+  }
+  sidebar.innerHTML = html;
+  // Wire up click handlers
+  sidebar.querySelectorAll('.struct').forEach(el => {
+    el.addEventListener('click', e => {
+      if (e.target.closest('.struct-mode')) return;
+      S.activeId = el.dataset.id;
+      renderSidebar(); render();
+    });
+  });
+  sidebar.querySelectorAll('.struct-mode').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const sid = el.dataset.modeId;
+      const s = S.byId[sid];
+      if (!s) return;
+      const next = (s.annotation_type === 'bbox') ? 'polyline' : 'bbox';
+      setStructMode(sid, next);
+    });
+  });
+}
+
+function setStructMode(sid, mode) {
+  const s = S.byId[sid];
+  if (!s || s.annotation_type === mode) return;
+  s.annotation_type = mode;
+  // Auto-derive bbox from polyline bounds if switching polyline → bbox
+  if (mode === 'bbox' && !s.bbox && (s.points || []).length) {
+    const xs = s.points.map(p => p[0]);
+    const ys = s.points.map(p => p[1]);
+    s.bbox = { x1: Math.min(...xs), y1: Math.min(...ys),
+               x2: Math.max(...xs), y2: Math.max(...ys) };
+  }
+  markDirty(s);
+  renderSidebar();
+  render();
+}
+
+function esc(s)     { return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escAttr(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ─────────────────────────────────────────────────────────────
+// Override tracking and save
+// ─────────────────────────────────────────────────────────────
+const _dirty = new Set();
+function markDirty(s) { _dirty.add(s.id); }
+
+function buildOverridesPayload() {
+  const out = {};
+  for (const sid of _dirty) {
+    const s = S.byId[sid];
+    if (!s) continue;
+    const rec = { annotation_type: s.annotation_type };
+    if (s.annotation_type === 'polyline') {
+      rec.points = s.points || [];
+      rec.type   = s.type || 'open';
+    } else {
+      rec.bbox = s.bbox || null;
+    }
+    out[sid] = rec;
+  }
+  return out;
+}
+
+async function save() {
+  const overrides = buildOverridesPayload();
+  if (Object.keys(overrides).length === 0) {
+    sbSaved.textContent = 'no edits';
+    return;
+  }
+  const r = await fetch(`/api/anatomy/${FILE_ID}/templates`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ overrides, source: 'manual' }),
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    sbSaved.textContent = 'save failed: ' + (err.error || r.status);
+    return;
+  }
+  const d = await r.json();
+  S.savedSeq = d.sequence_num;
+  sbSaved.innerHTML = `<b class="sb-ok">#${d.sequence_num}</b> · ${d.structures_saved} structures`;
+  _dirty.clear();
+}
+
+document.getElementById('btn-save').addEventListener('click', save);
+document.getElementById('btn-fit').addEventListener('click', fit);
+document.getElementById('btn-reset').addEventListener('click', async () => {
+  if (!confirm('Discard all reviewer overrides on this file? This appends an empty save to the change history.')) return;
+  await fetch(`/api/anatomy/${FILE_ID}/templates`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ overrides: {}, source: 'manual' }),
+  });
+  await load();
+});
+
+document.querySelectorAll('.mode-toggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-toggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    S.globalMode = btn.dataset.mode;
+    if (S.activeId) setStructMode(S.activeId, S.globalMode);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// Image load + fit
+// ─────────────────────────────────────────────────────────────
+function fit() {
+  if (!S.origImg) return;
+  const w = host.clientWidth, h = host.clientHeight;
+  const z = Math.min(w / S.imgW, h / S.imgH) * 0.96;
+  S.zoom = z;
+  S.panX = (w - S.imgW * z) / 2;
+  S.panY = (h - S.imgH * z) / 2;
+  render();
+}
+
+function loadImage() {
+  const img = new Image();
+  img.onload = () => {
+    S.origImg = img;
+    S.imgW = img.naturalWidth;
+    S.imgH = img.naturalHeight;
+    fit();
+    render();
+  };
+  img.src = `/panorama/${FILE_ID}/image`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Bootstrap: load templates + image, render sidebar + canvas
+// ─────────────────────────────────────────────────────────────
+async function load() {
+  const r = await fetch(`/api/anatomy/${FILE_ID}/templates`);
+  const d = await r.json();
+  S.groups = d.groups || [];
+  S.byId = {};
+  for (const g of S.groups) {
+    for (const s of g.structures) {
+      S.byId[s.id] = s;
+    }
+  }
+  S.savedSeq = d.saved_seq || 0;
+  if (S.savedSeq) sbSaved.innerHTML = `<b>#${S.savedSeq}</b> (loaded)`;
+  // Default-active first structure of first non-empty group for instant feedback
+  const firstNonEmpty = S.groups.find(g => g.structures.length);
+  if (firstNonEmpty) S.activeId = firstNonEmpty.structures[0].id;
+  renderSidebar();
+  render();
+  _dirty.clear();
+}
+
+// Boot
+fitCanvasSize();
+loadImage();
+load();
+</script>
+</body>
+</html>
