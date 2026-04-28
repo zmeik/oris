@@ -59,5 +59,53 @@
   "tooth_notes": {},
   "root_data": {},
   "crop_overrides": {},
-  "diagnostic_sites": {}
+  "diagnostic_sites": {},
+  "anatomical_landmarks": {
+    "mandibular_canal_right": {
+      "visibility": "partially_visible",
+      "course": "normal",
+      "distance_to_alveolar_crest_mm": 2.8
+    },
+    "mandibular_canal_left": {
+      "visibility": "partially_visible",
+      "course": "normal",
+      "distance_to_alveolar_crest_mm": 3.0
+    },
+    "mental_foramen_right": {
+      "visibility": "partially_visible",
+      "location_fdi": "4.5",
+      "shape": "oval"
+    },
+    "mental_foramen_left": {
+      "visibility": "partially_visible",
+      "location_fdi": "3.5",
+      "shape": "oval"
+    },
+    "maxillary_sinus_right": {
+      "status": "mucosal_thickening",
+      "floor_integrity": "intact",
+      "pneumatization": "increased",
+      "distance_to_crest_mm": 4.5
+    },
+    "maxillary_sinus_left": {
+      "status": "mucosal_thickening",
+      "floor_integrity": "intact",
+      "pneumatization": "increased",
+      "distance_to_crest_mm": 4.8
+    },
+    "tmj_right_condyle": {
+      "morphology": "flattened",
+      "surface_contour": "irregular",
+      "bone_density": "sclerotic"
+    },
+    "tmj_left_condyle": {
+      "morphology": "flattened",
+      "surface_contour": "irregular",
+      "bone_density": "sclerotic"
+    },
+    "airway_pharyngeal": {
+      "shape": "narrowed",
+      "tongue_position": "retropositioned"
+    }
+  }
 }

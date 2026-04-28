@@ -47,5 +47,53 @@
   "tooth_notes": {},
   "root_data": {},
   "crop_overrides": {},
-  "diagnostic_sites": {}
+  "diagnostic_sites": {},
+  "anatomical_landmarks": {
+    "mandibular_canal_right": {
+      "visibility": "clearly_visible",
+      "course": "normal",
+      "distance_to_alveolar_crest_mm": 4.5
+    },
+    "mandibular_canal_left": {
+      "visibility": "clearly_visible",
+      "course": "normal",
+      "distance_to_alveolar_crest_mm": 4.2
+    },
+    "mental_foramen_right": {
+      "visibility": "clearly_visible",
+      "location_fdi": "4.5",
+      "shape": "round"
+    },
+    "mental_foramen_left": {
+      "visibility": "partially_visible",
+      "location_fdi": "3.5",
+      "shape": "round"
+    },
+    "maxillary_sinus_right": {
+      "status": "normal",
+      "floor_integrity": "intact",
+      "pneumatization": "normal",
+      "distance_to_crest_mm": 7.5
+    },
+    "maxillary_sinus_left": {
+      "status": "normal",
+      "floor_integrity": "intact",
+      "pneumatization": "normal",
+      "distance_to_crest_mm": 7.1
+    },
+    "tmj_right_condyle": {
+      "morphology": "normal",
+      "surface_contour": "smooth",
+      "bone_density": "normal"
+    },
+    "tmj_left_condyle": {
+      "morphology": "normal",
+      "surface_contour": "smooth",
+      "bone_density": "normal"
+    },
+    "airway_pharyngeal": {
+      "shape": "normal",
+      "tongue_position": "normal"
+    }
+  }
 }

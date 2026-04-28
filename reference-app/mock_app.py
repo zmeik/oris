@@ -114,6 +114,7 @@ CREATE TABLE IF NOT EXISTS ground_truth (
     root_data_json    TEXT NOT NULL DEFAULT '{}',
     crop_overrides_json TEXT NOT NULL DEFAULT '{}',
     diagnostic_sites_json TEXT NOT NULL DEFAULT '{}',
+    anatomical_landmarks_json TEXT NOT NULL DEFAULT '{}',
     last_modified     TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -193,9 +194,21 @@ def db_connect():
 
 
 def init_db() -> None:
-    """Create schema if not present."""
+    """Create schema if not present.
+
+    Also performs idempotent ALTER TABLE migrations for older DB files
+    that pre-date a column addition (e.g., anatomical_landmarks_json
+    introduced when adding the side-panel UI for paper Figure 2)."""
     with db_connect() as conn:
         conn.executescript(SCHEMA_SQL)
+        # Idempotent migrations: SQLite has no ADD COLUMN IF NOT EXISTS,
+        # so we sniff the column list with PRAGMA and only ALTER if missing.
+        existing = {row[1] for row in conn.execute("PRAGMA table_info(ground_truth)").fetchall()}
+        if "anatomical_landmarks_json" not in existing:
+            conn.execute(
+                "ALTER TABLE ground_truth ADD COLUMN anatomical_landmarks_json "
+                "TEXT NOT NULL DEFAULT '{}'"
+            )
 
 
 # ============================================================================
@@ -325,6 +338,7 @@ def bootstrap_demo_data() -> None:
             bridge_links = doc.get("bridge_links", {})
             tooth_notes = doc.get("tooth_notes", {})
             root_data = doc.get("root_data", {})
+            anatomical_landmarks = doc.get("anatomical_landmarks", {}) or {}
 
             # Ingest the corresponding anonymised PNG
             image_id = _ingest_image(conn, png_path, f"case_{case_letter}_anonymised")
@@ -340,8 +354,9 @@ def bootstrap_demo_data() -> None:
                 """
                 INSERT OR REPLACE INTO ground_truth (file_id, formula_json, bridge_links_json,
                                                      tooth_notes_json, root_data_json,
-                                                     crop_overrides_json, diagnostic_sites_json)
-                VALUES (?, ?, ?, ?, ?, '{}', '{}')
+                                                     crop_overrides_json, diagnostic_sites_json,
+                                                     anatomical_landmarks_json)
+                VALUES (?, ?, ?, ?, ?, '{}', '{}', ?)
                 """,
                 (
                     file_id,
@@ -349,6 +364,7 @@ def bootstrap_demo_data() -> None:
                     json.dumps(bridge_links),
                     json.dumps(tooth_notes),
                     json.dumps(root_data),
+                    json.dumps(anatomical_landmarks),
                 ),
             )
             existing = conn.execute(
@@ -776,6 +792,71 @@ def api_gt_history(file_id: int):
         (file_id, limit),
     ).fetchall()
     return jsonify({"file_id": file_id, "history": [dict(r) for r in rows]})
+
+
+# ──────────────────────────────────────────────────────────────────
+# Anatomy endpoints — feed the side-panel UI introduced for paper §2.1
+# Figure 2 caption (Anatomical Landmarks block: mandibular canal,
+# mental foramen, maxillary sinus, TMJ, airway). Reads / writes the
+# anatomical_landmarks_json column on ground_truth, identical access
+# pattern to /api/darwin/ground-truth so the frontend can use one
+# fetch helper. Edits are appended to the same `history` table with
+# change_type = 'anatomy_update' so the time-machine / change-strip
+# panels show anatomy edits alongside tooth edits.
+# ──────────────────────────────────────────────────────────────────
+
+
+@app.route("/api/anatomy/<int:file_id>", methods=["GET"])
+def api_anatomy_get(file_id: int):
+    row = get_db().execute(
+        "SELECT anatomical_landmarks_json FROM ground_truth WHERE file_id = ?",
+        (file_id,),
+    ).fetchone()
+    if not row:
+        return jsonify({"file_id": file_id, "anatomical_landmarks": {}})
+    return jsonify({
+        "file_id": file_id,
+        "anatomical_landmarks": json.loads(row["anatomical_landmarks_json"] or "{}"),
+    })
+
+
+@app.route("/api/anatomy/<int:file_id>", methods=["POST"])
+def api_anatomy_save(file_id: int):
+    payload = request.get_json(silent=True) or {}
+    anatomy = payload.get("anatomical_landmarks") or {}
+    source = payload.get("source", "manual")
+    session_id = payload.get("session_id", str(uuid.uuid4()))
+
+    db = get_db()
+    file_row = db.execute("SELECT 1 FROM files WHERE file_id = ?", (file_id,)).fetchone()
+    if not file_row:
+        return jsonify({"ok": False, "error": f"unknown file_id {file_id}"}), 404
+
+    db.execute(
+        """
+        INSERT INTO ground_truth (file_id, anatomical_landmarks_json, last_modified)
+        VALUES (?, ?, datetime('now'))
+        ON CONFLICT(file_id) DO UPDATE SET
+            anatomical_landmarks_json = excluded.anatomical_landmarks_json,
+            last_modified = datetime('now')
+        """,
+        (file_id, json.dumps(anatomy)),
+    )
+    seq_row = db.execute(
+        "SELECT COALESCE(MAX(sequence_num), 0) AS s FROM history WHERE file_id = ?",
+        (file_id,),
+    ).fetchone()
+    next_seq = (seq_row["s"] or 0) + 1
+    db.execute(
+        """
+        INSERT INTO history (file_id, sequence_num, fdi, old_value, new_value,
+                             change_type, source, session_id)
+        VALUES (?, ?, NULL, NULL, ?, 'anatomy_update', ?, ?)
+        """,
+        (file_id, next_seq, json.dumps(list(anatomy.keys())), source, session_id),
+    )
+    db.commit()
+    return jsonify({"ok": True, "sequence_num": next_seq})
 
 
 @app.route("/api/darwin/ground-truth/<int:file_id>/snapshot/<int:seq>")
