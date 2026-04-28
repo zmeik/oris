@@ -277,24 +277,24 @@ function _renderSaveBanner(fileId) {
         if (!dt) return '';
         const secs = Math.round((Date.now() - dt.getTime()) / 1000);
         if (secs < 5)   return '«только что»';
-        if (secs < 60)  return `${secs} сек назад`;
-        if (secs < 3600)return `${Math.floor(secs/60)} мин назад`;
-        return `${Math.floor(secs/3600)} ч назад`;
+        if (secs < 60)  return `${secs}s ago`;
+        if (secs < 3600)return `${Math.floor(secs/60)}m ago`;
+        return `${Math.floor(secs/3600)}h ago`;
     }
 
-    let bg = 'rgba(15,23,42,0.4)', border = 'rgba(148,163,184,0.18)', color = '#94a3b8', iconCh = '💾', statusTxt = 'Изменений нет';
+    let bg = 'rgba(15,23,42,0.4)', border = 'rgba(148,163,184,0.18)', color = '#94a3b8', iconCh = '💾', statusTxt = 'No changes';
     if (status === 'pending') {
         bg='rgba(245,158,11,0.12)'; border='rgba(245,158,11,0.5)'; color='#fbbf24';
-        iconCh='⏳'; statusTxt = `Несохранённых: ${pending} — сохраню через ~1 сек`;
+        iconCh='⏳'; statusTxt = `${pending} unsaved — autosaving in ~1s`;
     } else if (status === 'saving') {
         bg='rgba(59,130,246,0.12)'; border='rgba(59,130,246,0.5)'; color='#60a5fa';
-        iconCh='💾'; statusTxt = `Сохраняю ${pending || 1} изм. в БД…`;
+        iconCh='💾'; statusTxt = `Saving ${pending || 1} change${(pending||1)===1?'':'s'} to database…`;
     } else if (status === 'saved') {
         bg='rgba(34,197,94,0.10)'; border='rgba(34,197,94,0.45)'; color='#4ade80';
-        iconCh='✅'; statusTxt = `Сохранено · всего за сессию: ${savedCount}`;
+        iconCh='✅'; statusTxt = `Saved · ${savedCount} total this session`;
     } else if (status === 'error') {
         bg='rgba(239,68,68,0.15)'; border='rgba(239,68,68,0.6)'; color='#fca5a5';
-        iconCh='⚠'; statusTxt = 'ОШИБКА сохранения — клик для повтора';
+        iconCh='⚠'; statusTxt = 'Save FAILED — click to retry';
     } else { // idle
         if (savedCount > 0) {
             statusTxt = `Всё в БД · ${savedCount} изм. сохранено в этой сессии`;
@@ -625,10 +625,10 @@ function _showTimeMachineBar(fileId, seq, snapshot) {
     const date = snapshot.created_at ? new Date(snapshot.created_at).toLocaleDateString('ru',{day:'2-digit',month:'2-digit'}) : '';
 
     tmBar.innerHTML =
-        `<span class="tm-label">Машина времени</span>` +
-        `<button class="tm-btn" onclick="_exitTimeMachine(${fileId})" title="Вернуться к текущей версии">\u2715 Выйти</button>` +
-        `<span class="tm-label">${date} ${time} | шаг ${seq}</span>` +
-        `<button class="tm-btn" onclick="_restoreSnapshot(${fileId},${seq})" title="Восстановить эту версию">\u21ba Восстановить</button>`;
+        `<span class="tm-label">Time machine</span>` +
+        `<button class="tm-btn" onclick="_exitTimeMachine(${fileId})" title="Return to current version">\u2715 Exit</button>` +
+        `<span class="tm-label">${date} ${time} | step ${seq}</span>` +
+        `<button class="tm-btn" onclick="_restoreSnapshot(${fileId},${seq})" title="Restore this version">\u21ba Restore</button>`;
 }
 
 /**

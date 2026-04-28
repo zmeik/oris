@@ -109,20 +109,20 @@ function renderArenaFormulaRow(type, label, sublabel, formula, groundTruth, file
     } else if (type === 'algo') {
         scoreHtml = `<div class="row-score" style="font-size:11px;color:var(--text-dim)">—</div>`;
     } else if (type === 'ground-truth') {
-        scoreHtml = `<div class="row-score" style="font-size:11px;color:var(--text-dim)">ЭТАЛОН</div>`;
+        scoreHtml = `<div class="row-score" style="font-size:11px;color:var(--text-dim)">GROUND TRUTH</div>`;
     }
 
     // Vote buttons for algo rows
     let voteHtml = '';
     if (type === 'algo' && codename) {
-        const champIcon = isChampion ? '<span title="Чемпион" style="font-size:10px">★</span>' : '';
-        const deadIcon = (isAlive === false) ? '<span title="Отключён" style="font-size:9px;color:var(--text-dim)">off</span>' : '';
+        const champIcon = isChampion ? '<span title="Champion" style="font-size:10px">★</span>' : '';
+        const deadIcon = (isAlive === false) ? '<span title="Disabled" style="font-size:9px;color:var(--text-dim)">off</span>' : '';
         voteHtml = `<div style="display:flex;gap:3px;padding:2px 0;justify-content:flex-end;">
             ${champIcon}${deadIcon}
-            <button class="arena-vote-btn vote-up" onclick="expertVote('${codename}','boost');setTimeout(()=>loadArena(),500)" title="Перспективный">↑</button>
+            <button class="arena-vote-btn vote-up" onclick="expertVote('${codename}','boost');setTimeout(()=>loadArena(),500)" title="Promising — boost">↑</button>
             ${isAlive !== false ?
-            `<button class="arena-vote-btn vote-down" onclick="expertVote('${codename}','kill');setTimeout(()=>loadArena(),500)" title="Отключить">✕</button>` :
-            `<button class="arena-vote-btn vote-revive" onclick="expertVote('${codename}','revive');setTimeout(()=>loadArena(),500)" title="Восстановить">↺</button>`}
+            `<button class="arena-vote-btn vote-down" onclick="expertVote('${codename}','kill');setTimeout(()=>loadArena(),500)" title="Hopeless — disable">✕</button>` :
+            `<button class="arena-vote-btn vote-revive" onclick="expertVote('${codename}','revive');setTimeout(()=>loadArena(),500)" title="Revive">↺</button>`}
         </div>`;
     }
     // GT confirm button — inactive until all 32 teeth marked
@@ -132,25 +132,25 @@ function renderArenaFormulaRow(type, label, sublabel, formula, groundTruth, file
         const filledCount = Object.values(gtFormula).filter(v => v).length;
         const isReady = filledCount >= 32;
         const readyClass = isReady ? 'ready' : '';
-        const btnTitle = isReady ? 'Сохранить эталон и пересчитать алгоритмы' : `Отмечено ${filledCount}/32 зубов — отметьте все для сохранения`;
+        const btnTitle = isReady ? 'Save ground truth and recompute algorithms' : `${filledCount}/32 teeth annotated — annotate all to save`;
         const aiHintBtn = filledCount === 0
             ? `<div style="text-align:center;margin-bottom:2px;">
-                <button class="gt-confirm-btn" style="background:rgba(168,85,247,0.2);border-color:rgba(168,85,247,0.5);font-size:11px;padding:4px 8px;" id="gt-ai-btn-${fileId}" onclick="prefillGTFromAI(${fileId})" title="Предзаполнить эталон из AI-анализа. Вы сможете исправить ошибки.">🤖 AI</button>
+                <button class="gt-confirm-btn" style="background:rgba(168,85,247,0.2);border-color:rgba(168,85,247,0.5);font-size:11px;padding:4px 8px;" id="gt-ai-btn-${fileId}" onclick="prefillGTFromAI(${fileId})" title="Prefill ground truth from AI analysis (you can correct any errors before saving)">🤖 AI prefill</button>
               </div>`
-            : `<button class="gt-confirm-btn" style="background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.3);font-size:9px;padding:2px 6px;" id="gt-ai-btn-${fileId}" onclick="prefillGTFromAI(${fileId})" title="Перезаполнить эталон из AI (сбросит текущую разметку!)">🤖</button>`;
-        const cardBtn = `<button class="gt-confirm-btn" style="background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.4);font-size:9px;padding:2px 6px;" id="gt-card-btn-${fileId}" onclick="prefillGTFromCard(${fileId})" title="Заполнить позиции имплантатов из карты пациента (FDI из диссертации)">📋</button>`;
+            : `<button class="gt-confirm-btn" style="background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.3);font-size:9px;padding:2px 6px;" id="gt-ai-btn-${fileId}" onclick="prefillGTFromAI(${fileId})" title="Re-prefill ground truth from AI (will reset current annotation!)">🤖</button>`;
+        const cardBtn = `<button class="gt-confirm-btn" style="background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.4);font-size:9px;padding:2px 6px;" id="gt-card-btn-${fileId}" onclick="prefillGTFromCard(${fileId})" title="Fill implant positions from patient card (FDIs from dissertation cohort)">📋</button>`;
         gtBtnHtml = `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-end;margin-top:4px">`
             + aiHintBtn
             + cardBtn
             + `<button class="gt-confirm-btn ${readyClass}" id="gt-btn-${fileId}" onclick="${isReady ? `arenaConfirmGT(${fileId})` : ''}" title="${btnTitle}" style="margin:0">✓</button>`
             + `<span class="gt-save-indicator" id="gt-save-status-${fileId}"></span>`
-            + `<button class="gt-tm-btn" id="gt-tm-trigger-${fileId}" onclick="_openTimeMachine(${fileId})" title="Машина времени — откатиться на предыдущие снимки разметки">&#128336;</button>`
-            + `<button class="crop-toggle-btn active" id="crop-toggle-${fileId}" onclick="_toggleCropCarousel(${fileId})" title="Скрыть/показать кропы">▲▼</button>`
+            + `<button class="gt-tm-btn" id="gt-tm-trigger-${fileId}" onclick="_openTimeMachine(${fileId})" title="Time machine — roll back to a previous annotation snapshot">&#128336;</button>`
+            + `<button class="crop-toggle-btn active" id="crop-toggle-${fileId}" onclick="_toggleCropCarousel(${fileId})" title="Show/hide tooth crops">▲▼</button>`
             + `</div>`
             // Persistent save banner — visible always, positioned below the GT controls
             + `<div class="gt-save-banner" id="gt-save-banner-${fileId}" data-file="${fileId}" style="display:flex;align-items:center;gap:10px;margin:6px 0 4px;padding:6px 10px;border-radius:6px;background:rgba(15,23,42,0.4);border:1px solid rgba(148,163,184,0.18);font-size:11px;line-height:1.3;transition:background 0.3s,border-color 0.3s">
                 <span class="gt-save-banner-icon" style="font-size:14px;line-height:1">💾</span>
-                <span class="gt-save-banner-status" style="font-weight:600;color:#94a3b8">Изменений нет</span>
+                <span class="gt-save-banner-status" style="font-weight:600;color:#94a3b8">No changes</span>
                 <span class="gt-save-banner-meta" style="color:#64748b;font-size:10px;margin-left:auto"></span>
             </div>`;
     }

@@ -237,15 +237,15 @@ function _toggleOPGChildrenView(fileId, btn) {
     const next = current === 'off' ? 'crops' : current === 'crops' ? 'all' : 'off';
     state.opgChildrenMode = next;
 
-    // Update button text — keep '🦷 Объекты' prefix across all states
+    // Update button text — keep '🦷 Objects' prefix across all states
     if (next === 'off') {
-        btn.textContent = '🦷 Объекты';
+        btn.textContent = '🦷 Objects';
         btn.classList.remove('active');
     } else if (next === 'crops') {
-        btn.textContent = '🦷 Объекты: кропы';
+        btn.textContent = '🦷 Objects: crops';
         btn.classList.add('active');
     } else {
-        btn.textContent = '🦷 Объекты: все';
+        btn.textContent = '🦷 Objects: all';
         btn.classList.add('active');
     }
 

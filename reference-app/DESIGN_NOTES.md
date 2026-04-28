@@ -95,6 +95,26 @@ formulas stack). Added a `< 900 px` breakpoint per the brief that
 collapses the whole layout to a single column and hides the sidebars.
 The grid columns reduce to `1fr` and `methods-grid` becomes 2-up.
 
+## Independent sanity-check via Claude Design
+
+A second-opinion mockup was generated through Claude Design (Anthropic
+Labs research preview) using the same brief — see
+`docs/figures/claude_design_mockup.md` for the project URL and full
+visual breakdown.
+
+The Claude Design output **converges** on the same palette, sandbox
+banner, four-row-by-sixteen-cell formula, and ETALON / mismatch
+metaphor — useful confirmation that the design language is sound.
+
+It also **diverges** in one important place worth recording: Claude
+Design rendered each tooth as a simplified icon, whereas the
+production UI uses the **5-zone V-M-D-L + O polygon SVG** (vestibular,
+mesial, distal, lingual + central occlusal). The 5-zone SVG is the
+correct clinical primitive — it encodes per-surface coding for caries,
+restoration coverage, and endo access cavities (e.g. `restored:mod`,
+`caries:d`, `endo:o` from the ORIS grammar). The icon-style render
+loses that information density. **The 5-zone SVG stays.**
+
 ## Assumptions documented
 
 A few autonomous decisions were taken without consultation:

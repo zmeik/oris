@@ -607,7 +607,7 @@ function _setupCropCanvasTooltip(canvas, card, fileId) {
             const rx = (e.clientX - rect.left) * dispScaleX;
             const isEdge = rx < edgeSize || rx > canvas.width - edgeSize;
             if (!isEdge) {
-                canvas.title = `${card.fdi}: Кликните на объект | Край: изменить размер`;
+                canvas.title = `${card.fdi}: Click an object | Edge: resize`;
                 canvas.style.cursor = 'default';
             }
         }
@@ -1184,7 +1184,7 @@ function _renderCropCarousel(fileId, jaw) {
         // Tooltip on card
         const confStr = card.conf ? ` ${Math.round(card.conf*100)}%` : '';
         const gtTip = card.gtAbbr ? `\nGT: ${card.gtAbbr} (${card.gtRaw})` : '';
-        cardEl.title = noDet ? `${fdi} — нет детекции\nКлик: нарисовать кроп вручную` : `${fdi} — ${card.gtAbbr || card.cls}${confStr}${gtTip}\nКлик: развернуть | Перетащи на зуб для переназначения`;
+        cardEl.title = noDet ? `${fdi} — no detection\nClick: draw crop manually` : `${fdi} — ${card.gtAbbr || card.cls}${confStr}${gtTip}\nClick: expand | Drag to a tooth to reassign`;
         // Click on empty card → draw manual crop on OPG
         if (noDet) {
             cardEl.addEventListener('click', (e) => {
@@ -1198,7 +1198,7 @@ function _renderCropCarousel(fileId, jaw) {
         const cvs = document.createElement('canvas');
         cvs.className = 'cc-canvas';
         cvs.width = 120; cvs.height = 120; // will be adjusted by draw
-        cvs.title = noDet ? fdi : `${fdi}: ${card.cls}${confStr}\nКлик: развернуть | Край: изменить размер`;
+        cvs.title = noDet ? fdi : `${fdi}: ${card.cls}${confStr}\nClick: expand | Edge: resize`;
         cardEl.appendChild(cvs);
 
         // Label
@@ -1482,7 +1482,7 @@ function _activateCropCard(fileId, fdi) {
             if (asb) asb.style.display = '';
             // Update canvas tooltip for expanded mode
             const activeCvs = el.querySelector('.cc-canvas');
-            if (activeCvs) activeCvs.title = `${fdi}: Кликните на объект | Край: изменить размер`;
+            if (activeCvs) activeCvs.title = `${fdi}: Click an object | Edge: resize`;
             // Redraw at high resolution (aspect-correct)
             const cvs = el.querySelector('.cc-canvas');
             if (cvs && card && card.bbox) {
@@ -1855,7 +1855,7 @@ async function _initCropCarousel(fileId) {
             _refreshOPGChildrenOverlay(fileId);
             // Set "Объекты" button to active state
             const _objBtn = _initCaseEl.querySelector('.opg-filter-btn[onclick*="toggleOPGChildrenView"]');
-            if (_objBtn) { _objBtn.textContent = '🦷 Объекты: все'; _objBtn.classList.add('active'); }
+            if (_objBtn) { _objBtn.textContent = '🦷 Objects: all'; _objBtn.classList.add('active'); }
         };
         if (_initOPG && _initOPG.complete) setTimeout(_drawAll, 100);
         else if (_initOPG) _initOPG.addEventListener('load', _drawAll);

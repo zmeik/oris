@@ -319,7 +319,7 @@ async function loadArena() {
         _loadingBanner = document.createElement('div');
         _loadingBanner.id = 'arena-loading-banner';
         _loadingBanner.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:9999;background:#6366f1;color:#fff;padding:10px 24px;border-radius:8px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,0.4);display:flex;align-items:center;gap:10px';
-        _loadingBanner.innerHTML = '<span style="animation:spin 1s linear infinite;display:inline-block">⟳</span> <span id="arena-loading-text">Загрузка Арены...</span>';
+        _loadingBanner.innerHTML = '<span style="animation:spin 1s linear infinite;display:inline-block">⟳</span> <span id="arena-loading-text">Loading Arena…</span>';
         document.body.appendChild(_loadingBanner);
         // Add spin animation
         if (!document.getElementById('arena-spin-style')) {
@@ -338,7 +338,7 @@ async function loadArena() {
     container.innerHTML = '';
 
     // Load ground truth from DATABASE first, then fallback to localStorage
-    _updateLoading(`Загрузка GT данных: 0/${cases.length}...`);
+    _updateLoading(`Loading ground truth: 0/${cases.length}…`);
     let _gtLoaded = 0;
     for (const tc of cases) {
         try {
@@ -361,7 +361,7 @@ async function loadArena() {
             }
         } catch(e) { console.warn('GT DB fetch failed for', tc.file_id); }
         _gtLoaded++;
-        _updateLoading(`Загрузка GT данных: ${_gtLoaded}/${cases.length}...`);
+        _updateLoading(`Loading ground truth: ${_gtLoaded}/${cases.length}…`);
     }
     // Fallback: merge localStorage (DB takes priority)
     try {
@@ -429,7 +429,7 @@ async function loadArena() {
             groupDiv.innerHTML = `<div class="arena-patient-group-header">
                 <h2>${surname} ${firstName}</h2>
                 <span class="group-badge">${groupCases.length} снимков</span>
-                <a href="/patient/${patientId}/verify" target="_blank" style="color:#60a5fa;font-size:11px;text-decoration:none;margin-left:8px;padding:3px 10px;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.35);border-radius:4px;font-weight:500" title="Открыть карту пациента в новой вкладке">📋 Карта →</a>
+                <a href="/patient/${patientId}/verify" target="_blank" style="color:#60a5fa;font-size:11px;text-decoration:none;margin-left:8px;padding:3px 10px;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.35);border-radius:4px;font-weight:500" title="Open patient card in new tab">📋 Card →</a>
             </div>`;
         }
 
@@ -487,14 +487,14 @@ async function loadArena() {
                     return { file_id: c.file_id, filled: otherFilled };
                 }).filter(s => s.filled > 0);
                 if (snapOptions.length > 0) {
-                    gtCopyBtn = `<button class="gt-copy-btn" onclick="showGTCopyMenu(event, ${tc.file_id}, ${patientId})" title="Скопировать эталон из другого снимка этого пациента">📋 Копировать ГТ из…</button>`;
+                    gtCopyBtn = `<button class="gt-copy-btn" onclick="showGTCopyMenu(event, ${tc.file_id}, ${patientId})" title="Copy ground truth from another image of this patient">📋 Copy GT from…</button>`;
                 }
             }
 
             // Title: full name for solo cases, snapshot index for groups
-            const cardLinkHtml = `<a href="/patient/${tc.patient_id}/verify" target="_blank" style="color:#60a5fa;font-size:11px;text-decoration:none;margin-left:8px;padding:2px 8px;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.35);border-radius:4px;font-weight:500" title="Открыть карту пациента в новой вкладке">📋 Карта →</a>`;
+            const cardLinkHtml = `<a href="/patient/${tc.patient_id}/verify" target="_blank" style="color:#60a5fa;font-size:11px;text-decoration:none;margin-left:8px;padding:2px 8px;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.35);border-radius:4px;font-weight:500" title="Open patient card in new tab">📋 Card →</a>`;
             const titleHtml = isGroup
-                ? `<h3 class="snap-title"><span class="snap-idx">Снимок ${si+1}</span> <span style="color:var(--text-dim);font-size:11px">file_id=${tc.file_id}</span> ${gtCopyBtn}</h3>`
+                ? `<h3 class="snap-title"><span class="snap-idx">Image ${si+1}</span> <span style="color:var(--text-dim);font-size:11px">file_id=${tc.file_id}</span> ${gtCopyBtn}</h3>`
                 : `<h2 style="font-size:16px;margin-bottom:2px;font-weight:600">${surname} ${firstName} <span style="color:var(--text-dim);font-size:12px;font-weight:400">file_id=${tc.file_id}</span>${cardLinkHtml}</h2>`;
 
             caseDiv.innerHTML = `
@@ -504,11 +504,11 @@ async function loadArena() {
                 <details class="card-hint-collapsible" id="card-hint-wrap-${tc.file_id}" style="margin:6px 0 10px" ontoggle="localStorage.setItem('cardHintOpen_${tc.file_id}', this.open ? '1' : '0')">
                     <summary id="card-hint-summary-${tc.file_id}" style="cursor:pointer;list-style:none;padding:7px 12px;border-radius:6px;background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.25);font-size:12px;color:#fbbf24;display:flex;align-items:center;gap:8px;user-select:none">
                         <span style="font-size:11px;transition:transform 0.15s">▸</span>
-                        <b>📋 Из карты пациента</b>
-                        <span id="card-hint-summary-text-${tc.file_id}" style="color:#cbd5e1;font-weight:500;opacity:0.9;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">загрузка…</span>
+                        <b>📋 From patient card</b>
+                        <span id="card-hint-summary-text-${tc.file_id}" style="color:#cbd5e1;font-weight:500;opacity:0.9;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">loading…</span>
                     </summary>
                     <div class="card-hint-bar" id="card-hint-${tc.file_id}" style="padding:10px 12px;margin-top:4px;border-radius:6px;background:linear-gradient(180deg,rgba(251,191,36,0.04),rgba(251,191,36,0.01));border:1px solid rgba(251,191,36,0.18);font-size:12px;color:#e2e8f0;line-height:1.55">
-                        <span style="opacity:0.65;color:#fbbf24">⏳ Проверка карты пациента…</span>
+                        <span style="opacity:0.65;color:#fbbf24">⏳ Checking patient card…</span>
                     </div>
                 </details>
 
@@ -520,16 +520,16 @@ async function loadArena() {
                             <canvas class="arena-opg-highlight-canvas" id="arena-opg-canvas-${tc.file_id}"></canvas>
                         </div>
                         <div class="arena-opg-toolbar" id="arena-opg-toolbar-${tc.file_id}">
-                            <button class="opg-filter-btn active" onclick="arenaOPGFilter(${tc.file_id},'original',this)">Ориг.</button>
+                            <button class="opg-filter-btn active" onclick="arenaOPGFilter(${tc.file_id},'original',this)">Original</button>
                             <button class="opg-filter-btn" onclick="arenaOPGFilter(${tc.file_id},'clahe',this)">CLAHE</button>
-                            <button class="opg-filter-btn" onclick="arenaOPGFilter(${tc.file_id},'contrast',this)">Контраст</button>
-                            <button class="opg-filter-btn" onclick="arenaOPGFilter(${tc.file_id},'bone_window',this)">Кость</button>
-                            <button class="opg-filter-btn" onclick="arenaOPGFilter(${tc.file_id},'inverted',this)">Инверт</button>
+                            <button class="opg-filter-btn" onclick="arenaOPGFilter(${tc.file_id},'contrast',this)">Contrast</button>
+                            <button class="opg-filter-btn" onclick="arenaOPGFilter(${tc.file_id},'bone_window',this)">Bone</button>
+                            <button class="opg-filter-btn" onclick="arenaOPGFilter(${tc.file_id},'inverted',this)">Invert</button>
                             <span style="flex:1"></span>
-                            <button class="opg-filter-btn" onclick="_toggleOPGChildrenView(${tc.file_id},this)" title="Переключить отображение объектов на панораме (OFF / Кропы / Все)">🦷 Объекты</button>
-                            <button class="opg-filter-btn" onclick="_toggleFDIGridOverlay(${tc.file_id},this)" title="Показать сетку 32 FDI позиций (OFF / Только занятые / Все 32)">🔲 FDI</button>
-                            <button class="opg-filter-btn" onclick="arenaOPGToggleSeg(${tc.file_id},this)">Сегмент.</button>
-                            <button class="opg-filter-btn" onclick="_toggleExpertOverlay(${tc.file_id},this)" title="Показать экспертные правки bbox на панораме">✎ Эксперт</button>
+                            <button class="opg-filter-btn" onclick="_toggleOPGChildrenView(${tc.file_id},this)" title="Toggle object overlays on the panorama (OFF / Crops / All)">🦷 Objects</button>
+                            <button class="opg-filter-btn" onclick="_toggleFDIGridOverlay(${tc.file_id},this)" title="Show FDI grid of 32 positions (OFF / Occupied only / All 32)">🔲 FDI</button>
+                            <button class="opg-filter-btn" onclick="arenaOPGToggleSeg(${tc.file_id},this)">Segments</button>
+                            <button class="opg-filter-btn" onclick="_toggleExpertOverlay(${tc.file_id},this)" title="Show expert bbox edits on the panorama">✎ Expert</button>
                         </div>
                         <div class="arena-legend">
                             <div class="leg-item"><div class="leg-dot" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1)">·</div>Инт.</div>
@@ -555,21 +555,21 @@ async function loadArena() {
                     </div>
                     <div class="arena-formulas-col">
                         <div class="arena-formulas" id="arena-formulas-${tc.file_id}">
-                            ${renderArenaFormulaRow('ground-truth', '🎯 ЭТАЛОН', gtFilled >= 32 ? '✓ Полная разметка' : `Разметка ${gtFilled}/32`, gt, null, tc.file_id, true)}
+                            ${renderArenaFormulaRow('ground-truth', '🎯 GROUND TRUTH', gtFilled >= 32 ? '✓ All 32 cells annotated' : `${gtFilled}/32 cells annotated`, gt, null, tc.file_id, true)}
                             ${leaderHtml ? `<div class="arena-leader-row" style="border-left:2px solid var(--green);padding-left:2px;">${leaderHtml}</div>` : ''}
                             <details class="arena-algos-collapsible">
-                                <summary style="font-size:11px;color:var(--text-dim);cursor:pointer;padding:4px 0;">Ещё ${restCount} алгоритм${restCount > 4 ? 'ов' : restCount > 1 ? 'а' : ''}: ${top3Text}</summary>
+                                <summary style="font-size:11px;color:var(--text-dim);cursor:pointer;padding:4px 0;">${restCount} more algorithm${restCount === 1 ? '' : 's'}: ${top3Text}</summary>
                                 ${restHtml}
                             </details>
                         </div>
                         <div class="arena-done-status" id="arena-done-status-${tc.file_id}" style="margin-top:4px;font-size:11px;color:var(--text-dim);text-align:center"></div>
                         <details class="gt-history-panel" id="gt-history-${tc.file_id}" ontoggle="if(this.open) _loadGTHistory(${tc.file_id})">
-                            <summary>&#128336; История изменений
-                                <a href="/expert-dashboard" target="_blank" style="float:right;font-size:9px;color:#60a5fa;font-weight:400;margin-right:8px" title="Открыть полный дашборд эксперта">Все действия ↗</a>
+                            <summary>&#128336; Change history
+                                <a href="/expert-dashboard" target="_blank" style="float:right;font-size:9px;color:#60a5fa;font-weight:400;margin-right:8px" title="Open full expert dashboard">All actions ↗</a>
                             </summary>
                             <div style="display:flex;gap:4px;padding:2px 6px;font-size:9px;">
-                                <button class="gt-scope-btn active" data-scope="file" onclick="_toggleHistoryScope(${tc.file_id},'file',this)" style="padding:1px 6px;border:1px solid #475569;border-radius:3px;background:#334155;color:#cbd5e1;cursor:pointer;font-size:9px;">Этот файл</button>
-                                <button class="gt-scope-btn" data-scope="all" onclick="_toggleHistoryScope(${tc.file_id},'all',this)" style="padding:1px 6px;border:1px solid #475569;border-radius:3px;background:transparent;color:#64748b;cursor:pointer;font-size:9px;">Все файлы</button>
+                                <button class="gt-scope-btn active" data-scope="file" onclick="_toggleHistoryScope(${tc.file_id},'file',this)" style="padding:1px 6px;border:1px solid #475569;border-radius:3px;background:#334155;color:#cbd5e1;cursor:pointer;font-size:9px;">This file</button>
+                                <button class="gt-scope-btn" data-scope="all" onclick="_toggleHistoryScope(${tc.file_id},'all',this)" style="padding:1px 6px;border:1px solid #475569;border-radius:3px;background:transparent;color:#64748b;cursor:pointer;font-size:9px;">All files</button>
                             </div>
                             <div class="gt-history-list"></div>
                         </details>
@@ -578,15 +578,15 @@ async function loadArena() {
                         <div id="tooth-detail-card-${tc.file_id}" style="display:none;margin-bottom:8px;">
                             <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;">
                                 <div style="font-size:14px;font-weight:700;margin-bottom:8px;">
-                                    Зуб <span id="td-fdi-${tc.file_id}"></span> <span id="td-status-${tc.file_id}" style="font-size:11px;color:var(--text-dim);"></span>
+                                    Tooth <span id="td-fdi-${tc.file_id}"></span> <span id="td-status-${tc.file_id}" style="font-size:11px;color:var(--text-dim);"></span>
                                 </div>
                                 <div id="td-root-preview-${tc.file_id}" style="text-align:center;margin-bottom:8px;"></div>
                                 <div id="td-pathology-btns-${tc.file_id}"></div>
                             </div>
                         </div>
-                        <div class="td-placeholder" id="td-placeholder-${tc.file_id}">Выберите зуб для деталей</div>
+                        <div class="td-placeholder" id="td-placeholder-${tc.file_id}">Click a tooth cell to see details</div>
                         <div class="arena-detail-panel" id="arena-detail-${tc.file_id}">
-                            <div class="arena-detail-empty">Кликните на название алгоритма, чтобы увидеть детали</div>
+                            <div class="arena-detail-empty">Click an algorithm name to see details</div>
                         </div>
                     </div>
                 </div>
@@ -638,13 +638,13 @@ async function loadArena() {
         addBtn.innerHTML = `
             <button class="arena-add-btn" onclick="openSandboxImportDialog()" title="Импортировать OPG в sandbox">
                 <span style="font-size:24px;line-height:1">+</span>
-                <span style="font-size:11px">Импорт OPG</span>
+                <span style="font-size:11px">Import OPG</span>
             </button>`;
     } else {
         addBtn.innerHTML = `
-            <button class="arena-add-btn" onclick="openArenaAddDialog()" title="Добавить пациента в арену">
+            <button class="arena-add-btn" onclick="openArenaAddDialog()" title="Add a patient case to the arena">
                 <span style="font-size:24px;line-height:1">+</span>
-                <span style="font-size:11px">Добавить кейс</span>
+                <span style="font-size:11px">Add case</span>
             </button>`;
     }
     container.appendChild(addBtn);
@@ -658,7 +658,7 @@ async function loadArena() {
     requestAnimationFrame(() => _alignConnectors());
 
     // Preload YOLO detections for hover-highlight + init crop carousels
-    _updateLoading('Загрузка кропов зубов...');
+    _updateLoading('Loading tooth crops…');
     const _arenaFiles = [];
     document.querySelectorAll('.arena-case[id^="arena-case-"]').forEach(ac => {
         const fid = ac.id.replace('arena-case-', '');
@@ -668,7 +668,7 @@ async function loadArena() {
     for (const fid of _arenaFiles) {
         _loadYoloDetections(fid).then(data => {
             _cropsLoaded++;
-            _updateLoading(`Кропы: ${_cropsLoaded}/${_arenaFiles.length}...`);
+            _updateLoading(`Tooth crops: ${_cropsLoaded}/${_arenaFiles.length}…`);
             if (_cropsLoaded >= _arenaFiles.length) {
                 const banner = document.getElementById('arena-loading-banner');
                 if (banner) banner.style.display = 'none';
@@ -721,7 +721,7 @@ function _alignConnectors() {
     }
 }
 
-// ═══ Диалог добавления нового кейса в арену ═══
+// ═══ Dialog: add a new case to the arena ═══
 function openArenaAddDialog() {
     let dlg = document.getElementById('arena-add-dialog');
     if (!dlg) {
@@ -731,7 +731,7 @@ function openArenaAddDialog() {
         dlg.innerHTML = `
             <div class="arena-add-dialog-box">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                    <h3 style="margin:0;font-size:14px">Добавить кейс в арену</h3>
+                    <h3 style="margin:0;font-size:14px">Add a case to the arena</h3>
                     <button onclick="this.closest('.arena-add-dialog-overlay').style.display='none'"
                         style="background:none;border:none;color:var(--text-dim);font-size:18px;cursor:pointer">✕</button>
                 </div>
@@ -956,7 +956,7 @@ async function _handleSandboxFiles(files) {
     const listEl = document.getElementById('sbx-import-list');
     const statusEl = document.getElementById('sbx-import-status');
     listEl.innerHTML = '';
-    statusEl.textContent = `Загрузка ${files.length} файлов...`;
+    statusEl.textContent = `Loading ${files.length} files…`;
 
     let ok = 0, fail = 0;
     for (const f of files) {
@@ -1104,7 +1104,7 @@ async function _loadCardHints(fileId) {
         const cardFdis = data.fdi_list || [];
         if (cardFdis.length === 0) {
             el.innerHTML = `<span style="opacity:0.5;color:#94a3b8">📋 В карте нет задокументированных имплантатов</span>`;
-            setSummary('0 имплантатов в карте');
+            setSummary('0 implants in patient card');
             return;
         }
         const gt = arenaGroundTruth[fileId] || {};

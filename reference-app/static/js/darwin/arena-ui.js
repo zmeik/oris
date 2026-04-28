@@ -47,7 +47,7 @@ function _applyToothStatus(value, surfaces) {
     if (gtBtn) {
         if (filled >= 32) {
             gtBtn.classList.add('ready');
-            gtBtn.title = 'Сохранить эталон и пересчитать алгоритмы';
+            gtBtn.title = 'Save ground truth and recompute algorithms';
             gtBtn.onclick = () => arenaConfirmGT(fileId);
         } else {
             gtBtn.classList.remove('ready');
@@ -117,7 +117,7 @@ function _applyToothLayered(layers) {
     if (gtBtn) {
         if (filled >= 32) {
             gtBtn.classList.add('ready');
-            gtBtn.title = 'Сохранить эталон и пересчитать алгоритмы';
+            gtBtn.title = 'Save ground truth and recompute algorithms';
             gtBtn.onclick = () => arenaConfirmGT(fileId);
         } else {
             gtBtn.classList.remove('ready');
@@ -548,7 +548,7 @@ function _renderQualitySummary(fileId, data) {
             const r1badge = _badge('R1', `R1: ${nUnmatched} лишних`, '#9333ea', lines);
             // Click to toggle YOLO bbox highlights on OPG
             r1badge.style.cursor = 'pointer';
-            r1badge.title = 'Кликните чтобы показать/скрыть детекции на снимке';
+            r1badge.title = 'Click to show/hide detections on the image';
             r1badge.addEventListener('click', () => _toggleR1Highlights(fileId, q.unmatched_detections, data.detections || []));
             bar.appendChild(r1badge);
         }

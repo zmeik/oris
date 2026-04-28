@@ -401,7 +401,7 @@ async function loadExperimentPreview(expId, codename) {
         <div class="vote-bar">
             <button class="vote-btn boost" onclick="expertVote('${pv.codename}','boost')" title="Добавить +10% к score">
                 <span class="vote-icon">👍</span>
-                <span class="vote-label">Перспективный</span>
+                <span class="vote-label">Promising</span>
             </button>
             <button class="vote-btn champion" onclick="expertVote('${pv.codename}','champion')" title="Назначить чемпионом поколения">
                 <span class="vote-icon">⭐</span>

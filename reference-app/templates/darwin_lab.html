@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Darwin Lab Arena — ORIS reference UI</title>
-<meta name="description" content="Reference UI for ORIS dental radiology schema. Q1 paper-quality companion app for IJOS submission. All examples synthetic — no PII.">
+<title>ORIS v0.1 Reference UI — Dental Panoramic Schema Demo</title>
+<meta name="description" content="Reference UI for ORIS v0.1 — Open Radiographic Imaging Schema for dental panoramic reports. Q1 paper-quality companion app for IJOS submission. All examples synthetic — no PII.">
 <link rel="preconnect" href="https://rsms.me">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,39 +12,34 @@
 <link rel="stylesheet" href="/static/css/darwin_lab.css">
 </head>
 <body data-theme="dark">
-<!-- Back-nav (breadcrumb) — synthetic-data badge + privacy notice -->
+<!-- Top breadcrumb: ORIS branding + privacy banner + GitHub link -->
 <nav class="back-nav" role="navigation" aria-label="Breadcrumb"
      style="background:var(--bg-elev);border-bottom:1px solid var(--border);padding:6px 16px;display:flex;align-items:center;gap:12px;font-size:12px;flex-shrink:0;font-family:var(--font-sans, system-ui)">
-    <a href="/" style="color:var(--text-muted);text-decoration:none;display:flex;align-items:center;gap:4px"
-       onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text-muted)'"
-       aria-label="Back to Patient Viewer">
-        <span style="font-size:14px" aria-hidden="true">←</span> Patient Viewer
-    </a>
-    <span style="color:var(--text-faint)" aria-hidden="true">›</span>
-    <span style="color:var(--purple);opacity:0.7" aria-label="Radiology">🔬 Рентген</span>
-    <span style="color:var(--text-faint)" aria-hidden="true">›</span>
-    <span style="color:var(--text);font-weight:500">Darwin Lab</span>
-    <span style="display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-strong);font-size:10px;font-weight:600;letter-spacing:0.04em" aria-label="Privacy banner">SYNTHETIC · NO PII</span>
+    <span style="color:var(--text);font-weight:600;letter-spacing:0.02em">ORIS v0.1</span>
+    <span style="color:var(--text-faint)" aria-hidden="true">·</span>
+    <span style="color:var(--text-muted);font-weight:400">Open Radiographic Imaging Schema</span>
+    <span style="color:var(--text-faint)" aria-hidden="true">·</span>
+    <span style="color:var(--text-muted)">Reference UI</span>
+    <span style="display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-strong);font-size:10px;font-weight:600;letter-spacing:0.04em" aria-label="Privacy banner" title="All cases are anonymised, EXIF-stripped, watermarked synthetic data. No PII.">SYNTHETIC · NO PII</span>
     <span style="flex:1"></span>
-    <a href="/dissertation-cases" style="color:var(--text-muted);text-decoration:none;font-size:11px"
-       onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--text-muted)'">🎓 Диссертация</a>
-    <a href="/panorama-workspace" style="color:var(--text-muted);text-decoration:none;font-size:11px"
-       onmouseover="this.style.color='var(--purple)'" onmouseout="this.style.color='var(--text-muted)'">🩺 Клинический обзор</a>
+    <a href="https://github.com/zmeik/oris" target="_blank" rel="noopener" style="color:var(--text-muted);text-decoration:none;font-size:11px;display:inline-flex;align-items:center;gap:4px"
+       onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-muted)'" aria-label="GitHub repository">
+        <span aria-hidden="true">⌥</span> GitHub
+    </a>
+    <a href="/static/PRIVACY.html" target="_blank" rel="noopener" style="color:var(--text-muted);text-decoration:none;font-size:11px"
+       onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-muted)'" aria-label="Privacy policy">Privacy</a>
 </nav>
 <div class="app">
     <!-- Top bar -->
     <header class="topbar" role="banner">
-        <h1>Darwin Lab <span>ORIS reference UI · synthetic data · paper-companion</span></h1>
+        <h1>ORIS Reference UI <span>v0.1 · synthetic data · paper-companion app for IJOS submission</span></h1>
         <nav class="nav" role="navigation" aria-label="Primary">
-            <a href="/" aria-label="Patients">📋 Пациенты</a>
-            <a href="/panorama-workspace" aria-label="Clinical overview">🩺 Клинический обзор</a>
-            <a href="/panorama-monitor" aria-label="Monitor">📊 Монитор</a>
-            <a href="/darwin-lab" class="active" onclick="showView('tree');return false;" aria-current="page">🧬 Эволюция</a>
-            <a href="#" onclick="showView('evaluate');return false;" id="nav-evaluate" aria-label="Evaluate">🧪 Оценка</a>
-            <a href="#" onclick="showView('metrics');return false;" id="nav-metrics" aria-label="Metrics">📊 Метрики</a>
-            <a href="#" onclick="showView('implant-lab');return false;" id="nav-implant" aria-label="Implant analysis">🦴 Имплант-анализ</a>
-            <a href="#" onclick="showView('arena');return false;" id="nav-arena" aria-label="Arena">🎯 Арена</a>
-            <button class="theme-toggle" type="button" onclick="document.body.classList.toggle('theme-light');try{localStorage.setItem('oris-theme', document.body.classList.contains('theme-light')?'light':'dark')}catch(e){}" aria-label="Toggle light/dark theme" title="Toggle light/dark theme">Theme</button>
+            <a href="#" onclick="showView('arena');return false;" id="nav-arena" class="active" aria-current="page" aria-label="Dental formula and OPG canvas (Figure 2)">🎯 Arena</a>
+            <a href="#" onclick="showView('tree');return false;" id="nav-tree" aria-label="Evolutionary algorithm tree (Paper A companion)">🧬 Evolution</a>
+            <a href="#" onclick="showView('evaluate');return false;" id="nav-evaluate" aria-label="Algorithm evaluation">🧪 Evaluate</a>
+            <a href="#" onclick="showView('metrics');return false;" id="nav-metrics" aria-label="Inter-algorithm reliability metrics">📊 Metrics</a>
+            <a href="#" onclick="showView('implant-lab');return false;" id="nav-implant" aria-label="Implant assessment lab (4 methods)">🦴 Implant lab</a>
+            <button class="theme-toggle" type="button" onclick="document.body.classList.toggle('theme-light');try{localStorage.setItem('oris-theme', document.body.classList.contains('theme-light')?'light':'dark')}catch(e){}" aria-label="Toggle light/dark theme" title="Toggle light/dark theme (use light for paper screenshots)">☀ / ☾</button>
         </nav>
     </header>
     <script>
@@ -54,18 +49,18 @@
 
     <!-- Left sidebar: algorithm list -->
     <div class="sidebar" id="sidebar">
-        <h3>Алгоритмы</h3>
+        <h3>Algorithms</h3>
         <div id="algo-list"></div>
     </div>
 
     <!-- Center: D3 tree -->
     <div class="tree-area" id="tree-area">
         <div class="tree-controls">
-            <button class="active" onclick="setLayout('horizontal')">Кладограмма</button>
-            <button onclick="setLayout('radial')">Радиальное</button>
-            <button onclick="setLayout('vertical')">Вертикальное</button>
+            <button class="active" onclick="setLayout('horizontal')">Cladogram</button>
+            <button onclick="setLayout('radial')">Radial</button>
+            <button onclick="setLayout('vertical')">Vertical</button>
         </div>
-        <div class="tree-info" id="tree-info">Загрузка...</div>
+        <div class="tree-info" id="tree-info">Loading…</div>
         <svg id="tree-svg"></svg>
     </div>
 
@@ -74,7 +69,7 @@
         <div class="empty">
             <div>
                 <div style="font-size:48px;margin-bottom:12px;">🧬</div>
-                <div>Выберите алгоритм на дереве<br>или в списке слева</div>
+                <div>Select an algorithm in the tree<br>or in the list on the left</div>
             </div>
         </div>
     </div>
@@ -214,30 +209,30 @@
     <div class="arena-area" id="arena-area">
         <!-- Sandbox selector bar -->
         <div class="arena-sandbox-bar" id="arena-sandbox-bar">
-            <span class="sbx-label">Источник:</span>
+            <span class="sbx-label">Source:</span>
             <select id="arena-sandbox-select" onchange="switchSandbox(this.value)">
-                <option value="RUDN">Synthetic Demo Sandbox</option>
+                <option value="RUDN">Synthetic Demo Sandbox (3 anonymised RUDN K08.1 cases)</option>
             </select>
             <span class="sbx-count" id="arena-sandbox-count"></span>
-            <button class="sbx-btn" onclick="openNewSandboxDialog()">+ Новый</button>
-            <button class="sbx-btn" id="sbx-import-btn" onclick="openSandboxImportDialog()" style="display:none">Импорт OPG</button>
-            <button class="sbx-btn" id="sbx-delete-btn" onclick="deleteSandbox()" style="display:none;color:var(--red);border-color:rgba(239,68,68,0.3)">Удалить</button>
+            <button class="sbx-btn" onclick="openNewSandboxDialog()" title="Create a new sandbox to import your own synthetic OPG">+ New sandbox</button>
+            <button class="sbx-btn" id="sbx-import-btn" onclick="openSandboxImportDialog()" style="display:none">Import OPG</button>
+            <button class="sbx-btn" id="sbx-delete-btn" onclick="deleteSandbox()" style="display:none;color:var(--red);border-color:rgba(239,68,68,0.3)">Delete</button>
             <span style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                <button class="sbx-btn" id="batch-gt-btn" onclick="batchPrepopulateGT('preview')" style="color:var(--purple);border-color:rgba(168,85,247,0.4);" title="Предзаполнить GT из V5b (w8) для всех OPG без GT">🤖 Батч W8→GT</button>
-                <button class="sbx-btn" id="batch-w0-btn" onclick="batchW0ToGT('preview')" style="color:var(--cyan);border-color:rgba(34,211,238,0.4);" title="Предзаполнить GT из YOLO+SemiT-SAM (w0) для K08.1">🧠 W0→GT (K08.1)</button>
+                <button class="sbx-btn" id="batch-gt-btn" onclick="batchPrepopulateGT('preview')" style="color:var(--purple);border-color:rgba(168,85,247,0.4);" title="Prefill ground truth from W8 model (V5b) for all OPGs without GT — demonstrates §5.3 AI workflow">🤖 Batch W8→GT</button>
+                <button class="sbx-btn" id="batch-w0-btn" onclick="batchW0ToGT('preview')" style="color:var(--cyan);border-color:rgba(34,211,238,0.4);" title="Prefill GT from YOLO+SemiT-SAM (W0) on K08.1 cohort">🧠 W0→GT (K08.1)</button>
                 <span id="batch-gt-status" style="font-size:11px;color:var(--text-dim);"></span>
             </span>
         </div>
         <details class="arena-explainer">
             <summary style="cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;">
-                <h3 style="margin:0">🎯 Арена — как это работает</h3>
-                <span style="font-size:10px;color:var(--text-dim)">▸</span>
+                <h3 style="margin:0">🎯 Arena — how it works</h3>
+                <span style="font-size:10px;color:var(--text-dim)">▸ click to expand</span>
             </summary>
             <div style="margin-top:8px">
-            <div class="step"><div class="step-num">1</div><div class="step-text"><b>Посмотрите на снимок</b> — панорамный рентген (OPG) реального пациента</div></div>
-            <div class="step"><div class="step-num">2</div><div class="step-text"><b>Заполните эталон</b> (синяя строка) — кликайте по ячейкам чтобы отметить что вы видите на снимке.</div></div>
-            <div class="step"><div class="step-num">3</div><div class="step-text"><b>Сравните алгоритмы</b> — каждая строка ниже показывает что думает алгоритм. Красная рамка = ошибка.</div></div>
-            <div class="step"><div class="step-num">4</div><div class="step-text"><b>Голосуйте</b> — 👍 перспективный, 💀 безнадёжный.</div></div>
+            <div class="step"><div class="step-num">1</div><div class="step-text"><b>Examine the radiograph</b> — anonymised panoramic dental radiograph (OPG) of a real K08.1 patient (5% all-side cropped, EXIF-stripped, watermarked)</div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-text"><b>Fill the ground-truth row</b> (blue) — click any of the 32 tooth cells to set its layered status (e.g. <code>endo:mo+post+crowned</code>). The layer editor opens with the full 18-status × 5-surface grammar.</div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-text"><b>Compare algorithms</b> — each row below the GT shows what one algorithm predicts. Red border = disagreement with GT.</div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-text"><b>Cast votes</b> — 👍 promising, 💀 hopeless. Aggregated κ across the 31-algorithm population is in the Metrics tab.</div></div>
             </div>
         </details>
         <div id="arena-cases"></div>
@@ -265,7 +260,21 @@
 window.addEventListener('resize', renderTree);
 init();
 
-// Auto-open Arena if ?file_id= is present
+// Default to Arena view (Paper Figure 2) — reviewers should land on the dental formula,
+// not the algorithm tree. The tree is reachable via the Evolution nav tab.
+(function() {
+    var params = new URLSearchParams(location.search);
+    var fileId = params.get('file_id');
+    var initialView = params.get('view');
+    // If no explicit ?view= and no ?file_id=, land on Arena
+    if (!initialView && !fileId) {
+        try { showView('arena'); } catch(e) {}
+    } else if (initialView) {
+        try { showView(initialView); } catch(e) {}
+    }
+})();
+
+// Auto-open Arena if ?file_id= is present + scroll to that case
 (function() {
     var params = new URLSearchParams(location.search);
     var fileId = params.get('file_id');

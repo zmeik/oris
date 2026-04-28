@@ -785,8 +785,15 @@ def serve_upload(image_id: int):
 
 
 @app.route("/panorama/sandbox/<int:file_id>/image")
+@app.route("/panorama/<int:file_id>/image")
 def panorama_image(file_id: int):
-    """Serve the OPG image associated with a file_id (synthetic placeholder by default)."""
+    """Serve the OPG image associated with a file_id (synthetic placeholder by default).
+
+    Two URL aliases:
+      - /panorama/sandbox/<id>/image  — sandbox-aware path used by some JS
+      - /panorama/<id>/image          — production-API path used by opg-viewer.js
+    Both return the same image so the production JS modules work unmodified.
+    """
     row = get_db().execute(
         """
         SELECT u.bytes, u.mime FROM files f
