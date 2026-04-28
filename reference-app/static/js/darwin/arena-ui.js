@@ -32,13 +32,15 @@ function _applyToothStatus(value, surfaces) {
     const filled = ALL32.filter(f => arenaGroundTruth[fileId]?.[f] || (_rd[f] && Object.keys(_rd[f]).length > 0)).length;
     const row = cellEl.closest('.arena-formula-row');
     const sub = row.querySelector('.row-sub');
+    const _ti = (k, p) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k, p) : k;
     if (sub) {
         if (filled >= 32) {
-            sub.innerHTML = '✓ Полная разметка';
+            sub.innerHTML = _ti('fmlMarkedFull');
             sub.title = '';
         } else {
             const umTeeth = _getUnmarkedTeethList(fileId);
-            sub.innerHTML = `Разметка ${filled}/32` + (umTeeth ? ` <div style="color:rgba(239,68,68,0.8);font-size:8px;line-height:1.2">нет: ${umTeeth}</div>` : '');
+            sub.innerHTML = _ti('fmlMarkedSub', {n: filled})
+                + (umTeeth ? ` <div style="color:rgba(239,68,68,0.8);font-size:8px;line-height:1.2">${_ti('fmlMissingTeeth')} ${umTeeth}</div>` : '');
             sub.title = '';
         }
     }
@@ -47,11 +49,11 @@ function _applyToothStatus(value, surfaces) {
     if (gtBtn) {
         if (filled >= 32) {
             gtBtn.classList.add('ready');
-            gtBtn.title = 'Save ground truth and recompute algorithms';
+            gtBtn.title = _ti('fmlSaveTitle');
             gtBtn.onclick = () => arenaConfirmGT(fileId);
         } else {
             gtBtn.classList.remove('ready');
-            gtBtn.title = `Отмечено ${filled}/32 зубов — отметьте все для сохранения`;
+            gtBtn.title = _ti('fmlNotReadyShort', {n: filled});
             gtBtn.onclick = null;
         }
     }
@@ -104,12 +106,14 @@ function _applyToothLayered(layers) {
     const filled = ALL32b.filter(f => arenaGroundTruth[fileId]?.[f] || (_rd2[f] && Object.keys(_rd2[f]).length > 0)).length;
     const row = cellEl.closest('.arena-formula-row');
     const sub = row.querySelector('.row-sub');
+    const _ti2 = (k, p) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k, p) : k;
     if (sub) {
         if (filled >= 32) {
-            sub.innerHTML = '✓ Полная разметка';
+            sub.innerHTML = _ti2('fmlMarkedFull');
         } else {
             const umTeeth2 = _getUnmarkedTeethList(fileId);
-            sub.innerHTML = `Разметка ${filled}/32` + (umTeeth2 ? ` <span style="color:rgba(239,68,68,0.8);font-size:9px">· нет: ${umTeeth2}</span>` : '');
+            sub.innerHTML = _ti2('fmlMarkedSub', {n: filled})
+                + (umTeeth2 ? ` <span style="color:rgba(239,68,68,0.8);font-size:9px">· ${_ti2('fmlMissingTeeth')} ${umTeeth2}</span>` : '');
         }
     }
     // Update GT confirm button state
@@ -117,11 +121,11 @@ function _applyToothLayered(layers) {
     if (gtBtn) {
         if (filled >= 32) {
             gtBtn.classList.add('ready');
-            gtBtn.title = 'Save ground truth and recompute algorithms';
+            gtBtn.title = _ti2('fmlSaveTitle');
             gtBtn.onclick = () => arenaConfirmGT(fileId);
         } else {
             gtBtn.classList.remove('ready');
-            gtBtn.title = `Отмечено ${filled}/32 зубов — отметьте все для сохранения`;
+            gtBtn.title = _ti2('fmlNotReadyShort', {n: filled});
             gtBtn.onclick = null;
         }
     }

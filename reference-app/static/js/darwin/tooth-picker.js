@@ -128,32 +128,29 @@ function renderArenaFormulaRow(type, label, sublabel, formula, groundTruth, file
     // GT confirm button — inactive until all 32 teeth marked
     let gtBtnHtml = '';
     if (type === 'ground-truth' && fileId) {
+        const _t = (k, p) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k, p) : k;
         const gtFormula = formula || {};
         const filledCount = Object.values(gtFormula).filter(v => v).length;
         const isReady = filledCount >= 32;
         const readyClass = isReady ? 'ready' : '';
-        const btnTitle = isReady ? 'Save ground truth and recompute algorithms' : `${filledCount}/32 teeth annotated — annotate all to save`;
+        const btnTitle = isReady
+            ? _t('fmlSaveTitle')
+            : _t('fmlNotReadyTitle', {filled: filledCount});
         const aiHintBtn = filledCount === 0
             ? `<div style="text-align:center;margin-bottom:2px;">
-                <button class="gt-confirm-btn" style="background:rgba(168,85,247,0.2);border-color:rgba(168,85,247,0.5);font-size:11px;padding:4px 8px;" id="gt-ai-btn-${fileId}" onclick="prefillGTFromAI(${fileId})" title="Prefill ground truth from AI analysis (you can correct any errors before saving)">🤖 AI prefill</button>
+                <button class="gt-confirm-btn" style="background:rgba(168,85,247,0.2);border-color:rgba(168,85,247,0.5);font-size:11px;padding:4px 8px;" id="gt-ai-btn-${fileId}" onclick="prefillGTFromAI(${fileId})" title="Prefill ground truth from AI analysis (you can correct any errors before saving)">${_t('fmlAIPrefill')}</button>
               </div>`
-            : `<button class="gt-confirm-btn" style="background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.3);font-size:9px;padding:2px 6px;" id="gt-ai-btn-${fileId}" onclick="prefillGTFromAI(${fileId})" title="Re-prefill ground truth from AI (will reset current annotation!)">🤖</button>`;
-        // Card prefill button removed in the reference-app: the
-        // /api/darwin/prefill-from-card endpoint lives in the production
-        // patient-card stack (Dissertation Case Viewer) and is not
-        // shipped here. Leaving the button caused it to hammer the
-        // missing endpoint and report endless save failures.
+            : `<button class="gt-confirm-btn" style="background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.3);font-size:9px;padding:2px 6px;" id="gt-ai-btn-${fileId}" onclick="prefillGTFromAI(${fileId})" title="${_t('fmlAIRetitle')}">🤖</button>`;
         gtBtnHtml = `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-end;margin-top:4px">`
             + aiHintBtn
             + `<button class="gt-confirm-btn ${readyClass}" id="gt-btn-${fileId}" onclick="${isReady ? `arenaConfirmGT(${fileId})` : ''}" title="${btnTitle}" style="margin:0">✓</button>`
             + `<span class="gt-save-indicator" id="gt-save-status-${fileId}"></span>`
-            + `<button class="gt-tm-btn" id="gt-tm-trigger-${fileId}" onclick="_openTimeMachine(${fileId})" title="Time machine — roll back to a previous annotation snapshot">&#128336;</button>`
-            + `<button class="crop-toggle-btn active" id="crop-toggle-${fileId}" onclick="_toggleCropCarousel(${fileId})" title="Show/hide tooth crops">▲▼</button>`
+            + `<button class="gt-tm-btn" id="gt-tm-trigger-${fileId}" onclick="_openTimeMachine(${fileId})" title="${_t('fmlTimeMachineTitle')}">&#128336;</button>`
+            + `<button class="crop-toggle-btn active" id="crop-toggle-${fileId}" onclick="_toggleCropCarousel(${fileId})" title="${_t('fmlCropToggle')}">▲▼</button>`
             + `</div>`
-            // Persistent save banner — visible always, positioned below the GT controls
             + `<div class="gt-save-banner" id="gt-save-banner-${fileId}" data-file="${fileId}" style="display:flex;align-items:center;gap:10px;margin:6px 0 4px;padding:6px 10px;border-radius:6px;background:rgba(15,23,42,0.4);border:1px solid rgba(148,163,184,0.18);font-size:11px;line-height:1.3;transition:background 0.3s,border-color 0.3s">
                 <span class="gt-save-banner-icon" style="font-size:14px;line-height:1">💾</span>
-                <span class="gt-save-banner-status" style="font-weight:600;color:#94a3b8">No changes</span>
+                <span class="gt-save-banner-status" data-i18n-fallback="fmlSaveBannerNoChanges" style="font-weight:600;color:#94a3b8">${_t('fmlSaveBannerNoChanges')}</span>
                 <span class="gt-save-banner-meta" style="color:#64748b;font-size:10px;margin-left:auto"></span>
             </div>`;
     }
@@ -166,7 +163,7 @@ function renderArenaFormulaRow(type, label, sublabel, formula, groundTruth, file
     <div class="arena-formula-row ${type === 'ground-truth' ? 'ground-truth' : ''}" ${deadStyle} data-codename="${codename||''}" data-file="${fileId||''}">
         <div class="row-label" ${labelClick}>
             <div>${label}</div>
-            <div class="row-sub">${sublabel}${type==='ground-truth' && fileId && sublabel.includes('/32') ? (() => { const gt = arenaGroundTruth[fileId] || {}; const filled = Object.values(gt).filter(v=>v).length; if (filled === 0) return ''; const _um = _getUnmarkedTeethList(fileId); return _um ? `<div style="color:rgba(239,68,68,0.8);font-size:8px;line-height:1.2;max-height:24px;overflow:hidden;text-overflow:ellipsis">нет: ${_um}</div>` : ''; })() : ''}</div>
+            <div class="row-sub">${sublabel}${type==='ground-truth' && fileId && sublabel.includes('/32') ? (() => { const gt = arenaGroundTruth[fileId] || {}; const filled = Object.values(gt).filter(v=>v).length; if (filled === 0) return ''; const _um = _getUnmarkedTeethList(fileId); const _missingLbl = (typeof OrisI18n !== 'undefined') ? OrisI18n.t('fmlMissingTeeth') : 'нет:'; return _um ? `<div style="color:rgba(239,68,68,0.8);font-size:8px;line-height:1.2;max-height:24px;overflow:hidden;text-overflow:ellipsis">${_missingLbl} ${_um}</div>` : ''; })() : ''}</div>
             ${voteHtml}
             ${gtBtnHtml}
         </div>
@@ -212,49 +209,63 @@ function arenaStatusIcon(s) {
     return '';
 }
 
-// ── Tooth Status Picker — категоризированное меню ──
-// Группы настраиваемые через UI (⚙). Хранятся в localStorage.
+// ── Tooth Status Picker — categorised menu ──
+// Group headers and item labels carry an `i18nKey` so OrisI18n can
+// translate them at render time (label is a fallback shown when no
+// translation is registered). The localStorage cache key was bumped
+// from darwin_tooth_groups → darwin_tooth_groups_v2 when the i18n
+// keys were introduced; older saves are dropped on first load.
 const _DEFAULT_TOOTH_GROUPS = [
-    { label: 'СТАТУС ЗУБА', items: [
-        { value: 'present',  label: 'Интактный',    icon: '·',  color: 'var(--surface2)',          key: '1' },
-        { value: 'missing',  label: 'Отсутствует',  icon: 'О',  color: 'rgba(75,85,99,0.4)',       key: '0' },
-        { value: 'impacted', label: 'Ретинир.',     icon: 'Rt', color: 'rgba(139,92,246,0.35)',   key: '8' },
+    { i18nKey: 'tpHeaderStatus', label: 'СТАТУС ЗУБА', items: [
+        { value: 'present',  i18nKey: 'tpItemPresent',   label: 'Интактный',    icon: '·',  color: 'var(--surface2)',          key: '1' },
+        { value: 'missing',  i18nKey: 'tpItemMissing',   label: 'Отсутствует',  icon: 'О',  color: 'rgba(75,85,99,0.4)',       key: '0' },
+        { value: 'impacted', i18nKey: 'tpItemImpacted',  label: 'Ретинир.',     icon: 'Rt', color: 'rgba(139,92,246,0.35)',   key: '8' },
     ]},
-    { label: 'ПАТОЛОГИЯ', items: [
-        { value: 'caries',   label: 'Кариес',       icon: 'С',  color: 'rgba(251,146,60,0.4)',     key: '2' },
-        { value: 'attrition',label: 'Стираемость',  icon: 'Ст', color: 'rgba(234,179,8,0.4)',      key: '6' },
-        { value: 'root',     label: 'Корень',       icon: 'R',  color: 'rgba(239,68,68,0.35)',     key: '5' },
+    { i18nKey: 'tpHeaderPathology', label: 'ПАТОЛОГИЯ', items: [
+        { value: 'caries',   i18nKey: 'tpItemCaries',    label: 'Кариес',       icon: 'С',  color: 'rgba(251,146,60,0.4)',     key: '2' },
+        { value: 'attrition',i18nKey: 'tpItemAttrition', label: 'Стираемость',  icon: 'Ст', color: 'rgba(234,179,8,0.4)',      key: '6' },
+        { value: 'root',     i18nKey: 'tpItemRootRem',   label: 'Корень',       icon: 'R',  color: 'rgba(239,68,68,0.35)',     key: '5' },
     ]},
-    { label: 'ЛЕЧЕНИЕ', items: [
-        { value: 'restored', label: 'Пломба',       icon: 'П',  color: 'rgba(59,130,246,0.35)',    key: '3' },
-        { value: 'endo',     label: 'Эндо',         icon: 'Э',  color: 'rgba(168,85,247,0.4)',     key: '4' },
+    { i18nKey: 'tpHeaderTreatment', label: 'ЛЕЧЕНИЕ', items: [
+        { value: 'restored', i18nKey: 'tpItemRestored', label: 'Пломба',        icon: 'П',  color: 'rgba(59,130,246,0.35)',    key: '3' },
+        { value: 'endo',     i18nKey: 'tpItemEndo',     label: 'Эндо',          icon: 'Э',  color: 'rgba(168,85,247,0.4)',     key: '4' },
     ]},
-    { label: 'ИМПЛАНТАТ', items: [
-        { value: 'impl_fixture',  label: 'Фикстура',       icon: 'И',   color: 'rgba(16,185,129,0.25)', key: 'q' },
-        { value: 'impl_cover',    label: '+ Заглушка',      icon: 'ИЗ',  color: 'rgba(16,185,129,0.3)',  key: 'w' },
-        { value: 'impl_healing',  label: '+ Формирователь', icon: 'ИФ',  color: 'rgba(16,185,129,0.4)',  key: 'e' },
-        { value: 'impl_abutment', label: '+ Абатмент',      icon: 'И',   color: 'rgba(16,185,129,0.45)', key: 't' },
-        { value: 'impl_temp_abut',label: '+ Врем. абатмент',icon: 'И',   color: 'rgba(16,185,129,0.42)', key: '' },
-        { value: 'impl_provisional',label:'+ Провиз. коронка',icon:'И', color: 'rgba(16,185,129,0.48)', key: '' },
-        { value: 'impl_restored', label: '+ Коронка',       icon: 'ИК',  color: 'rgba(16,185,129,0.5)',  key: 'y' },
+    { i18nKey: 'tpHeaderImplant', label: 'ИМПЛАНТАТ', items: [
+        { value: 'impl_fixture',     i18nKey: 'tpItemImplFixture',     label: 'Фикстура',         icon: 'И',  color: 'rgba(16,185,129,0.25)', key: 'q' },
+        { value: 'impl_cover',       i18nKey: 'tpItemImplCover',       label: '+ Заглушка',       icon: 'ИЗ', color: 'rgba(16,185,129,0.3)',  key: 'w' },
+        { value: 'impl_healing',     i18nKey: 'tpItemImplHealing',     label: '+ Формирователь',  icon: 'ИФ', color: 'rgba(16,185,129,0.4)',  key: 'e' },
+        { value: 'impl_abutment',    i18nKey: 'tpItemImplAbutment',    label: '+ Абатмент',        icon: 'И',  color: 'rgba(16,185,129,0.45)', key: 't' },
+        { value: 'impl_temp_abut',   i18nKey: 'tpItemImplTempAbut',    label: '+ Врем. абатмент', icon: 'И',  color: 'rgba(16,185,129,0.42)', key: '' },
+        { value: 'impl_provisional', i18nKey: 'tpItemImplProvisional', label: '+ Провиз. коронка',icon: 'И',  color: 'rgba(16,185,129,0.48)', key: '' },
+        { value: 'impl_restored',    i18nKey: 'tpItemImplRestored',    label: '+ Коронка',         icon: 'ИК', color: 'rgba(16,185,129,0.5)',  key: 'y' },
     ]},
-    { label: 'ПРОТЕЗ', items: [
-        { value: 'post',       label: 'Штифт',                 icon: 'Ш',  color: 'rgba(217,119,6,0.4)',     key: 'r' },
-        { value: 'crowned',    label: 'Коронка',               icon: 'К',  color: 'rgba(245,158,11,0.4)',    key: '6' },
-        { value: 'bridge',     label: 'Понтик (тело моста)',   icon: 'М',  color: 'rgba(34,211,238,0.35)',   key: '7' },
-        { value: '_smart_bridge', label: '🌉 Мост (drag→b)', icon: '🌉', color: 'rgba(34,211,238,0.45)',  key: 'b' },
-        { value: '_smart_bar',    label: '═ Балка (drag→g)',  icon: '═',  color: 'rgba(168,162,158,0.5)',  key: 'g' },
-        { value: 'cantilever', label: 'Консоль',               icon: 'Кн', color: 'rgba(34,211,238,0.45)',   key: 'u' },
+    { i18nKey: 'tpHeaderProsthesis', label: 'ПРОТЕЗ', items: [
+        { value: 'post',          i18nKey: 'tpItemPost',         label: 'Штифт',               icon: 'Ш',  color: 'rgba(217,119,6,0.4)',    key: 'r' },
+        { value: 'crowned',       i18nKey: 'tpItemCrowned',      label: 'Коронка',             icon: 'К',  color: 'rgba(245,158,11,0.4)',   key: '6' },
+        { value: 'bridge',        i18nKey: 'tpItemBridge',       label: 'Понтик (тело моста)', icon: 'М',  color: 'rgba(34,211,238,0.35)',  key: '7' },
+        { value: '_smart_bridge', i18nKey: 'tpItemSmartBridge',  label: '🌉 Мост (drag→b)',   icon: '🌉', color: 'rgba(34,211,238,0.45)',  key: 'b' },
+        { value: '_smart_bar',    i18nKey: 'tpItemSmartBar',     label: '═ Балка (drag→g)',   icon: '═',  color: 'rgba(168,162,158,0.5)',  key: 'g' },
+        { value: 'cantilever',    i18nKey: 'tpItemCantilever',   label: 'Консоль',             icon: 'Кн', color: 'rgba(34,211,238,0.45)',  key: 'u' },
     ]},
-    { label: '', items: [
-        { value: 'uncertain', label: 'Не ясно',      icon: '?',  color: 'rgba(234,179,8,0.3)',     key: '9' },
-        { value: '',          label: 'Сброс',        icon: '✕',  color: 'transparent',             key: 'Backspace' },
+    { i18nKey: '', label: '', items: [
+        { value: 'uncertain', i18nKey: 'tpItemUncertain', label: 'Не ясно', icon: '?', color: 'rgba(234,179,8,0.3)', key: '9' },
+        { value: '',          i18nKey: 'tpItemReset',     label: 'Сброс',   icon: '✕', color: 'transparent',         key: 'Backspace' },
     ]},
 ];
-let TOOTH_GROUPS = JSON.parse(localStorage.getItem('darwin_tooth_groups') || 'null') || structuredClone(_DEFAULT_TOOTH_GROUPS);
+// Tiny helpers — pull localised label / group label, fall back to
+// the hard-coded one if i18n hasn't loaded yet.
+function _tpItemLabel(item) {
+    if (item.i18nKey && typeof OrisI18n !== 'undefined') return OrisI18n.t(item.i18nKey);
+    return item.label || '';
+}
+function _tpGroupLabel(g) {
+    if (g.i18nKey && typeof OrisI18n !== 'undefined') return OrisI18n.t(g.i18nKey);
+    return g.label || '';
+}
+let TOOTH_GROUPS = JSON.parse(localStorage.getItem('darwin_tooth_groups_v2') || 'null') || structuredClone(_DEFAULT_TOOTH_GROUPS);
 
 function _saveToothGroups() {
-    localStorage.setItem('darwin_tooth_groups', JSON.stringify(TOOTH_GROUPS));
+    localStorage.setItem('darwin_tooth_groups_v2', JSON.stringify(TOOTH_GROUPS));
 }
 
 function _resetToothGroups() {
@@ -294,7 +305,8 @@ function _renameGroup(groupIdx, newLabel) {
 function _addNewGroup() {
     // Insert before the last (system) group
     const insertIdx = TOOTH_GROUPS.length > 0 ? TOOTH_GROUPS.length - 1 : 0;
-    TOOTH_GROUPS.splice(insertIdx, 0, { label: 'НОВАЯ ГРУППА', items: [] });
+    const _t = (k) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k) : k;
+    TOOTH_GROUPS.splice(insertIdx, 0, { label: _t('gedNewGroupName'), items: [] });
     _saveToothGroups();
     _rebuildPickerFull();
     _showGroupsEditor();
@@ -317,6 +329,18 @@ function _rebuildPickerFull() {
     window.TOOTH_OPTIONS_FLAT = TOOTH_GROUPS.flatMap(g => g.items);
 }
 
+// Re-render the picker (and any stale TOOTH_OPTIONS_FLAT) whenever the
+// EN/RU language flips so every group header / item label gets fresh
+// strings on the next open.
+if (typeof OrisI18n !== 'undefined') {
+    OrisI18n.onLangChange(() => {
+        _rebuildPickerFull();
+        // If a groups-editor overlay is open, rebuild it too.
+        const ed = document.getElementById('groups-editor-overlay');
+        if (ed) { ed.remove(); _showGroupsEditor(); }
+    });
+}
+
 // Show/hide groups editor panel
 function _showGroupsEditor() {
     let editor = document.getElementById('groups-editor-overlay');
@@ -326,9 +350,10 @@ function _showGroupsEditor() {
     editor.id = 'groups-editor-overlay';
     editor.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;';
 
+    const _t = (k) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k) : k;
     let html = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <div style="font-size:14px;font-weight:700;color:var(--text);">⚙ Настройка групп статусов</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);">${_t('gedTitle')}</div>
             <span onclick="document.getElementById('groups-editor-overlay').remove()" style="cursor:pointer;font-size:18px;color:var(--text3);">✕</span>
         </div>`;
 
@@ -337,27 +362,28 @@ function _showGroupsEditor() {
         const labelEditable = !isSystem;
         html += `<div style="margin-bottom:12px;border:1px solid var(--border);border-radius:8px;padding:8px;">`;
         if (labelEditable) {
+            const groupShown = _tpGroupLabel(group);
             html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
-                <input type="text" value="${group.label || ''}"
+                <input type="text" value="${groupShown}"
                     onchange="_renameGroup(${gi},this.value);document.getElementById('groups-editor-overlay').remove();_showGroupsEditor();"
                     style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:12px;font-weight:700;color:var(--text);">
-                ${group.items.length === 0 ? `<span onclick="_deleteGroup(${gi})" style="cursor:pointer;color:var(--red);font-size:11px;" title="Удалить пустую группу">🗑</span>` : ''}
+                ${group.items.length === 0 ? `<span onclick="_deleteGroup(${gi})" style="cursor:pointer;color:var(--red);font-size:11px;" title="${_t('gedDeleteEmpty')}">🗑</span>` : ''}
             </div>`;
         } else {
-            html += `<div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:600;">СИСТЕМНЫЕ</div>`;
+            html += `<div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:600;">${_t('gedSystemLabel')}</div>`;
         }
 
         group.items.forEach((item, ii) => {
             html += `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
                 <span style="background:${item.color};padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;min-width:28px;text-align:center;">${item.icon}</span>
-                <span style="font-size:11px;color:var(--text);flex:1;">${item.label}</span>
+                <span style="font-size:11px;color:var(--text);flex:1;">${_tpItemLabel(item)}</span>
                 <span style="font-size:9px;color:var(--text3);width:16px;text-align:center;">${item.key === 'Backspace' ? '⌫' : item.key}</span>
                 <select onchange="_moveItemToGroup('${item.value}',${gi},parseInt(this.value));this.value=''"
                     style="font-size:10px;background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--text3);padding:1px 4px;width:60px;">
                     <option value="">→</option>`;
             TOOTH_GROUPS.forEach((tg, tgi) => {
                 if (tgi !== gi) {
-                    html += `<option value="${tgi}">${tg.label || 'Системные'}</option>`;
+                    html += `<option value="${tgi}">${_tpGroupLabel(tg) || _t('gedSystemLabel')}</option>`;
                 }
             });
             html += `</select>
@@ -369,12 +395,12 @@ function _showGroupsEditor() {
 
     html += `<div style="display:flex;gap:8px;margin-top:8px;">
         <button onclick="_addNewGroup();document.getElementById('groups-editor-overlay').remove();_showGroupsEditor();"
-            style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--blue);background:rgba(59,130,246,0.15);color:var(--blue);cursor:pointer;">＋ Новая группа</button>
+            style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--blue);background:rgba(59,130,246,0.15);color:var(--blue);cursor:pointer;">${_t('gedAddGroup')}</button>
         <button onclick="_resetToothGroups();document.getElementById('groups-editor-overlay').remove();_showGroupsEditor();"
-            style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--text3);background:transparent;color:var(--text3);cursor:pointer;">↺ Сброс по умолчанию</button>
+            style="font-size:11px;padding:5px 12px;border-radius:6px;border:1px solid var(--text3);background:transparent;color:var(--text3);cursor:pointer;">${_t('gedReset')}</button>
         <div style="flex:1;"></div>
         <button onclick="document.getElementById('groups-editor-overlay').remove()"
-            style="font-size:11px;padding:5px 16px;border-radius:6px;border:1px solid var(--green);background:rgba(16,185,129,0.15);color:var(--green);cursor:pointer;">Готово</button>
+            style="font-size:11px;padding:5px 16px;border-radius:6px;border:1px solid var(--green);background:rgba(16,185,129,0.15);color:var(--green);cursor:pointer;">${_t('gedDone')}</button>
     </div>`;
 
     html += `</div>`;
@@ -722,22 +748,25 @@ function _ensurePicker() {
     _pickerEl = document.createElement('div');
     _pickerEl.className = 'tooth-picker';
 
-    let html = `<div class="tp-title" style="display:flex;justify-content:space-between;align-items:center;"><span></span><span onclick="_showGroupsEditor()" style="cursor:pointer;font-size:12px;opacity:0.5;" title="Настройка групп">⚙</span></div><div class="tp-status-page">`;
+    const _t = (k) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k) : k;
+    let html = `<div class="tp-title" style="display:flex;justify-content:space-between;align-items:center;"><span></span><span onclick="_showGroupsEditor()" style="cursor:pointer;font-size:12px;opacity:0.5;" title="${_t('tpSettingsTitle')}">⚙</span></div><div class="tp-status-page">`;
     for (const group of TOOTH_GROUPS) {
         html += `<div class="tp-group">`;
-        if (group.label) html += `<div class="tp-group-label">${group.label}</div>`;
+        const gLabel = _tpGroupLabel(group);
+        if (gLabel) html += `<div class="tp-group-label">${gLabel}</div>`;
         html += `<div class="tp-grid">`;
         for (const o of group.items) {
             const keyLabel = o.key === 'Backspace' ? '⌫' : o.key;
-            const tip = STATUS_TOOLTIPS[o.value] || o.label;
+            const oLabel = _tpItemLabel(o);
+            const tip = STATUS_TOOLTIPS[o.value] || oLabel;
             html += `<div class="tp-btn" data-value="${o.value}" style="background:${o.color}" onclick="pickToothStatus('${o.value}')" title="${tip}">
-                <span class="tp-icon">${o.icon}</span>${o.label}<span class="tp-key">${keyLabel}</span>
+                <span class="tp-icon">${o.icon}</span>${oLabel}<span class="tp-key">${keyLabel}</span>
             </div>`;
         }
         html += `</div></div>`;
     }
     // Composite presets section (editable)
-    html += `<div class="tp-group" id="tp-presets-section"><div class="tp-group-label" style="display:flex;align-items:center;justify-content:space-between;">ШАБЛОНЫ<span style="cursor:pointer;font-size:13px;opacity:0.6;" onclick="_togglePresetEditor()" title="Редактировать шаблоны">⚙</span></div><div class="tp-grid" id="tp-presets-container">`;
+    html += `<div class="tp-group" id="tp-presets-section"><div class="tp-group-label" style="display:flex;align-items:center;justify-content:space-between;">${_t('tpHeaderPresets')}<span style="cursor:pointer;font-size:13px;opacity:0.6;" onclick="_togglePresetEditor()" title="${_t('tpEditPresetsTitle')}">⚙</span></div><div class="tp-grid" id="tp-presets-container">`;
     for (const p of COMPOSITE_PRESETS) {
         html += `<div class="tp-btn tp-preset" style="background:${p.color}" onclick="pickCompositePreset('${p.value}')">
             <span class="tp-icon">⚡</span>${p.label}<span class="tp-key">${p.key}</span>
@@ -747,14 +776,14 @@ function _ensurePicker() {
 
     // Bridge toggle — shown only in batch mode, hidden by default
     html += `<div class="tp-group tp-bridge-toggle" id="tp-bridge-toggle" style="display:none;">
-        <div class="tp-group-label">СВЯЗИ</div>
+        <div class="tp-group-label">${_t('tpHeaderLinks')}</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:2px 0;">
                 <input type="checkbox" id="tp-bridge-check" style="width:14px;height:14px;margin:0;accent-color:rgb(34,211,238);">
-                <span style="font-size:10px;color:rgba(34,211,238,0.9);">+ мост при назначении статуса</span>
+                <span style="font-size:10px;color:rgba(34,211,238,0.9);">${_t('tpBridgeAddLink')}</span>
             </label>
-            <button onclick="_bridgeLinkOnlyBatch()" style="font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid rgba(34,211,238,0.5);background:rgba(34,211,238,0.15);color:rgba(34,211,238,0.9);cursor:pointer;font-weight:600;">🔗 Только связать</button>
-            <button onclick="_bridgeUnlinkBatch()" style="font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:rgba(239,68,68,0.8);cursor:pointer;">✕ Разъединить</button>
+            <button onclick="_bridgeLinkOnlyBatch()" style="font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid rgba(34,211,238,0.5);background:rgba(34,211,238,0.15);color:rgba(34,211,238,0.9);cursor:pointer;font-weight:600;">${_t('tpBridgeLinkOnly')}</button>
+            <button onclick="_bridgeUnlinkBatch()" style="font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:rgba(239,68,68,0.8);cursor:pointer;">${_t('tpBridgeUnlink')}</button>
         </div>
     </div>`;
 
@@ -762,7 +791,7 @@ function _ensurePicker() {
 
     // Surface picker panel (step 2 for caries/restored)
     html += `<div class="tp-surfaces" id="tp-surfaces">
-        <div class="tp-surf-title">Отметьте поражённые стенки:</div>
+        <div class="tp-surf-title">${_t('tpSurfacesTitle')}</div>
         <svg class="tp-surf-svg" viewBox="0 0 24 24" width="80" height="80">
             <polygon class="sf-btn sf-btn-v" data-sf="v" points="0,0 24,0 17,7 7,7"/>
             <polygon class="sf-btn sf-btn-d" data-sf="d" points="24,0 24,24 17,17 17,7"/>
@@ -779,12 +808,12 @@ function _ensurePicker() {
             <text x="3" y="13" font-size="4" fill="rgba(255,255,255,0.5)" text-anchor="middle" pointer-events="none">M</text>
             <text x="12" y="13" font-size="4" fill="rgba(255,255,255,0.5)" text-anchor="middle" pointer-events="none">O</text>
         </svg>
-        <button class="tp-surf-done" onclick="_surfaceDone()">Готово</button>
+        <button class="tp-surf-done" onclick="_surfaceDone()">${_t('tpSurfaceDone')}</button>
     </div>`;
 
     // Root / canal section
     html += `<div class="tp-section" id="tp-roots-section" style="display:none;border-top:1px solid rgba(255,255,255,0.1);margin-top:6px;padding-top:6px;">
-        <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.5);margin-bottom:4px;">КОРНИ / ROOTS</div>
+        <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.5);margin-bottom:4px;">${_t('tpHeaderRoots')}</div>
         <div id="tp-variant-btns" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;"></div>
         <div id="tp-dilac-controls" style="margin-bottom:6px;display:none;"></div>
         <div id="tp-vertucci-selectors" style="margin-bottom:6px;"></div>
@@ -1623,7 +1652,10 @@ function pickToothStatus(value) {
         const filled = ALL32t.filter(f => arenaGroundTruth[fileId]?.[f] || (_rd[f] && Object.keys(_rd[f]).length > 0)).length;
         const row = (targets[0].cellEl || cellEl).closest('.arena-formula-row');
         const sub = row?.querySelector('.row-sub');
-        if (sub) sub.innerHTML = filled >= 32 ? '✓ Полная разметка' : `Разметка ${filled}/32`;
+        if (sub) {
+            const _tp = (k, p) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k, p) : k;
+            sub.innerHTML = filled >= 32 ? _tp('fmlMarkedFull') : _tp('fmlMarkedSub', {n: filled});
+        }
         // Update picker title
         const tw = TWI_STATES[targets[0] ? ((arenaRootData[fileId]?.[targets[0].fdi]?.wear?.twi) || 0) : 0];
         const titleEl = _pickerEl?.querySelector('.tp-title span');

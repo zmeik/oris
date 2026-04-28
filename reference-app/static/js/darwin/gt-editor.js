@@ -282,22 +282,28 @@ function _renderSaveBanner(fileId) {
         return `${Math.floor(secs/3600)}h ago`;
     }
 
-    let bg = 'rgba(15,23,42,0.4)', border = 'rgba(148,163,184,0.18)', color = '#94a3b8', iconCh = '💾', statusTxt = 'No changes';
+    const _t = (k, p) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k, p) : k;
+    // {plural:n} is a placeholder we expand here for English ("s" iff
+    // n != 1) — Russian has its own pre-pluralised string.
+    function _pluralS(n) { return (n === 1) ? '' : 's'; }
+    let bg = 'rgba(15,23,42,0.4)', border = 'rgba(148,163,184,0.18)', color = '#94a3b8', iconCh = '💾', statusTxt = _t('fmlSaveBannerNoChanges');
     if (status === 'pending') {
         bg='rgba(245,158,11,0.12)'; border='rgba(245,158,11,0.5)'; color='#fbbf24';
-        iconCh='⏳'; statusTxt = `${pending} unsaved — autosaving in ~1s`;
+        iconCh='⏳'; statusTxt = _t('fmlSaveBannerPending', {n: pending});
     } else if (status === 'saving') {
         bg='rgba(59,130,246,0.12)'; border='rgba(59,130,246,0.5)'; color='#60a5fa';
-        iconCh='💾'; statusTxt = `Saving ${pending || 1} change${(pending||1)===1?'':'s'} to database…`;
+        const n = pending || 1;
+        iconCh='💾';
+        statusTxt = _t('fmlSaveBannerSaving', {n}).replace('{plural:n}', _pluralS(n));
     } else if (status === 'saved') {
         bg='rgba(34,197,94,0.10)'; border='rgba(34,197,94,0.45)'; color='#4ade80';
-        iconCh='✅'; statusTxt = `Saved · ${savedCount} total this session`;
+        iconCh='✅'; statusTxt = _t('fmlSaveBannerSaved', {n: savedCount});
     } else if (status === 'error') {
         bg='rgba(239,68,68,0.15)'; border='rgba(239,68,68,0.6)'; color='#fca5a5';
-        iconCh='⚠'; statusTxt = 'Save FAILED — click to retry';
+        iconCh='⚠'; statusTxt = _t('fmlSaveBannerFailed');
     } else { // idle
         if (savedCount > 0) {
-            statusTxt = `Всё в БД · ${savedCount} изм. сохранено в этой сессии`;
+            statusTxt = _t('fmlSaveBannerSavedAll', {n: savedCount});
             color='#94a3b8'; iconCh='✅';
         }
     }
@@ -309,8 +315,12 @@ function _renderSaveBanner(fileId) {
     banner.style.borderColor = border;
 
     const parts = [];
-    if (lastAction) parts.push(`последнее: ${lastAction.fdi} → ${lastAction.value} в ${fmtTime(lastAction.ts)}`);
-    if (lastSavedAt) parts.push(`сохранено ${fmtTime(lastSavedAt)} (${fmtAgo(lastSavedAt)})`);
+    if (lastAction) parts.push(_t('fmlSaveBannerLast', {
+        fdi: lastAction.fdi, val: lastAction.value, time: fmtTime(lastAction.ts)
+    }));
+    if (lastSavedAt) parts.push(_t('fmlSaveBannerSavedAt', {
+        time: fmtTime(lastSavedAt), ago: fmtAgo(lastSavedAt)
+    }));
     metaEl.textContent = parts.join(' · ');
 
     // Click-to-retry on error
@@ -322,6 +332,49 @@ function _renderSaveBanner(fileId) {
 setInterval(() => {
     for (const fid of Object.keys(_gtLastSavedAt)) _renderSaveBanner(parseInt(fid, 10));
 }, 5000);
+
+// Re-render every GT save banner + every GT row-sub when the language
+// flips. The banners cache state per file_id (saving / saved / error /
+// pending counters), so we just call _renderSaveBanner on each known
+// file. The GT row-sub recomputes its `filled / missing` text from
+// arenaGroundTruth without an API round-trip.
+function _refreshGTRowSubsForLang() {
+    if (typeof OrisI18n === 'undefined' || typeof arenaGroundTruth === 'undefined') return;
+    const _t = (k, p) => OrisI18n.t(k, p);
+    const ALL32 = ['1.8','1.7','1.6','1.5','1.4','1.3','1.2','1.1','2.1','2.2','2.3','2.4','2.5','2.6','2.7','2.8',
+                   '4.8','4.7','4.6','4.5','4.4','4.3','4.2','4.1','3.1','3.2','3.3','3.4','3.5','3.6','3.7','3.8'];
+    document.querySelectorAll('.arena-formula-row.ground-truth').forEach(row => {
+        const fileId = row.dataset.file;
+        if (!fileId) return;
+        // Re-translate the leading "🎯 Ground truth …" label
+        const labelDiv = row.querySelector('.row-label > div:first-child');
+        if (labelDiv) labelDiv.textContent = '🎯 ' + _t('fmlGTRowLabel');
+        const sub = row.querySelector('.row-sub');
+        if (!sub) return;
+        const gt = arenaGroundTruth[fileId] || {};
+        const filled = ALL32.filter(f => gt[f]).length;
+        if (filled >= 32) {
+            sub.innerHTML = _t('fmlMarkedFull');
+        } else {
+            // Try to keep the "missing teeth" hint if the helper exists
+            let umTeeth = '';
+            try { if (typeof _getUnmarkedTeethList === 'function') umTeeth = _getUnmarkedTeethList(parseInt(fileId, 10)) || ''; } catch (_) {}
+            sub.innerHTML = _t('fmlMarkedSub', {n: filled})
+                + (umTeeth ? ` <span style="color:rgba(239,68,68,0.8);font-size:9px">· ${_t('fmlMissingTeeth')} ${umTeeth}</span>` : '');
+        }
+    });
+}
+if (typeof OrisI18n !== 'undefined') {
+    OrisI18n.onLangChange(() => {
+        _refreshGTRowSubsForLang();
+        for (const fid of Object.keys(_gtLastSavedAt)) _renderSaveBanner(parseInt(fid, 10));
+        // Banners on rows that haven't saved yet — walk all visible banners
+        document.querySelectorAll('[id^="gt-save-banner-"]').forEach(b => {
+            const fid = parseInt(b.dataset.file, 10);
+            if (fid && !_gtLastSavedAt[fid]) _renderSaveBanner(fid);
+        });
+    });
+}
 
 // ── beforeunload: flush pending saves via sendBeacon ──
 window.addEventListener('beforeunload', () => {

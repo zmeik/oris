@@ -555,7 +555,11 @@ async function loadArena() {
                     </div>
                     <div class="arena-formulas-col">
                         <div class="arena-formulas" id="arena-formulas-${tc.file_id}">
-                            ${renderArenaFormulaRow('ground-truth', '🎯 GROUND TRUTH', gtFilled >= 32 ? '✓ All 32 cells annotated' : `${gtFilled}/32 cells annotated`, gt, null, tc.file_id, true)}
+                            ${(() => {
+                                const _t = (k, p) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k, p) : k;
+                                const sub = gtFilled >= 32 ? _t('fmlMarkedFull') : _t('fmlMarkedSub', {n: gtFilled});
+                                return renderArenaFormulaRow('ground-truth', '🎯 ' + _t('fmlGTRowLabel'), sub, gt, null, tc.file_id, true);
+                            })()}
                             ${leaderHtml ? `<div class="arena-leader-row" style="border-left:2px solid var(--green);padding-left:2px;">${leaderHtml}</div>` : ''}
                             <details class="arena-algos-collapsible">
                                 <summary style="font-size:11px;color:var(--text-dim);cursor:pointer;padding:4px 0;">${restCount} more algorithm${restCount === 1 ? '' : 's'}: ${top3Text}</summary>

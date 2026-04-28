@@ -6,6 +6,8 @@
 <title>ORIS · Anatomy Viewer · file_id {{ file_id }}</title>
 <meta name="oris-file-id" content="{{ file_id }}">
 <meta name="description" content="Dual-mode (bbox + polyline) anatomy viewer for the ORIS reference application. Boots in read-only Viewer mode with pan + zoom; toggles to Editor for drag-to-reshape + add/delete custom structures. Paper Figure 2 anatomical-landmarks side panel, full-page variant.">
+<!-- Shared EN ↔ RU dictionary used by both /play and /play/anatomy. -->
+<script src="/static/js/oris-i18n.js"></script>
 
 <style>
 :root {
@@ -407,7 +409,7 @@ body.viewer-mode .delete-custom {
     <button id="page-editor" data-page="editor">✏ Edit</button>
   </div>
   <div class="tb-spacer"></div>
-  <div class="lang-toggle" role="tablist" aria-label="Language">
+  <div class="lang-toggle" role="tablist" aria-label="Language" data-lang-toggle>
     <button id="lang-ru" data-lang="ru">RU</button>
     <button id="lang-en" data-lang="en">EN</button>
   </div>
@@ -488,12 +490,11 @@ const S = {
   // toggle), and the mousedown/keydown handlers below short-circuit
   // every editing path when pageMode === 'viewer'.
   pageMode: 'viewer',    // 'viewer' | 'editor'
-  // UI language: 'ru' = Russian (default — matches the original
-  // anatomy nomenclature shipped in anatomy_templates.json), 'en' =
-  // English. Persisted in localStorage as 'oris-anatomy-lang' so a
-  // reviewer's choice survives page reload.
-  lang: (typeof localStorage !== 'undefined'
-         && localStorage.getItem('oris-anatomy-lang') === 'en') ? 'en' : 'ru',
+  // UI language is owned by window.OrisI18n (shared with /play). Use
+  // the getter / setter on that module rather than mutating S.lang
+  // directly — kept here as a read-only mirror so legacy call sites
+  // keep working.
+  get lang() { return OrisI18n.getLang(); },
   // Magnetic snap: when ON, dragging a vertex / clicking to add a new
   // vertex / inserting a vertex on a segment will pull toward the
   // nearest visible vertex of any other structure within `threshold`
@@ -536,140 +537,16 @@ function nextCustomColour() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// i18n — bilingual EN / RU. The user opens the editor in their
-// preferred language; the toggle in the topbar flips both UI
-// chrome (button labels, tooltips, prompts, status hints) AND
-// every structure / group / hint label that ships with bilingual
-// {ru, en} strings in data/anatomy_templates.json. Custom
-// structures added by reviewers carry a single string label they
-// typed themselves — those don't change with the toggle (we have
-// nothing to translate them to).
-// Persisted in localStorage so reloading the page keeps the
-// reviewer's choice. Default = ru because the OPGs and the
-// anatomical names are originally Russian; the EN translations
-// are reviewer-friendly approximations, not authoritative
-// terminology.
+// i18n — bilingual EN / RU. The dictionary itself lives in
+// /static/js/oris-i18n.js (loaded above) so it can be shared with
+// the /play page. Here we just thin-alias the public API and keep
+// the existing call sites working unchanged. Subscribe to
+// onLangChange so a flip from anywhere (this page or /play in
+// another tab) re-runs applyLang(), repainting the editor with
+// the new strings.
 // ─────────────────────────────────────────────────────────────
-const I18N = {
-  ru: {
-    appViewer: 'Анатомия — просмотр',
-    appEditor: 'Анатомия — правка',
-    backToPlay: '← /play',
-    fileIdLabel: 'file_id',
-    pageViewer: '👁 Просмотр',
-    pageEditor: '✏ Правка',
-    pageViewerTitle: 'Только просмотр — пан + zoom + подсветка (без правки)',
-    pageEditorTitle: 'Включить drag-to-reshape, +Add, Save',
-    polyline: '⌒ Полилиния',
-    bbox: '▭ Bbox',
-    zoomLabel: 'zoom',
-    fit: 'В размер',
-    fitTitle: 'Вписать снимок в окно (F)',
-    reset: 'Сброс',
-    resetTitle: 'Откатить все правки на этом файле',
-    save: '✓ Сохранить',
-    saveTitle: 'Сохранить правки (Ctrl+S)',
-    snapBtn: '🧲 Магнит',
-    snapTitle: 'Притягивать точки к ближайшим вершинам (S)',
-    addBtn: '+ Доб.',
-    addTitle: 'Добавить полигон или bbox в группу «{group}»',
-    structHide: 'Скрыть с холста (H)',
-    structShow: 'Показать на холсте (H)',
-    structModeTitle: 'Переключить bbox / полилиния (B / P)',
-    deleteCustomTitle: 'Удалить эту пользовательскую структуру',
-    groupHideAll: 'Скрыть всю группу',
-    groupShowAll: 'Показать всю группу',
-    sbActive: 'активна',
-    sbMode: 'режим',
-    sbVertices: 'точек',
-    sbSaved: 'сохранение',
-    sbHintViewer: 'просмотр · drag = пан · scroll = zoom · клик слева — подсветить структуру',
-    sbHintEditor: 'тащите точки · клик по сегменту = новая точка · правый клик = удалить · B / P режим · S магнит',
-    drawingPolyline: 'Рисуем <b>{name}</b> · клик добавляет точку · двойной клик / Enter — завершить',
-    drawingBbox: 'Рисуем <b>{name}</b> · клик + перетаскивание задают прямоугольник',
-    commit: 'Завершить (Enter)',
-    cancel: 'Отмена (Esc)',
-    promptCustomName: 'Новая пользовательская структура в группе «{group}»\nИмя:',
-    promptCustomNameDefault: 'Новая находка',
-    promptKind: 'Режим? Введите "polyline" (по умолч.) или "bbox":',
-    confirmDeleteCustom: 'Удалить структуру «{name}»? Действие можно откатить, пока не нажмёте Сохранить.',
-    confirmReset: 'Сбросить все правки на этом файле? К истории добавится пустое сохранение.',
-    saveNoEdits: 'нет правок',
-    saveFailed: 'ошибка сохранения: ',
-    saveOk: '#{seq} · {n} структур',
-    loadedSeq: '#{seq} (загружено)',
-    structuresCountSuffix: 'pts',
-    countDash: '—',
-  },
-  en: {
-    appViewer: 'Anatomy viewer',
-    appEditor: 'Anatomy editor',
-    backToPlay: '← /play',
-    fileIdLabel: 'file_id',
-    pageViewer: '👁 Viewer',
-    pageEditor: '✏ Edit',
-    pageViewerTitle: 'Read-only — pan + zoom + highlight (no editing)',
-    pageEditorTitle: 'Unlock drag-to-reshape, + Add, Save',
-    polyline: '⌒ Polyline',
-    bbox: '▭ Bbox',
-    zoomLabel: 'zoom',
-    fit: 'Fit',
-    fitTitle: 'Fit image to viewport (F)',
-    reset: 'Reset',
-    resetTitle: 'Discard reviewer overrides on this file',
-    save: '✓ Save',
-    saveTitle: 'Save reviewer overrides (Ctrl+S)',
-    snapBtn: '🧲 Snap',
-    snapTitle: 'Snap to nearby vertices (S)',
-    addBtn: '+ Add',
-    addTitle: 'Add a new polygon or bbox into "{group}"',
-    structHide: 'Hide from canvas (H)',
-    structShow: 'Show on canvas (H)',
-    structModeTitle: 'Toggle bbox / polyline (B / P)',
-    deleteCustomTitle: 'Delete this custom structure',
-    groupHideAll: 'Hide all in this group',
-    groupShowAll: 'Show all in this group',
-    sbActive: 'active',
-    sbMode: 'mode',
-    sbVertices: 'vertices',
-    sbSaved: 'last save',
-    sbHintViewer: 'view-only · drag = pan · scroll = zoom · click structure on the left to highlight',
-    sbHintEditor: 'drag points · click segment to insert · right-click to delete · B / P mode · S snap',
-    drawingPolyline: 'Drawing <b>{name}</b> · click to add points · double-click / Enter to commit',
-    drawingBbox: 'Drawing <b>{name}</b> · click + drag a rectangle on the OPG',
-    commit: 'Commit (Enter)',
-    cancel: 'Cancel (Esc)',
-    promptCustomName: 'New custom structure in "{group}"\nName:',
-    promptCustomNameDefault: 'New finding',
-    promptKind: 'Mode? Type "polyline" (default) or "bbox":',
-    confirmDeleteCustom: 'Delete custom structure "{name}"? This is undoable until you press Save.',
-    confirmReset: 'Discard all reviewer overrides on this file? This appends an empty save to the change history.',
-    saveNoEdits: 'no edits',
-    saveFailed: 'save failed: ',
-    saveOk: '#{seq} · {n} structures',
-    loadedSeq: '#{seq} (loaded)',
-    structuresCountSuffix: 'pts',
-    countDash: '—',
-  },
-};
-function t(key, params) {
-  let s = (I18N[S.lang] || I18N.en)[key];
-  if (s == null) s = I18N.en[key] || key;
-  if (params) for (const [k, v] of Object.entries(params)) {
-    s = s.replaceAll('{' + k + '}', v);
-  }
-  return s;
-}
-// Display the localised name from a {ru, en} object — falls back through
-// the chain and tolerates plain strings (custom structures the reviewer
-// typed in one language carry a string, not an object).
-function tName(n) {
-  if (n == null) return '';
-  if (typeof n === 'string') return n;
-  return n[S.lang] || n.ru || n.en || '';
-}
-// Canonical RU group name for `_group` payloads, so a custom structure
-// added in EN still lands in the correct group on the backend.
+const t      = (key, params) => OrisI18n.t(key, params);
+const tName  = (n) => OrisI18n.tName(n);
 function groupKey(g) {
   if (typeof g.name === 'string') return g.name;
   return g.name?.ru || g.name?.en || '';
@@ -1595,14 +1472,11 @@ document.querySelectorAll('.page-toggle button').forEach(btn => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// Language switch (EN ↔ RU)
+// Language switch (EN ↔ RU). The toggle button is auto-wired by
+// OrisI18n, so we only need to register applyLang() as a listener
+// — every flip (locally OR from the /play tab) re-paints the
+// editor's labels.
 // ─────────────────────────────────────────────────────────────
-function setLang(lang) {
-  if (lang !== 'ru' && lang !== 'en') return;
-  S.lang = lang;
-  try { localStorage.setItem('oris-anatomy-lang', lang); } catch(e) {}
-  applyLang();
-}
 function applyLang() {
   document.documentElement.lang = S.lang;
   document.title = `ORIS · ${(S.pageMode === 'viewer') ? t('appViewer') : t('appEditor')} · file_id ${FILE_ID}`;
@@ -1639,10 +1513,7 @@ function applyLang() {
   document.getElementById('sbl-saved').textContent    = t('sbSaved');
   document.getElementById('sb-hint').textContent =
     (S.pageMode === 'viewer') ? t('sbHintViewer') : t('sbHintEditor');
-  // Lang button active state
-  document.querySelectorAll('.lang-toggle button').forEach(b => {
-    b.classList.toggle('active', b.dataset.lang === S.lang);
-  });
+  // Lang button active state is handled centrally by OrisI18n.
   // Disclaimer paragraphs (only the matching language is shown)
   document.querySelectorAll('#disclaimer p[data-lang]').forEach(p => {
     p.classList.toggle('show', p.dataset.lang === S.lang);
@@ -1651,9 +1522,8 @@ function applyLang() {
   renderSidebar();
   render();
 }
-document.querySelectorAll('.lang-toggle button').forEach(btn => {
-  btn.addEventListener('click', () => setLang(btn.dataset.lang));
-});
+// Subscribe — any setLang() call (from this tab OR /play) calls applyLang.
+OrisI18n.onLangChange(applyLang);
 
 // ─────────────────────────────────────────────────────────────
 // Magnetic snap toggle

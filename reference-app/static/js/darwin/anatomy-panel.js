@@ -31,6 +31,9 @@
   // ──────────────────────────────────────────────
   // Change-history strip (paper §2.1 Figure 2 caption, "bottom")
   // ──────────────────────────────────────────────
+  function _t(key, params) {
+    return (typeof OrisI18n !== 'undefined') ? OrisI18n.t(key, params) : key;
+  }
   async function renderHistoryStrip() {
     const host = document.getElementById('change-history-strip');
     if (!host) return;
@@ -40,13 +43,13 @@
       const d = await r.json();
       const rows = (d.history || []).slice(0, 12);
       if (!rows.length) {
-        host.innerHTML = '<div class="chist-empty">No edits yet</div>';
+        host.innerHTML = `<div class="chist-empty">${_t('chistEmpty')}</div>`;
         return;
       }
       host.innerHTML = `
         <div class="chist-head">
-          <span class="chist-title">Change history</span>
-          <span class="chist-meta">${rows.length} recent · file_id ${fileId}</span>
+          <span class="chist-title">${_t('chistTitle')}</span>
+          <span class="chist-meta">${_t('chistRecentMeta', {n: rows.length, id: fileId})}</span>
         </div>
         <div class="chist-list">
           ${rows.map(r => {
@@ -59,9 +62,9 @@
             const fdi = r.fdi || (r.change_type && r.change_type.startsWith('anatomy') ? '🦴' : '—');
             let diff;
             if (r.change_type === 'anatomy_template_update') {
-              diff = `anatomy template update: ${r.new_value ? r.new_value.slice(0, 60) : ''}`;
+              diff = _t('chistAnatomyTpl', {value: r.new_value ? r.new_value.slice(0, 60) : ''});
             } else if (r.change_type === 'anatomy_update') {
-              diff = `anatomy: ${r.new_value ? r.new_value.slice(0, 60) : ''}`;
+              diff = _t('chistAnatomyMisc', {value: r.new_value ? r.new_value.slice(0, 60) : ''});
             } else if (r.old_value || r.new_value) {
               diff = `${r.old_value || '∅'} → ${r.new_value || '∅'}`;
             } else {
@@ -78,8 +81,13 @@
           }).join('')}
         </div>`;
     } catch (err) {
-      host.innerHTML = '<div class="chist-empty">history fetch failed</div>';
+      host.innerHTML = `<div class="chist-empty">${_t('chistFetchFailed')}</div>`;
     }
+  }
+  // Re-render whenever the language flips so chist-title / chist-empty
+  // / anatomy-template-update labels stay in sync.
+  if (typeof OrisI18n !== 'undefined') {
+    OrisI18n.onLangChange(renderHistoryStrip);
   }
   // Exposed so other modules (e.g. the GT save flow in tooth-picker.js,
   // or the anatomy editor in another tab via postMessage if we add it
