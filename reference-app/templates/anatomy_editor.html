@@ -245,6 +245,38 @@ body.viewer-mode .delete-custom {
 .struct-mode.bbox      { color: var(--amber); border-color: rgba(251,191,36,0.4); }
 .struct-mode.polyline  { color: var(--accent); border-color: rgba(91,141,239,0.4); }
 
+/* Per-structure visibility toggle (eye icon).
+   Visible in both Viewer and Editor — purely a viewing preference, not
+   an edit. Session-only state: closing the page restores defaults so the
+   reviewer never opens a file with structures mysteriously missing. */
+.struct-vis {
+  background: transparent; border: 0;
+  color: var(--text-muted);
+  font: inherit; font-size: 12px;
+  padding: 0 4px; line-height: 1;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+.struct-vis:hover { color: var(--accent); }
+.struct-vis.is-hidden { opacity: 0.40; color: var(--text-dim); }
+.struct-vis.is-hidden::after {
+  content: "";
+  position: absolute;
+  left: 3px; right: 3px;
+  top: 50%;
+  height: 1px;
+  background: currentColor;
+  transform: rotate(-22deg);
+}
+/* Dim the whole row when its structure is hidden so the reviewer can
+   spot at-a-glance which entries were toggled off. */
+.struct.is-row-hidden .label,
+.struct.is-row-hidden .swatch,
+.struct.is-row-hidden .pts {
+  opacity: 0.55;
+}
+
 /* ──────────────── Canvas area ──────────────── */
 #canvas-host {
   flex: 1 1 auto;
@@ -497,6 +529,9 @@ function render() {
 }
 
 function drawStructure(s) {
+  // Visibility toggle: hidden structures render nothing on canvas.
+  // Sidebar still lists them (dimmed) so the reviewer can flip them back.
+  if (s._hidden) return;
   const isActive = (s.id === S.activeId);
   const colour = s.color || '#5b8def';
   ctx.lineWidth = isActive ? 3 : 2;
@@ -838,6 +873,12 @@ canvas.addEventListener('wheel', e => {
 // ─────────────────────────────────────────────────────────────
 window.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  // H toggles visibility of the active structure — purely a viewing
+  // operation, so available in BOTH Viewer and Editor modes.
+  if ((e.key === 'h' || e.key === 'H') && S.activeId) {
+    toggleVisibility(S.activeId);
+    return;
+  }
   // Viewer mode: only navigation keys allowed (F = fit, Esc = deselect).
   if (S.pageMode === 'viewer') {
     if (e.key === 'f' || e.key === 'F') { fit(); return; }
@@ -874,13 +915,16 @@ function renderSidebar() {
     for (const s of g.structures) {
       const active = (s.id === S.activeId) ? ' active' : '';
       const isCustom = !!s._custom;
+      const isHidden = !!s._hidden;
       const pts = (s.annotation_type === 'bbox')
         ? (s.bbox ? '▭' : '∅')
         : `${(s.points || []).length} pts`;
-      html += `<div class="struct${active}${isCustom ? ' is-custom' : ''}" data-id="${escAttr(s.id)}">`
+      html += `<div class="struct${active}${isCustom ? ' is-custom' : ''}${isHidden ? ' is-row-hidden' : ''}" data-id="${escAttr(s.id)}">`
             + `<span class="swatch" style="background:${escAttr(s.color || '#5b8def')}"></span>`
             + `<span class="label" title="${escAttr(s.hint || s.name)}">${esc(s.name)}</span>`
             + `<span class="pts">${pts}</span>`
+            + `<button class="struct-vis${isHidden ? ' is-hidden' : ''}" data-vis-id="${escAttr(s.id)}" `
+            + `title="${isHidden ? 'Show on canvas' : 'Hide from canvas'} (H)" aria-pressed="${isHidden ? 'true' : 'false'}">👁</button>`
             + `<button class="struct-mode ${escAttr(s.annotation_type)}" data-mode-id="${escAttr(s.id)}" title="Toggle bbox / polyline (B / P)">`
             + (s.annotation_type === 'bbox' ? '▭' : '⌒')
             + '</button>'
@@ -895,9 +939,17 @@ function renderSidebar() {
   // Wire up click handlers
   sidebar.querySelectorAll('.struct').forEach(el => {
     el.addEventListener('click', e => {
-      if (e.target.closest('.struct-mode') || e.target.closest('.delete-custom')) return;
+      if (e.target.closest('.struct-mode')
+          || e.target.closest('.delete-custom')
+          || e.target.closest('.struct-vis')) return;
       S.activeId = el.dataset.id;
       renderSidebar(); render();
+    });
+  });
+  sidebar.querySelectorAll('.struct-vis').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleVisibility(el.dataset.visId);
     });
   });
   sidebar.querySelectorAll('.struct-mode').forEach(el => {
@@ -923,6 +975,23 @@ function renderSidebar() {
       deleteCustomStructure(sid);
     });
   });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Per-structure visibility toggle (the 👁 button).
+// Hidden structures are simply skipped in drawStructure(); they remain
+// in the sidebar (dimmed) so the reviewer can re-enable them. State is
+// session-only — _hidden never goes into the save payload.
+// ─────────────────────────────────────────────────────────────
+function toggleVisibility(sid) {
+  const s = S.byId[sid];
+  if (!s) return;
+  s._hidden = !s._hidden;
+  // Hiding the active structure mid-edit would leave handles invisible
+  // but still hit-testable — deselect to avoid confusion.
+  if (s._hidden && S.activeId === sid) S.activeId = null;
+  renderSidebar();
+  render();
 }
 
 // ─────────────────────────────────────────────────────────────
