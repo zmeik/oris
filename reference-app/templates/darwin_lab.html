@@ -39,7 +39,10 @@
     <header class="topbar" role="banner">
         <h1>ORIS Reference UI <span>v0.1 · synthetic data · paper-companion app for IJOS submission</span></h1>
         <nav class="nav" role="navigation" aria-label="Primary">
-            <a href="#" onclick="showView('arena');return false;" id="nav-arena" class="active" aria-current="page" aria-label="Dental formula and OPG canvas (Figure 2)">🎯 Arena</a>
+            <!-- Single-view reference build: the Arena tab is the only view that ships,
+                 rendered as a static badge instead of a clickable tab so reviewers don't
+                 expect a no-op when they click. -->
+            <span id="nav-arena" class="active" style="padding:4px 10px;font-size:12px;font-weight:600;color:var(--accent);opacity:0.9;cursor:default;letter-spacing:0.02em" aria-label="Arena view">🎯 Arena</span>
             <!-- Production-only views (Evolution / Evaluate / Metrics / Implant lab) are hidden in
                  the public reference app: their backend depends on the live RUDN database,
                  ML-experiment registry and 11 813 implant-assessment rows we cannot ship.
@@ -444,11 +447,13 @@ init();
 <script src="/static/js/darwin/fullscreen.js"></script>
 
 <!-- ============================================================
-     Reference-app: hide controls whose backend is not shipped here
-     (production-only patient-card link, GT copy menu, sandbox
-     import/delete admin actions). Keeping the JS that injects them
-     intact so /darwin-lab clones wired to production still get the
-     full UI; only the visual surface is suppressed in this build.
+     Reference-app overrides for the production Arena CSS:
+     - hide controls whose backend is not shipped here
+     - keep upper / lower formula rows on the same vertical midline
+       (long status labels like "ПVDLMC" can otherwise widen a cell
+       and shift the row by a few pixels)
+     - keep crop carousel cards inside their parent column so the
+       crop never visually overflows the cell SVG above/below it
      ============================================================ -->
 <style>
   /* "📋 Card →" link — needs a real /patient/<id>/verify view */
@@ -457,6 +462,44 @@ init();
   .gt-copy-btn { display: none !important; }
   /* "Карта не найдена" placeholder when patient card is absent */
   .tc-card-empty { display: none !important; }
+
+  /* ---- Cell width hardening ----
+     The production darwin sets .cell-abbr min-width: 38px without a
+     hard cap, so a 6-char ПVDLMC pill quietly grows the cell to ~50 px
+     while a 2-char ИЗ stays at 38 px. With 8 cells per quadrant this
+     can drift the upper midline ~10 px right of the lower one. Capping
+     the abbr keeps every cell at a strict 48 px slot, which is the
+     same width used by the carousel cards above/below. */
+  .arena-cell { box-sizing: border-box; max-width: var(--cell-w); }
+  .arena-cell .cell-abbr {
+    max-width: calc(var(--cell-w) - 2px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ---- Crop carousel column hardening ----
+     .carousel-card.active was scaling up to 220 px wide with a -86 px
+     left margin so it could "balloon" over the OPG. That overflow is
+     fine in the production app where the cells live in a separate
+     row, but in the reference-app review flow it makes the active
+     crop look like it floats off into the wrong cell. Keep the bigger
+     hover hit-target but constrain the visual width to the cell so
+     reviewers see one crop strictly above each tooth. The fullscreen
+     crop editor (double-click the carousel card) is still the way
+     to inspect a crop in detail. */
+  .carousel-card { box-sizing: border-box; max-width: var(--cell-w); }
+  .carousel-card.active .cc-canvas {
+    width: calc(var(--cell-w) - 6px);
+    margin-left: 0;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.45), 0 0 0 1px var(--accent-ring);
+  }
+  .carousel-card.nb-left,
+  .carousel-card.nb-right,
+  .carousel-card.distant {
+    transform: none;
+    opacity: 1;
+  }
 </style>
 
 <!-- ============================================================
