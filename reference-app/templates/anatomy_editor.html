@@ -137,10 +137,16 @@ body.viewer-mode #mode-polyline,
 body.viewer-mode #mode-bbox,
 body.viewer-mode #btn-save,
 body.viewer-mode #btn-reset,
+body.viewer-mode #btn-snap,
 body.viewer-mode .add-btn,
 body.viewer-mode .struct-mode,
 body.viewer-mode .delete-custom {
   display: none !important;
+}
+/* Snap button: tinted amber when on, neutral when off. */
+.tb-btn#btn-snap.active {
+  color: var(--amber); border-color: rgba(251,191,36,0.55);
+  background: rgba(251,191,36,0.10); font-weight: 600;
 }
 .tb-meta {
   font-family: "IBM Plex Mono", monospace;
@@ -409,6 +415,7 @@ body.viewer-mode .delete-custom {
     <button id="mode-polyline" class="active" data-mode="polyline">⌒ Polyline</button>
     <button id="mode-bbox" data-mode="bbox">▭ Bbox</button>
   </div>
+  <button class="tb-btn" id="btn-snap">🧲 Snap</button>
   <span class="tb-meta"><span id="lbl-zoom">zoom</span> <b id="meta-zoom">100%</b></span>
   <button class="tb-btn" id="btn-fit">Fit</button>
   <button class="tb-btn" id="btn-reset">Reset</button>
@@ -487,6 +494,22 @@ const S = {
   // reviewer's choice survives page reload.
   lang: (typeof localStorage !== 'undefined'
          && localStorage.getItem('oris-anatomy-lang') === 'en') ? 'en' : 'ru',
+  // Magnetic snap: when ON, dragging a vertex / clicking to add a new
+  // vertex / inserting a vertex on a segment will pull toward the
+  // nearest visible vertex of any other structure within `threshold`
+  // screen-pixels. Useful when adjacent landmarks need to share a
+  // boundary vertex (e.g. mandible point clicking right onto an
+  // alveolar-crest tip). Toggle with the 🧲 button or hot-key S.
+  // Persisted in localStorage as 'oris-anatomy-snap'.
+  snap: {
+    enabled: (typeof localStorage !== 'undefined'
+              && localStorage.getItem('oris-anatomy-snap') !== '0'),
+    threshold: 12,
+  },
+  // Live screen-coord of the current snap target (when dragging /
+  // drawing). Painted as a yellow halo in render() so the reviewer
+  // sees what they will snap to before releasing the mouse.
+  snapTarget: null,
   zoom: 1, panX: 0, panY: 0,
   drag: null,            // { type: 'point'|'corner'|'pan'|'translate'|'new', ... }
   hoverPoint: null,      // index of hovered vertex on activeId
@@ -546,6 +569,8 @@ const I18N = {
     resetTitle: 'Откатить все правки на этом файле',
     save: '✓ Сохранить',
     saveTitle: 'Сохранить правки (Ctrl+S)',
+    snapBtn: '🧲 Магнит',
+    snapTitle: 'Притягивать точки к ближайшим вершинам (S)',
     addBtn: '+ Доб.',
     addTitle: 'Добавить полигон или bbox в группу «{group}»',
     structHide: 'Скрыть с холста (H)',
@@ -559,7 +584,7 @@ const I18N = {
     sbVertices: 'точек',
     sbSaved: 'сохранение',
     sbHintViewer: 'просмотр · drag = пан · scroll = zoom · клик слева — подсветить структуру',
-    sbHintEditor: 'тащите точки · клик по сегменту = новая точка · правый клик = удалить · B / P переключают режим',
+    sbHintEditor: 'тащите точки · клик по сегменту = новая точка · правый клик = удалить · B / P режим · S магнит',
     drawingPolyline: 'Рисуем <b>{name}</b> · клик добавляет точку · двойной клик / Enter — завершить',
     drawingBbox: 'Рисуем <b>{name}</b> · клик + перетаскивание задают прямоугольник',
     commit: 'Завершить (Enter)',
@@ -594,6 +619,8 @@ const I18N = {
     resetTitle: 'Discard reviewer overrides on this file',
     save: '✓ Save',
     saveTitle: 'Save reviewer overrides (Ctrl+S)',
+    snapBtn: '🧲 Snap',
+    snapTitle: 'Snap to nearby vertices (S)',
     addBtn: '+ Add',
     addTitle: 'Add a new polygon or bbox into "{group}"',
     structHide: 'Hide from canvas (H)',
@@ -607,7 +634,7 @@ const I18N = {
     sbVertices: 'vertices',
     sbSaved: 'last save',
     sbHintViewer: 'view-only · drag = pan · scroll = zoom · click structure on the left to highlight',
-    sbHintEditor: 'drag points · click segment to insert · right-click point to delete · B / P toggle mode',
+    sbHintEditor: 'drag points · click segment to insert · right-click to delete · B / P mode · S snap',
     drawingPolyline: 'Drawing <b>{name}</b> · click to add points · double-click / Enter to commit',
     drawingBbox: 'Drawing <b>{name}</b> · click + drag a rectangle on the OPG',
     commit: 'Commit (Enter)',
@@ -701,6 +728,22 @@ function render() {
     for (const s of g.structures) {
       drawStructure(s);
     }
+  }
+
+  // Snap halo — drawn AFTER all structures so it sits on top of every
+  // outline. Only paints while a drag/draw operation is locked onto a
+  // snap target; mouseup clears S.snapTarget.
+  if (S.snapTarget) {
+    const [hx, hy] = S.snapTarget;
+    ctx.save();
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#fbbf24';
+    ctx.shadowColor = 'rgba(251,191,36,0.65)';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(hx, hy, 9, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
   }
 
   metaZoom.textContent = Math.round(S.zoom * 100) + '%';
@@ -876,6 +919,57 @@ function bboxContains(s, sx, sy) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Magnetic snap — find the nearest visible vertex (polyline point or
+// bbox corner) within `S.snap.threshold` screen-pixels of the cursor.
+// Returns { sx, sy, ix, iy } where (sx, sy) are the snapped screen
+// coords (drawn as a halo) and (ix, iy) are the corresponding image
+// coords [0..1] used to overwrite the dragged / inserted point.
+// `excludeSid` + `excludeIdx` skip the vertex currently being dragged
+// (so a point doesn't snap to itself).
+// ─────────────────────────────────────────────────────────────
+function findSnapTarget(sx, sy, excludeSid, excludeIdx) {
+  if (!S.snap.enabled) return null;
+  const t = S.snap.threshold;
+  let best = null, bestD = t + 0.5;
+  for (const g of S.groups) {
+    for (const s of g.structures) {
+      if (s._hidden) continue;
+      if (s.annotation_type === 'polyline') {
+        const pts = s.points || [];
+        for (let i = 0; i < pts.length; i++) {
+          if (s.id === excludeSid && i === excludeIdx) continue;
+          const [px, py] = imgToScreen(pts[i][0], pts[i][1]);
+          const d = Math.hypot(sx - px, sy - py);
+          if (d < bestD) { bestD = d; best = { sx: px, sy: py, ix: pts[i][0], iy: pts[i][1] }; }
+        }
+      } else if (s.annotation_type === 'bbox' && s.bbox) {
+        const corners = [
+          [s.bbox.x1, s.bbox.y1], [s.bbox.x2, s.bbox.y1],
+          [s.bbox.x2, s.bbox.y2], [s.bbox.x1, s.bbox.y2],
+        ];
+        for (const [cx, cy] of corners) {
+          const [px, py] = imgToScreen(cx, cy);
+          const d = Math.hypot(sx - px, sy - py);
+          if (d < bestD) { bestD = d; best = { sx: px, sy: py, ix: cx, iy: cy }; }
+        }
+      }
+    }
+  }
+  return best;
+}
+// Wrap screenToImg with optional snap. Returns { ix, iy, snapped }.
+function snappedImg(sx, sy, excludeSid, excludeIdx) {
+  const snap = findSnapTarget(sx, sy, excludeSid, excludeIdx);
+  if (snap) {
+    S.snapTarget = [snap.sx, snap.sy];
+    return { ix: snap.ix, iy: snap.iy, snapped: true };
+  }
+  S.snapTarget = null;
+  const [ix, iy] = screenToImg(sx, sy);
+  return { ix, iy, snapped: false };
+}
+
+// ─────────────────────────────────────────────────────────────
 // Mouse interactions
 // ─────────────────────────────────────────────────────────────
 function eventToCanvas(e) {
@@ -907,7 +1001,8 @@ canvas.addEventListener('mousedown', e => {
       commitDrawing();
       return;
     }
-    const [ix, iy] = screenToImg(sx, sy);
+    const sn = snappedImg(sx, sy);
+    const ix = sn.ix, iy = sn.iy;
     if (S.drawMode.kind === 'polyline') {
       s.points = s.points || [];
       s.points.push([Math.max(0, Math.min(1, ix)),
@@ -955,8 +1050,8 @@ canvas.addEventListener('mousedown', e => {
       }
       const edge = findEdgeHit(s, sx, sy);
       if (edge >= 0) {
-        const [ix, iy] = screenToImg(sx, sy);
-        s.points.splice(edge + 1, 0, [ix, iy]);
+        const sn = snappedImg(sx, sy);
+        s.points.splice(edge + 1, 0, [sn.ix, sn.iy]);
         markDirty(s);
         S.drag = { type: 'point', sid: s.id, idx: edge + 1 };
         render();
@@ -974,8 +1069,8 @@ canvas.addEventListener('mousedown', e => {
       }
       // Empty space + bbox missing → start drawing new bbox
       if (!s.bbox) {
-        const [ix, iy] = screenToImg(sx, sy);
-        s.bbox = { x1: ix, y1: iy, x2: ix, y2: iy };
+        const sn = snappedImg(sx, sy);
+        s.bbox = { x1: sn.ix, y1: sn.iy, x2: sn.ix, y2: sn.iy };
         S.drag = { type: 'new-bbox', sid: s.id };
         markDirty(s);
         render();
@@ -1001,19 +1096,21 @@ canvas.addEventListener('mousemove', e => {
     }
     const s = S.byId[d.sid];
     if (!s) return;
-    const [ix, iy] = screenToImg(sx, sy);
     if (d.type === 'point') {
-      s.points[d.idx] = [Math.max(0, Math.min(1, ix)), Math.max(0, Math.min(1, iy))];
+      const sn = snappedImg(sx, sy, d.sid, d.idx);
+      s.points[d.idx] = [Math.max(0, Math.min(1, sn.ix)), Math.max(0, Math.min(1, sn.iy))];
       markDirty(s);
       render();
     } else if (d.type === 'corner') {
+      const sn = snappedImg(sx, sy);
       const corners = [['x1','y1'], ['x2','y1'], ['x2','y2'], ['x1','y2']];
       const [kx, ky] = corners[d.corner];
-      s.bbox[kx] = Math.max(0, Math.min(1, ix));
-      s.bbox[ky] = Math.max(0, Math.min(1, iy));
+      s.bbox[kx] = Math.max(0, Math.min(1, sn.ix));
+      s.bbox[ky] = Math.max(0, Math.min(1, sn.iy));
       markDirty(s);
       render();
     } else if (d.type === 'translate') {
+      const [ix, iy] = screenToImg(sx, sy);
       const [lx, ly] = screenToImg(d.lastSx, d.lastSy);
       const dx = ix - lx, dy = iy - ly;
       s.bbox.x1 += dx; s.bbox.x2 += dx;
@@ -1022,13 +1119,16 @@ canvas.addEventListener('mousemove', e => {
       markDirty(s);
       render();
     } else if (d.type === 'new-bbox') {
-      s.bbox.x2 = Math.max(0, Math.min(1, ix));
-      s.bbox.y2 = Math.max(0, Math.min(1, iy));
+      const sn = snappedImg(sx, sy);
+      s.bbox.x2 = Math.max(0, Math.min(1, sn.ix));
+      s.bbox.y2 = Math.max(0, Math.min(1, sn.iy));
       markDirty(s);
       render();
     }
     return;
   }
+  // Not dragging: clear lingering snap halo so it doesn't paint while idle.
+  if (S.snapTarget) { S.snapTarget = null; render(); }
 
   // Viewer mode: no point-hover affordance — there are no dots to hover.
   // Suppress the "point N/M" tooltip and the hover-grow effect on dots.
@@ -1057,8 +1157,17 @@ canvas.addEventListener('mousemove', e => {
   tip.style.display = 'none';
 });
 
-canvas.addEventListener('mouseup',   () => { S.drag = null; host.classList.remove('dragging'); });
-canvas.addEventListener('mouseleave',() => { S.drag = null; host.classList.remove('dragging'); tip.style.display = 'none'; });
+canvas.addEventListener('mouseup',   () => {
+  S.drag = null;
+  host.classList.remove('dragging');
+  if (S.snapTarget) { S.snapTarget = null; render(); }
+});
+canvas.addEventListener('mouseleave',() => {
+  S.drag = null;
+  host.classList.remove('dragging');
+  tip.style.display = 'none';
+  if (S.snapTarget) { S.snapTarget = null; render(); }
+});
 canvas.addEventListener('contextmenu', e => e.preventDefault());
 canvas.addEventListener('dblclick', () => { if (S.drawMode) commitDrawing(); });
 
@@ -1101,6 +1210,10 @@ window.addEventListener('keydown', e => {
   if (e.key === 'f' || e.key === 'F') { fit(); return; }
   if (e.key === 'b' || e.key === 'B') { setStructMode(S.activeId, 'bbox'); return; }
   if (e.key === 'p' || e.key === 'P') { setStructMode(S.activeId, 'polyline'); return; }
+  // Plain S (no Ctrl/Cmd) toggles magnetic snap. Ctrl+S already saves.
+  if ((e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey) {
+    setSnap(!S.snap.enabled); return;
+  }
   if (e.key === 'Escape') { S.activeId = null; renderSidebar(); render(); return; }
 });
 
@@ -1513,6 +1626,12 @@ function applyLang() {
   resetBtn.textContent = t('reset'); resetBtn.title = t('resetTitle');
   const saveBtn = document.getElementById('btn-save');
   saveBtn.textContent = t('save'); saveBtn.title = t('saveTitle');
+  const snapBtn = document.getElementById('btn-snap');
+  if (snapBtn) {
+    snapBtn.textContent = t('snapBtn');
+    snapBtn.title = t('snapTitle');
+    snapBtn.classList.toggle('active', S.snap.enabled);
+  }
   // Status-bar labels
   document.getElementById('sbl-active').textContent   = t('sbActive');
   document.getElementById('sbl-mode').textContent     = t('sbMode');
@@ -1535,6 +1654,17 @@ function applyLang() {
 document.querySelectorAll('.lang-toggle button').forEach(btn => {
   btn.addEventListener('click', () => setLang(btn.dataset.lang));
 });
+
+// ─────────────────────────────────────────────────────────────
+// Magnetic snap toggle
+// ─────────────────────────────────────────────────────────────
+function setSnap(enabled) {
+  S.snap.enabled = !!enabled;
+  try { localStorage.setItem('oris-anatomy-snap', enabled ? '1' : '0'); } catch(e) {}
+  const btn = document.getElementById('btn-snap');
+  if (btn) btn.classList.toggle('active', S.snap.enabled);
+}
+document.getElementById('btn-snap').addEventListener('click', () => setSnap(!S.snap.enabled));
 
 // ─────────────────────────────────────────────────────────────
 // Image load + fit
