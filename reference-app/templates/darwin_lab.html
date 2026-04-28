@@ -496,20 +496,15 @@ init();
      left-of-centre by ~half a row-label width, which the reviewer
      finds easier to read because the eye lands on the cells first
      and the controls sit out of the way at the right. */
-  /* Take row-score out of the flex flow so its variable width
-     ("GROUND TRUTH" / "—" / percent) doesn't unbalance the centre. */
-  .arena-formula-row .row-score {
-    position: absolute;
-    right: 8px;
-    top: 6px;
-    z-index: 1;
-    font-size: 10px;
-    font-family: var(--font-mono);
-    letter-spacing: 0.04em;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    opacity: 0.7;
-  }
+  /* Hide row-score altogether: it duplicates the "GROUND TRUTH"
+     header that already lives at the top of the redesigned row-label
+     panel, and the empty band it left between the panel and the
+     right edge of the arena was confusing reviewers. */
+  .arena-formula-row .row-score { display: none !important; }
+  /* Push the row-label panel to the right edge of the arena row so
+     no empty band sits between the panel and the right border. */
+  .arena-formula-row .row-formula-wrap { flex: 1 1 auto !important; }
+  .arena-formula-row .row-label { margin-left: auto !important; }
 
   /* ============================================================
      GT control panel redesign
