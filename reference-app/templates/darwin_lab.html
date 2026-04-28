@@ -428,5 +428,132 @@ init();
 
 <script src="/static/js/darwin/fullscreen.js"></script>
 
+<!-- ============================================================
+     Floating bridges-export panel (used by /play and /darwin-lab)
+     Always visible, bottom-right; hits /api/export/<file_id>?format=...
+     where file_id is taken from the global ARENA_FILE_ID set by
+     production arena-core.js when a sandbox file is loaded.
+     ============================================================ -->
+<style>
+  .oris-bridges-panel {
+    position: fixed; right: 14px; bottom: 14px; z-index: 60;
+    background: rgba(15,23,42,0.92);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #e2e8f0;
+    font: 12px/1.4 'Inter', system-ui, sans-serif;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+    max-width: 260px;
+  }
+  .oris-bridges-panel.collapsed { padding: 6px 10px; }
+  .oris-bridges-panel .bp-head {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 8px;
+    font-weight: 600; font-size: 11.5px;
+    color: #93c5fd; letter-spacing: 0.02em;
+  }
+  .oris-bridges-panel .bp-toggle {
+    background: transparent; border: 0; color: #94a3b8;
+    cursor: pointer; font-size: 13px; padding: 0 4px;
+  }
+  .oris-bridges-panel .bp-toggle:hover { color: #fff; }
+  .oris-bridges-panel.collapsed .bp-body { display: none; }
+  .oris-bridges-panel .bp-body {
+    margin-top: 8px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+  }
+  .oris-bridges-panel .bp-body button {
+    background: rgba(51,65,85,0.6);
+    border: 1px solid #475569;
+    border-radius: 4px;
+    color: #e2e8f0;
+    cursor: pointer;
+    font: inherit; font-size: 11.5px;
+    padding: 5px 8px;
+    text-align: center;
+  }
+  .oris-bridges-panel .bp-body button.primary {
+    background: #2563eb; border-color: #2563eb; color: #fff;
+    grid-column: 1 / -1;
+  }
+  .oris-bridges-panel .bp-body button:hover {
+    background: rgba(71,85,105,0.85); border-color: #64748b;
+  }
+  .oris-bridges-panel .bp-body button.primary:hover {
+    background: #1d4ed8; border-color: #1d4ed8;
+  }
+  .oris-bridges-panel .bp-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; color: #64748b;
+    margin-top: 6px; line-height: 1.4;
+  }
+  .oris-bridges-panel .bp-meta b { color: #94a3b8; }
+</style>
+
+<div class="oris-bridges-panel" id="orisBridgesPanel" aria-label="ORIS export bridges">
+  <div class="bp-head">
+    <span>🌐 ORIS export</span>
+    <button class="bp-toggle" id="bpToggle" aria-label="Toggle">−</button>
+  </div>
+  <div class="bp-body">
+    <button class="primary" data-bridge-fmt="oris">Download ORIS · v0.1</button>
+    <button data-bridge-fmt="fhir">FHIR R4</button>
+    <button data-bridge-fmt="dicom">DICOM-SR</button>
+    <button data-bridge-fmt="mis">MIS chart</button>
+    <button data-bridge-fmt="mmoral">MMOral 8-cls</button>
+  </div>
+  <div class="bp-meta">
+    file_id <b id="bpFileId">—</b> · runs the bridges/* converters on the
+    saved ground truth. No DB writes triggered by these buttons.
+  </div>
+</div>
+
+<script>
+(function () {
+  const panel = document.getElementById('orisBridgesPanel');
+  const toggle = document.getElementById('bpToggle');
+  const fileIdLabel = document.getElementById('bpFileId');
+
+  function currentFileId() {
+    // Production arena-core.js sets window.ARENA_FILE_ID once a sandbox
+    // file is loaded; fallback: try to parse it from the URL or sandbox state.
+    if (typeof window.ARENA_FILE_ID === 'number') return window.ARENA_FILE_ID;
+    if (window.AppState && typeof window.AppState.fileId === 'number') return window.AppState.fileId;
+    const m = /file_id=(\d+)/.exec(location.search);
+    if (m) return parseInt(m[1], 10);
+    return 1001;  // default to Case A so bridges still produce something
+  }
+
+  function refreshFileId() {
+    const id = currentFileId();
+    fileIdLabel.textContent = id;
+  }
+
+  refreshFileId();
+  setInterval(refreshFileId, 1500);  // production arena updates this asynchronously
+
+  toggle.addEventListener('click', () => {
+    panel.classList.toggle('collapsed');
+    toggle.textContent = panel.classList.contains('collapsed') ? '+' : '−';
+  });
+
+  document.querySelectorAll('.oris-bridges-panel [data-bridge-fmt]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const fmt = btn.dataset.bridgeFmt;
+      const id = currentFileId();
+      const url = `/api/export/${id}?format=${encodeURIComponent(fmt)}`;
+      // Use a temporary <a> so the Content-Disposition filename is honoured.
+      const a = document.createElement('a');
+      a.href = url;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
+  });
+})();
+</script>
+
 </body>
 </html>

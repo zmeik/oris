@@ -412,14 +412,21 @@ def darwin_lab_page():
 
 @app.route("/play")
 def play_page():
-    """Reviewer-facing minimal playground.
+    """Reviewer-facing playground = the full production Darwin-Lab Arena.
 
-    Single self-contained page: pick one of 3 anonymised synthetic OPG cases
-    (A/B/C), click any tooth cell to cycle through ORIS statuses, watch the
-    canonical ORIS JSON re-render live, and download FHIR/DICOM-SR/MIS/MMOral
-    via /api/play/export. Sits between the static /demo (Figure 2 source) and
-    the full /darwin-lab Arena."""
-    return send_file(str(HERE / "static" / "play.html"), mimetype="text/html")
+    Same template as /darwin-lab so reviewers get every piece of UI we
+    iterated on: 22-status icon picker, layered status editor, Vertucci
+    root-data, surface m/d/o/v/l checkboxes, anatomy panel, 16-cell
+    crops carousel, fullscreen crop editor, time-machine ground-truth
+    history, FDI bbox overlay on the OPG, etc.
+
+    The bridges-export floating panel injected into darwin_lab.html
+    surfaces the FHIR R4 / DICOM-SR / MIS / MMOral / ORIS converters
+    so reviewers don't need to type API URLs by hand. Three anonymised
+    K08.1 cases (A/B/C, file_id 1001-1003) are auto-seeded into SQLite
+    on app startup; reviewers switch between them via the Sandbox file
+    list at the top of the Arena."""
+    return render_template("darwin_lab.html")
 
 
 @app.route("/api/play/cases")
