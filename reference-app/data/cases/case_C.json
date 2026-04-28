@@ -64,48 +64,102 @@
     "mandibular_canal_right": {
       "visibility": "partially_visible",
       "course": "normal",
-      "distance_to_alveolar_crest_mm": 2.8
+      "distance_to_alveolar_crest_mm": 2.8,
+      "bbox": {
+        "x1": 320,
+        "y1": 690,
+        "x2": 880,
+        "y2": 760
+      }
     },
     "mandibular_canal_left": {
       "visibility": "partially_visible",
       "course": "normal",
-      "distance_to_alveolar_crest_mm": 3.0
+      "distance_to_alveolar_crest_mm": 3.0,
+      "bbox": {
+        "x1": 1120,
+        "y1": 690,
+        "x2": 1680,
+        "y2": 760
+      }
     },
     "mental_foramen_right": {
       "visibility": "partially_visible",
       "location_fdi": "4.5",
-      "shape": "oval"
+      "shape": "oval",
+      "bbox": {
+        "x1": 700,
+        "y1": 660,
+        "x2": 800,
+        "y2": 750
+      }
     },
     "mental_foramen_left": {
       "visibility": "partially_visible",
       "location_fdi": "3.5",
-      "shape": "oval"
+      "shape": "oval",
+      "bbox": {
+        "x1": 1200,
+        "y1": 660,
+        "x2": 1300,
+        "y2": 750
+      }
     },
     "maxillary_sinus_right": {
       "status": "mucosal_thickening",
       "floor_integrity": "intact",
       "pneumatization": "increased",
-      "distance_to_crest_mm": 4.5
+      "distance_to_crest_mm": 4.5,
+      "bbox": {
+        "x1": 260,
+        "y1": 80,
+        "x2": 620,
+        "y2": 280
+      }
     },
     "maxillary_sinus_left": {
       "status": "mucosal_thickening",
       "floor_integrity": "intact",
       "pneumatization": "increased",
-      "distance_to_crest_mm": 4.8
+      "distance_to_crest_mm": 4.8,
+      "bbox": {
+        "x1": 1380,
+        "y1": 80,
+        "x2": 1740,
+        "y2": 280
+      }
     },
     "tmj_right_condyle": {
       "morphology": "flattened",
       "surface_contour": "irregular",
-      "bone_density": "sclerotic"
+      "bone_density": "sclerotic",
+      "bbox": {
+        "x1": 70,
+        "y1": 100,
+        "x2": 220,
+        "y2": 280
+      }
     },
     "tmj_left_condyle": {
       "morphology": "flattened",
       "surface_contour": "irregular",
-      "bone_density": "sclerotic"
+      "bone_density": "sclerotic",
+      "bbox": {
+        "x1": 1780,
+        "y1": 100,
+        "x2": 1930,
+        "y2": 280
+      }
     },
     "airway_pharyngeal": {
       "shape": "narrowed",
-      "tongue_position": "retropositioned"
+      "tongue_position": "retropositioned",
+      "bbox": {
+        "x1": 780,
+        "y1": 380,
+        "x2": 1220,
+        "y2": 660
+      }
     }
   }
 }

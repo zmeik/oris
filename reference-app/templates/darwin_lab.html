@@ -477,7 +477,7 @@ init();
     font-size: 12px;
   }
   .apan-head {
-    display: flex; align-items: center; gap: 10px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
     margin-bottom: 10px;
   }
   .apan-title {
@@ -486,10 +486,13 @@ init();
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
+  .apan-hint {
+    font-size: 10px; color: var(--text-dim);
+    flex: 1 1 auto;
+  }
   .apan-meta {
     font-family: var(--font-mono);
     font-size: 10px; color: var(--text-dim);
-    margin-left: auto;
   }
   .apan-meta b { color: var(--text-muted); font-weight: 500; }
   .apan-save {
@@ -500,95 +503,115 @@ init();
     border-radius: 4px;
     font: inherit; font-size: 11px; font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s, opacity 0.15s;
   }
-  .apan-save:hover:not(:disabled) {
-    background: rgba(16, 185, 129, 0.32);
-    color: #fff;
+  .apan-save:hover:not(:disabled) { background: rgba(16, 185, 129, 0.32); color: #fff; }
+  .apan-save:disabled { opacity: 0.4; cursor: not-allowed; }
+  .apan-group {
+    margin-bottom: 4px;
   }
-  .apan-save:disabled {
-    opacity: 0.4; cursor: not-allowed;
+  .apan-group-rows {
+    display: flex; flex-direction: column; gap: 2px;
   }
-  .apan-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 10px;
-  }
-  .apan-card {
-    background: rgba(30, 41, 59, 0.55);
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    border-radius: 6px;
-    padding: 8px 10px;
-    display: flex; flex-direction: column; gap: 6px;
-    min-width: 0;
-  }
-  .apan-card-head {
-    font-size: 11px; font-weight: 600;
-    color: var(--text);
-    letter-spacing: 0.02em;
-  }
-  .apan-side { font-size: 11px; color: var(--text-muted); }
-  .apan-side > summary {
-    list-style: none;
-    cursor: pointer;
-    display: flex; align-items: center; gap: 6px;
-    padding: 3px 6px;
+  .apan-row {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.18);
     border-radius: 4px;
-    background: rgba(15, 23, 42, 0.45);
+    transition: background 0.12s, border-color 0.12s, box-shadow 0.12s;
   }
-  .apan-side > summary::-webkit-details-marker { display: none; }
-  .apan-side > summary:hover { background: rgba(15, 23, 42, 0.7); }
-  .apan-side-label {
+  .apan-row:hover {
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(96, 165, 250, 0.4);
+  }
+  .apan-row.pinned {
+    background: rgba(34, 211, 238, 0.10);
+    border-color: rgba(34, 211, 238, 0.55);
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.25);
+  }
+  .apan-row-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .apan-row-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+  .apan-row-label {
+    font-size: 11.5px; font-weight: 500;
+    color: var(--text);
+  }
+  .apan-row-side {
     font-family: var(--font-mono);
-    font-size: 9.5px;
+    font-size: 9px;
     color: var(--text-dim);
-    min-width: 30px;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
+    padding: 1px 6px;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 99px;
   }
-  .apan-summary-spacer { flex: 1; }
-  .apan-summary-toggle {
-    color: var(--text-dim); font-size: 10px;
-    transition: transform 0.15s;
+  .apan-row-spacer { flex: 1 1 auto; }
+  .apan-row-toggle {
+    background: transparent;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    color: var(--text-dim);
+    font: inherit; font-size: 11px;
+    width: 22px; height: 20px;
+    border-radius: 3px;
+    cursor: pointer;
+    line-height: 1;
   }
-  .apan-side[open] > summary .apan-summary-toggle { transform: rotate(180deg); }
-  .apan-status {
-    font-family: var(--font-mono);
-    font-size: 9.5px;
-    padding: 1px 6px; border-radius: 99px;
-    text-transform: lowercase;
-  }
-  .apan-status-ok    { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; }
-  .apan-status-warn  { background: rgba(234, 179, 8, 0.20);  color: #fde68a; }
-  .apan-status-bad   { background: rgba(239, 68, 68, 0.20);  color: #fca5a5; }
-  .apan-status-empty { background: rgba(100,116,139,0.20);   color: #94a3b8; }
-  .apan-fields {
-    margin-top: 6px;
-    display: grid; grid-template-columns: 1fr; gap: 4px;
+  .apan-row-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .apan-row-body {
+    padding: 6px 10px 10px 40px;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
     font-size: 10.5px;
+    border-top: 1px solid rgba(148, 163, 184, 0.12);
   }
   .apan-field {
     display: grid;
-    grid-template-columns: 1fr 1fr; gap: 4px;
+    grid-template-columns: 110px 1fr;
+    gap: 4px;
     align-items: center;
   }
-  .apan-field label {
-    color: var(--text-dim); font-size: 10px;
-  }
+  .apan-field label { color: var(--text-dim); font-size: 10px; }
   .apan-input {
     background: rgba(15, 23, 42, 0.6);
     border: 1px solid rgba(148, 163, 184, 0.25);
     border-radius: 3px;
     color: var(--text);
     font: inherit; font-size: 10.5px;
-    padding: 2px 4px;
+    padding: 3px 6px;
     width: 100%;
     box-sizing: border-box;
   }
   .apan-input:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px var(--accent-soft, rgba(96,165,250,0.18));
+    box-shadow: 0 0 0 2px rgba(96,165,250,0.2);
+  }
+  .apan-status {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    padding: 1px 8px; border-radius: 99px;
+    text-transform: lowercase;
+    white-space: nowrap;
+  }
+  .apan-status-ok    { background: rgba(16, 185, 129, 0.18); color: #6ee7b7; }
+  .apan-status-warn  { background: rgba(234, 179, 8, 0.20);  color: #fde68a; }
+  .apan-status-bad   { background: rgba(239, 68, 68, 0.20);  color: #fca5a5; }
+  .apan-status-empty { background: rgba(100,116,139,0.20);   color: #94a3b8; }
+
+  /* OPG anatomy overlay — SVG positioned absolutely on top of the
+     production <img id="arena-opg-img-..."> */
+  .apan-opg-overlay {
+    /* Inline styles set position/inset/etc. so this rule is mostly for
+       theming; keep it visible above the production canvas (z-index 5). */
+    pointer-events: none;
   }
 
   /* ─── Change-history strip ─── */

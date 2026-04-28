@@ -52,48 +52,102 @@
     "mandibular_canal_right": {
       "visibility": "clearly_visible",
       "course": "normal",
-      "distance_to_alveolar_crest_mm": 4.5
+      "distance_to_alveolar_crest_mm": 4.5,
+      "bbox": {
+        "x1": 320,
+        "y1": 690,
+        "x2": 880,
+        "y2": 760
+      }
     },
     "mandibular_canal_left": {
       "visibility": "clearly_visible",
       "course": "normal",
-      "distance_to_alveolar_crest_mm": 4.2
+      "distance_to_alveolar_crest_mm": 4.2,
+      "bbox": {
+        "x1": 1120,
+        "y1": 690,
+        "x2": 1680,
+        "y2": 760
+      }
     },
     "mental_foramen_right": {
       "visibility": "clearly_visible",
       "location_fdi": "4.5",
-      "shape": "round"
+      "shape": "round",
+      "bbox": {
+        "x1": 700,
+        "y1": 660,
+        "x2": 800,
+        "y2": 750
+      }
     },
     "mental_foramen_left": {
       "visibility": "partially_visible",
       "location_fdi": "3.5",
-      "shape": "round"
+      "shape": "round",
+      "bbox": {
+        "x1": 1200,
+        "y1": 660,
+        "x2": 1300,
+        "y2": 750
+      }
     },
     "maxillary_sinus_right": {
       "status": "normal",
       "floor_integrity": "intact",
       "pneumatization": "normal",
-      "distance_to_crest_mm": 7.5
+      "distance_to_crest_mm": 7.5,
+      "bbox": {
+        "x1": 260,
+        "y1": 80,
+        "x2": 620,
+        "y2": 280
+      }
     },
     "maxillary_sinus_left": {
       "status": "normal",
       "floor_integrity": "intact",
       "pneumatization": "normal",
-      "distance_to_crest_mm": 7.1
+      "distance_to_crest_mm": 7.1,
+      "bbox": {
+        "x1": 1380,
+        "y1": 80,
+        "x2": 1740,
+        "y2": 280
+      }
     },
     "tmj_right_condyle": {
       "morphology": "normal",
       "surface_contour": "smooth",
-      "bone_density": "normal"
+      "bone_density": "normal",
+      "bbox": {
+        "x1": 70,
+        "y1": 100,
+        "x2": 220,
+        "y2": 280
+      }
     },
     "tmj_left_condyle": {
       "morphology": "normal",
       "surface_contour": "smooth",
-      "bone_density": "normal"
+      "bone_density": "normal",
+      "bbox": {
+        "x1": 1780,
+        "y1": 100,
+        "x2": 1930,
+        "y2": 280
+      }
     },
     "airway_pharyngeal": {
       "shape": "normal",
-      "tongue_position": "normal"
+      "tongue_position": "normal",
+      "bbox": {
+        "x1": 780,
+        "y1": 380,
+        "x2": 1220,
+        "y2": 660
+      }
     }
   }
 }
