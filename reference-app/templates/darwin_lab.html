@@ -40,10 +40,14 @@
         <h1>ORIS Reference UI <span>v0.1 · synthetic data · paper-companion app for IJOS submission</span></h1>
         <nav class="nav" role="navigation" aria-label="Primary">
             <a href="#" onclick="showView('arena');return false;" id="nav-arena" class="active" aria-current="page" aria-label="Dental formula and OPG canvas (Figure 2)">🎯 Arena</a>
-            <a href="#" onclick="showView('tree');return false;" id="nav-tree" aria-label="Evolutionary algorithm tree (Paper A companion)">🧬 Evolution</a>
-            <a href="#" onclick="showView('evaluate');return false;" id="nav-evaluate" aria-label="Algorithm evaluation">🧪 Evaluate</a>
-            <a href="#" onclick="showView('metrics');return false;" id="nav-metrics" aria-label="Inter-algorithm reliability metrics">📊 Metrics</a>
-            <a href="#" onclick="showView('implant-lab');return false;" id="nav-implant" aria-label="Implant assessment lab (4 methods)">🦴 Implant lab</a>
+            <!-- Production-only views (Evolution / Evaluate / Metrics / Implant lab) are hidden in
+                 the public reference app: their backend depends on the live RUDN database,
+                 ML-experiment registry and 11 813 implant-assessment rows we cannot ship.
+                 Re-enable in /darwin-lab clones that are wired to the production stack. -->
+            <a href="#" onclick="showView('tree');return false;" id="nav-tree" aria-label="Evolutionary algorithm tree (Paper A companion)" hidden>🧬 Evolution</a>
+            <a href="#" onclick="showView('evaluate');return false;" id="nav-evaluate" aria-label="Algorithm evaluation" hidden>🧪 Evaluate</a>
+            <a href="#" onclick="showView('metrics');return false;" id="nav-metrics" aria-label="Inter-algorithm reliability metrics" hidden>📊 Metrics</a>
+            <a href="#" onclick="showView('implant-lab');return false;" id="nav-implant" aria-label="Implant assessment lab (4 methods)" hidden>🦴 Implant lab</a>
             <button class="theme-toggle" type="button" onclick="document.body.classList.toggle('theme-light');try{localStorage.setItem('oris-theme', document.body.classList.contains('theme-light')?'light':'dark')}catch(e){}" aria-label="Toggle light/dark theme" title="Toggle light/dark theme (use light for paper screenshots)">☀ / ☾</button>
         </nav>
     </header>
@@ -223,9 +227,12 @@
             <button class="sbx-btn" id="sbx-import-btn" onclick="openSandboxImportDialog()" style="display:none">Import OPG</button>
             <button class="sbx-btn" id="sbx-delete-btn" onclick="deleteSandbox()" style="display:none;color:var(--red);border-color:rgba(239,68,68,0.3)">Delete</button>
             <span style="margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                <button class="sbx-btn" id="batch-gt-btn" onclick="batchPrepopulateGT('preview')" style="color:var(--purple);border-color:rgba(168,85,247,0.4);" title="Prefill ground truth from W8 model (V5b) for all OPGs without GT — demonstrates §5.3 AI workflow">🤖 Batch W8→GT</button>
-                <button class="sbx-btn" id="batch-w0-btn" onclick="batchW0ToGT('preview')" style="color:var(--cyan);border-color:rgba(34,211,238,0.4);" title="Prefill GT from YOLO+SemiT-SAM (W0) on K08.1 cohort">🧠 W0→GT (K08.1)</button>
-                <span id="batch-gt-status" style="font-size:11px;color:var(--text-dim);"></span>
+                <!-- Production-only batch buttons (W8 / W0 models live on RUDN GPU box, not in
+                     the public reference app). Hidden via `hidden` so reviewers don't click
+                     into a stub that cannot complete. -->
+                <button class="sbx-btn" id="batch-gt-btn" onclick="batchPrepopulateGT('preview')" style="color:var(--purple);border-color:rgba(168,85,247,0.4);" title="Prefill ground truth from W8 model (V5b) for all OPGs without GT — demonstrates §5.3 AI workflow" hidden>🤖 Batch W8→GT</button>
+                <button class="sbx-btn" id="batch-w0-btn" onclick="batchW0ToGT('preview')" style="color:var(--cyan);border-color:rgba(34,211,238,0.4);" title="Prefill GT from YOLO+SemiT-SAM (W0) on K08.1 cohort" hidden>🧠 W0→GT (K08.1)</button>
+                <span id="batch-gt-status" style="font-size:11px;color:var(--text-dim);" hidden></span>
                 <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding-left:10px;border-left:1px solid var(--border);" title="ORIS export — runs the bridges/* converters on the saved ground truth of the currently loaded file. No DB writes are triggered.">
                     <span style="font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;text-transform:uppercase;">🌐 ORIS</span>
                     <button class="sbx-btn" data-bridge-fmt="oris" style="color:var(--blue);border-color:rgba(59,130,246,0.45);background:rgba(59,130,246,0.1);" title="Download canonical ORIS v0.1 JSON (validated against schema/oris-v0.1.json)">⬇ ORIS</button>
@@ -435,6 +442,22 @@ init();
 </div>
 
 <script src="/static/js/darwin/fullscreen.js"></script>
+
+<!-- ============================================================
+     Reference-app: hide controls whose backend is not shipped here
+     (production-only patient-card link, GT copy menu, sandbox
+     import/delete admin actions). Keeping the JS that injects them
+     intact so /darwin-lab clones wired to production still get the
+     full UI; only the visual surface is suppressed in this build.
+     ============================================================ -->
+<style>
+  /* "📋 Card →" link — needs a real /patient/<id>/verify view */
+  a[href^="/patient/"][href$="/verify"] { display: none !important; }
+  /* "📋 Copy GT from…" — needs cross-image GT history per patient */
+  .gt-copy-btn { display: none !important; }
+  /* "Карта не найдена" placeholder when patient card is absent */
+  .tc-card-empty { display: none !important; }
+</style>
 
 <!-- ============================================================
      ORIS export bridges — wires the inline buttons in the topbar
