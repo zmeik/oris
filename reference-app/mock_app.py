@@ -410,6 +410,127 @@ def darwin_lab_page():
     return render_template("darwin_lab.html")
 
 
+@app.route("/play")
+def play_page():
+    """Reviewer-facing minimal playground.
+
+    Single self-contained page: pick one of 3 anonymised synthetic OPG cases
+    (A/B/C), click any tooth cell to cycle through ORIS statuses, watch the
+    canonical ORIS JSON re-render live, and download FHIR/DICOM-SR/MIS/MMOral
+    via /api/play/export. Sits between the static /demo (Figure 2 source) and
+    the full /darwin-lab Arena."""
+    return send_file(str(HERE / "static" / "play.html"), mimetype="text/html")
+
+
+@app.route("/api/play/cases")
+def api_play_cases():
+    """List the 3 demo cases for the playground (A/B/C)."""
+    cases = []
+    for letter, file_id in (("A", 1001), ("B", 1002), ("C", 1003)):
+        json_path = HERE / "data" / "cases" / f"case_{letter}.json"
+        png_path = HERE / "static" / "images" / "cases" / f"case_{letter}.png"
+        if not json_path.exists() or not png_path.exists():
+            continue
+        doc = json.loads(json_path.read_text(encoding="utf-8"))
+        cases.append({
+            "letter": letter,
+            "file_id": file_id,
+            "label": doc.get("label", f"Case {letter}"),
+            "image_url": f"/static/images/cases/case_{letter}.png",
+            "formula": doc.get("formula", {}),
+            "tooth_notes": doc.get("tooth_notes", {}),
+            "root_data": doc.get("root_data", {}),
+        })
+    return jsonify({"cases": cases})
+
+
+@app.route("/api/play/export", methods=["POST"])
+def api_play_export():
+    """Stateless export — accepts {formula, format} JSON, returns the bridge output.
+
+    Unlike /api/export/<file_id> this does NOT touch the SQLite ground-truth row,
+    so reviewers can experiment in /play without polluting the demo state."""
+    payload = request.get_json(silent=True) or {}
+    formula = payload.get("formula") or {}
+    fmt = (payload.get("format") or "oris").lower()
+    case_letter = payload.get("case", "X")
+
+    # Build a lightweight ORIS doc directly from the FDI→status map,
+    # mirroring the logic in _build_oris_doc_from_db() but skipping the DB.
+    teeth: dict[str, dict] = {}
+    if lookup_oris_from_fdi is not None:
+        for fdi, status in formula.items():
+            occupant = "N"
+            if status == "missing":
+                occupant = "A"
+            elif status in ("implant", "impl_fixture", "impl_healing", "impl_restored"):
+                occupant = "F"
+            elif status == "bridge":
+                occupant = "B"
+            elif status == "cantilever":
+                occupant = "C"
+            elif status == "uncertain":
+                occupant = "U"
+            try:
+                code = lookup_oris_from_fdi(fdi, occupant)
+            except Exception:
+                continue
+            teeth[code] = {
+                "fdi": fdi,
+                "occupant": occupant,
+                "status_layers": status,
+            }
+
+    doc = {
+        "oris_version": "0.1.0",
+        "document_id": f"PLAY_{case_letter}",
+        "patient": {"anonymized_id": f"P_PLAY_{case_letter}_DEMO", "age_years": None, "sex": None},
+        "imaging": {
+            "modality": "OPG",
+            "device": "ORIS Reference Application — Playground",
+            "acquisition_date": "2026-01-01T00:00:00Z",
+        },
+        "teeth": teeth,
+        "ground_truth_meta": {
+            "source": "manual",
+            "session_id": "play-session",
+            "sequence_num": 1,
+        },
+        "notes": f"Playground export for Case {case_letter}",
+    }
+
+    if fmt == "oris":
+        body = json.dumps(doc, ensure_ascii=False, indent=2)
+        return Response(body, mimetype="application/json",
+                        headers={"Content-Disposition": f"attachment; filename=oris_play_{case_letter}.json"})
+    if fmt == "fhir":
+        if to_fhir is None:
+            return jsonify({"error": "bridges.fhir not available"}), 500
+        body = json.dumps(to_fhir(doc), ensure_ascii=False, indent=2)
+        return Response(body, mimetype="application/json",
+                        headers={"Content-Disposition": f"attachment; filename=fhir_play_{case_letter}.json"})
+    if fmt == "dicom":
+        if to_dicom_sr is None:
+            return jsonify({"error": "bridges.dicom_sr not available"}), 500
+        body = to_dicom_sr(doc)
+        return Response(body, mimetype="application/xml",
+                        headers={"Content-Disposition": f"attachment; filename=dicom_sr_play_{case_letter}.xml"})
+    if fmt == "mis":
+        if to_mis_chart is None:
+            return jsonify({"error": "bridges.mis not available"}), 500
+        body = json.dumps(to_mis_chart(doc), ensure_ascii=False, indent=2)
+        return Response(body, mimetype="application/json",
+                        headers={"Content-Disposition": f"attachment; filename=mis_chart_play_{case_letter}.json"})
+    if fmt == "mmoral":
+        if to_mmoral_format is None:
+            return jsonify({"error": "bridges.mmoral not available"}), 500
+        body = json.dumps(to_mmoral_format(doc), ensure_ascii=False, indent=2)
+        return Response(body, mimetype="application/json",
+                        headers={"Content-Disposition": f"attachment; filename=mmoral_play_{case_letter}.json"})
+
+    return jsonify({"error": f"unknown format '{fmt}' (use oris|fhir|dicom|mis|mmoral)"}), 400
+
+
 # ============================================================================
 # Sandbox endpoints
 # ============================================================================

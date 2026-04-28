@@ -40,7 +40,8 @@ python3 mock_app.py
 Что вы получаете:
 
 - **`/`** и **`/demo`** — статичная IJOS-quality demo (исходник Figure 2). Полностью self-contained vanilla HTML/CSS/JS, без API-вызовов, EN/RU и light/dark тема. Идеальный первый клик для рецензента журнала.
-- **`/darwin-lab`** — интерактивный Arena UI на SQLite + Pillow image upload + bridges (FHIR R4, DICOM-SR, MIS, MMOral). Три анонимизированных синтетических OPG авто-загружаются при первом запуске. Включает layer editor, time-machine ground-truth history, anatomy/TMJ/airway панели, экспорт через bridges.
+- **`/play`** — минимальная интерактивная песочница для рецензентов. Выбираешь один из трёх анонимизированных кейсов (A/B/C), кликаешь по любой ячейке зуба чтобы циклить через статусы ORIS, смотришь как канонический ORIS JSON перерисовывается live, и скачиваешь FHIR R4 / DICOM-SR / MIS / MMOral через stateless `POST /api/play/export`. Никаких записей в БД — правки живут в браузере. EN/RU + light/dark.
+- **`/darwin-lab`** — полный интерактивный Arena UI на SQLite + Pillow image upload + bridges (FHIR R4, DICOM-SR, MIS, MMOral). Те же три анонимизированных кейса авто-загружаются при первом запуске. Включает production layer editor, time-machine ground-truth history, anatomy/TMJ/airway панели, и весь Darwin-Lab инструментарий.
 
 См. [`reference-app/README.md`](reference-app/README.md) для роут-карты, что замокано vs. реально, и как подсунуть свои OPG (под privacy gate, описанным там же).
 

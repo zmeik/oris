@@ -40,7 +40,8 @@ python3 mock_app.py
 What you get:
 
 - **`/`** and **`/demo`** — the static IJOS-quality demo (paper Figure 2 source). Fully self-contained vanilla HTML/CSS/JS, no API calls, EN/RU and light/dark theme toggles. Ideal first stop for a journal reviewer.
-- **`/darwin-lab`** — the interactive Arena UI backed by SQLite + Pillow image upload + bridges (FHIR R4, DICOM-SR, MIS, MMOral). Three anonymised synthetic OPG cases auto-seed on first run. Includes the layer editor, time-machine ground-truth history, anatomy/TMJ/airway panels, and bridge exports.
+- **`/play`** — a minimal interactive playground for reviewers. Pick one of three anonymised OPG cases (A/B/C), click any tooth cell to cycle through ORIS statuses, watch the canonical ORIS JSON re-render live, and download FHIR R4 / DICOM-SR / MIS / MMOral via stateless `POST /api/play/export`. No DB writes — your edits stay in the browser. EN/RU + light/dark.
+- **`/darwin-lab`** — the full interactive Arena UI backed by SQLite + Pillow image upload + bridges (FHIR R4, DICOM-SR, MIS, MMOral). The same three anonymised cases auto-seed on first run. Includes the production layer editor, time-machine ground-truth history, anatomy/TMJ/airway panels, and the full Darwin-Lab toolset.
 
 Read [`reference-app/README.md`](reference-app/README.md) for the route-by-route map, what's mocked vs. real, and how to swap in your own OPGs (under the privacy gate documented there).
 
