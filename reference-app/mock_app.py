@@ -387,8 +387,26 @@ def bootstrap_demo_data() -> None:
 
 
 @app.route("/")
+def landing_page():
+    """Landing page = polished IJOS-quality static demo (paper Figure 2 source).
+
+    The standalone HTML at /static/demo.html is fully self-contained — no API
+    calls, all SVG generated procedurally — so it works on any browser without
+    backend setup. Reviewers see Q1-quality design first, then click into
+    /darwin-lab for the full interactive Flask version (3 anonymised cases,
+    layer editor, bridge exports, time-machine ground-truth history)."""
+    return send_file(str(HERE / "static" / "demo.html"), mimetype="text/html")
+
+
+@app.route("/demo")
+def demo_page():
+    """Static IJOS-quality demo (alias for /)."""
+    return send_file(str(HERE / "static" / "demo.html"), mimetype="text/html")
+
+
 @app.route("/darwin-lab")
 def darwin_lab_page():
+    """Full interactive Arena UI — backed by SQLite + bridges (FHIR/DICOM-SR/MIS/MMOral)."""
     return render_template("darwin_lab.html")
 
 

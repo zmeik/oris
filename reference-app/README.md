@@ -1,8 +1,18 @@
-# `production-arena/` — full-fidelity Arena demo with mock backend
+# `reference-app/` — ORIS v0.1 Reference Application
 
 > 🇬🇧 **English** · 🇷🇺 [На русском (ниже)](#русская-версия)
 
-This directory contains a **full clone** of the production Darwin-Lab Arena UI from the X-RayAnalizer project (RUDN), with a minimal mock Flask backend so that anyone can run the real interface against synthetic data — **no PostgreSQL, no real radiographs, no PII**.
+Companion application for *Paper 0 — ORIS v0.1: Open Radiographic Imaging Schema*
+(IJOS submission). One Flask process serves two views from `localhost:5050`:
+
+| Route | What you get | When to use |
+|---|---|---|
+| **`/`**  · also `/demo` | **Static IJOS-quality demo page** (62 KB, fully self-contained, paper Figure 2 source). Renders 16-cell quadrants, 3-row algorithm comparison, status legend, selected-tooth detail panel, sandbox/cohort breadcrumb, light/dark theme. **No backend dependency** — works as a standalone HTML file too. | First impression for paper reviewers. The screenshot in Figure 2 of the paper is captured from this URL. |
+| **`/darwin-lab`** | **Full interactive Arena** — the production Darwin-Lab UI from the X-RayAnalizer project at RUDN, served against a mock SQLite backend with three anonymised K08.1 cases (case_A/B/C, 5 % all-side cropped, EXIF-stripped, watermarked). All 14 JavaScript modules load verbatim. Click cells to edit ground truth, save change-history with sequence numbers, export to FHIR / DICOM-SR / MIS / MMOral. | Reviewers who want to *use* the schema. Power users editing ground truth. |
+
+Click **Arena ↗** in the demo nav to jump to the interactive view, or **← Demo view** in the interactive nav to come back.
+
+Below: a verbatim clone of the production Darwin-Lab Arena UI, served against a minimal mock Flask backend with synthetic data — **no PostgreSQL, no real radiographs, no PII**.
 
 ## What's in here
 
