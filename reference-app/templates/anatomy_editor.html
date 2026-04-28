@@ -170,6 +170,31 @@ body.viewer-mode .delete-custom {
 .group-head .add-btn:hover {
   background: rgba(91,141,239,0.30); color: #fff;
 }
+/* Group-level eye toggle: hides/shows every structure in this group at
+   once. Visible in BOTH Viewer and Editor (visibility is a viewing
+   concern, not an edit). The hidden state is derived: "all structures
+   in the group are _hidden". */
+.group-head .group-vis {
+  background: transparent; border: 0;
+  color: var(--text-muted);
+  font: inherit; font-size: 12px;
+  padding: 0 4px; line-height: 1;
+  cursor: pointer;
+  position: relative;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+.group-head .group-vis:hover { color: var(--accent); }
+.group-head .group-vis.is-hidden { opacity: 0.40; color: var(--text-dim); }
+.group-head .group-vis.is-hidden::after {
+  content: "";
+  position: absolute;
+  left: 3px; right: 3px;
+  top: 50%;
+  height: 1px;
+  background: currentColor;
+  transform: rotate(-22deg);
+}
 /* Drawing-mode banner — visible when the user is mid-stroke on a new
    custom structure. Click on canvas adds points; Enter / double-click
    commits; Esc cancels. */
@@ -533,6 +558,11 @@ function drawStructure(s) {
   // Sidebar still lists them (dimmed) so the reviewer can flip them back.
   if (s._hidden) return;
   const isActive = (s.id === S.activeId);
+  // Vertex dots and bbox corner handles are EDITING affordances —
+  // dragging only makes sense in Editor mode. Viewer renders just the
+  // outline + label so the reviewer sees the structure shape without
+  // visual noise from clickable handles.
+  const showHandles = isActive && S.pageMode === 'editor';
   const colour = s.color || '#5b8def';
   ctx.lineWidth = isActive ? 3 : 2;
   ctx.strokeStyle = colour;
@@ -545,8 +575,8 @@ function drawStructure(s) {
     ctx.setLineDash(isActive ? [] : [8, 4]);
     ctx.strokeRect(x1, y1, w, h);
     ctx.setLineDash([]);
-    if (isActive) {
-      // 4 corner handles
+    if (showHandles) {
+      // 4 corner handles — Editor only
       const handles = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]];
       ctx.fillStyle = colour;
       handles.forEach(([hx, hy]) => {
@@ -559,10 +589,8 @@ function drawStructure(s) {
         ctx.strokeStyle = colour;
         ctx.lineWidth = isActive ? 3 : 2;
       });
-      drawLabel(x1, y1 - 6, s.name, colour);
-    } else {
-      drawLabel(x1, y1 - 6, s.name, colour);
     }
+    drawLabel(x1, y1 - 6, s.name, colour);
     return;
   }
 
@@ -583,7 +611,8 @@ function drawStructure(s) {
   ctx.setLineDash(isActive ? [] : [8, 4]);
   ctx.stroke();
   ctx.setLineDash([]);
-  if (isActive) {
+  if (showHandles) {
+    // Vertex dots — Editor only
     pts.forEach((p, i) => {
       const [sx, sy] = imgToScreen(p[0], p[1]);
       ctx.beginPath();
@@ -596,10 +625,12 @@ function drawStructure(s) {
       ctx.strokeStyle = colour;
       ctx.lineWidth = 3;
     });
-    if (pts.length > 0) {
-      const [lx, ly] = imgToScreen(pts[0][0], pts[0][1]);
-      drawLabel(lx + 6, ly - 6, s.name, colour);
-    }
+  }
+  // Label is shown for the active structure in BOTH modes — in Viewer
+  // it's the only cue saying "this is the one I clicked in the list".
+  if (isActive && pts.length > 0) {
+    const [lx, ly] = imgToScreen(pts[0][0], pts[0][1]);
+    drawLabel(lx + 6, ly - 6, s.name, colour);
   }
 }
 
@@ -832,7 +863,15 @@ canvas.addEventListener('mousemove', e => {
     return;
   }
 
-  // No drag: hover hit-testing for cursor feedback on active structure
+  // Viewer mode: no point-hover affordance — there are no dots to hover.
+  // Suppress the "point N/M" tooltip and the hover-grow effect on dots.
+  if (S.pageMode === 'viewer') {
+    if (S.hoverPoint !== null) { S.hoverPoint = null; render(); }
+    tip.style.display = 'none';
+    return;
+  }
+
+  // Editor: hover hit-testing for cursor feedback on active structure
   const s = S.byId[S.activeId];
   if (s && s.annotation_type === 'polyline') {
     const idx = findPointHit(s, sx, sy);
@@ -905,11 +944,21 @@ function renderSidebar() {
   let html = '';
   for (const g of S.groups) {
     html += `<div class="group" data-group="${escAttr(g.name)}">`;
+    const allHidden = isGroupAllHidden(g);
     html += `<div class="group-head"><span class="icon">${g.icon || '·'}</span>`
           + `<span>${esc(g.name)}</span>`
           + `<span class="count">${g.structures.length}</span>`
           + `<button class="add-btn" data-add-group="${escAttr(g.name)}" `
           + `title="Add a new custom polygon or bbox into '${escAttr(g.name)}'">+ Add</button>`
+          // Group eye: only render when the group has at least one
+          // structure (empty groups have nothing to hide). Class flips
+          // to .is-hidden when EVERY structure in the group is hidden.
+          + (g.structures.length
+              ? `<button class="group-vis${allHidden ? ' is-hidden' : ''}" `
+              + `data-vis-group="${escAttr(g.name)}" `
+              + `aria-pressed="${allHidden ? 'true' : 'false'}" `
+              + `title="${allHidden ? 'Show all in this group' : 'Hide all in this group'}">👁</button>`
+              : '')
           + `</div>`;
     html += '<div class="group-rows">';
     for (const s of g.structures) {
@@ -952,6 +1001,12 @@ function renderSidebar() {
       toggleVisibility(el.dataset.visId);
     });
   });
+  sidebar.querySelectorAll('.group-vis').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleGroupVisibility(el.dataset.visGroup);
+    });
+  });
   sidebar.querySelectorAll('.struct-mode').forEach(el => {
     el.addEventListener('click', e => {
       e.stopPropagation();
@@ -990,6 +1045,25 @@ function toggleVisibility(sid) {
   // Hiding the active structure mid-edit would leave handles invisible
   // but still hit-testable — deselect to avoid confusion.
   if (s._hidden && S.activeId === sid) S.activeId = null;
+  renderSidebar();
+  render();
+}
+
+// Group-level visibility: derived from per-structure _hidden flags.
+// "All hidden" = every structure in the group has _hidden === true; the
+// click action then becomes "show all". Otherwise the action is "hide
+// all" — even a single visible structure flips the group to "hide".
+function isGroupAllHidden(g) {
+  return g.structures.length > 0 && g.structures.every(s => s._hidden);
+}
+function toggleGroupVisibility(groupName) {
+  const g = S.groups.find(x => x.name === groupName);
+  if (!g || !g.structures.length) return;
+  const newHidden = g.structures.some(s => !s._hidden); // any visible → hide all
+  for (const s of g.structures) {
+    s._hidden = newHidden;
+    if (newHidden && S.activeId === s.id) S.activeId = null;
+  }
   renderSidebar();
   render();
 }
