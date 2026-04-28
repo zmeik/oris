@@ -1,0 +1,32 @@
+{
+  "$schema": "https://github.com/zmeik/oris/schema/oris-v0.1.json",
+  "oris_version": "0.1.0",
+  "document_id": "SYNTHETIC_OPG_042_single_17",
+  "patient": {
+    "anonymized_id": "P_e_17_SYNTHETIC",
+    "age_years": 40,
+    "sex": "M"
+  },
+  "imaging": {
+    "modality": "OPG",
+    "device": "Synthetic Reference Device v1",
+    "acquisition_date": "2026-01-15T10:30:00Z",
+    "kvp": 70,
+    "ma": 12,
+    "exposure_seconds": 13.5,
+    "image_quality_score": 4
+  },
+  "teeth": {
+    "UR2PMN": {
+      "fdi": "1.7",
+      "occupant": "N",
+      "status_layers": "caries:od"
+    }
+  },
+  "ground_truth_meta": {
+    "source": "manual",
+    "session_id": "synth-e_17",
+    "sequence_num": 1
+  },
+  "notes": "Isolated tooth 1.7 = caries:od (test fixture)"
+}

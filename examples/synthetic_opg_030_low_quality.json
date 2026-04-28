@@ -1,0 +1,187 @@
+{
+  "$schema": "https://github.com/zmeik/oris/schema/oris-v0.1.json",
+  "oris_version": "0.1.0",
+  "document_id": "SYNTHETIC_OPG_030_low_quality",
+  "patient": {
+    "anonymized_id": "P_lity_SYNTHETIC",
+    "age_years": 50,
+    "sex": "U"
+  },
+  "imaging": {
+    "modality": "OPG",
+    "device": "Synthetic Reference Device v1",
+    "acquisition_date": "2026-01-15T10:30:00Z",
+    "kvp": 70,
+    "ma": 12,
+    "exposure_seconds": 13.5,
+    "image_quality_score": 1
+  },
+  "teeth": {
+    "URCPIU": {
+      "fdi": "1.1",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "URLPIU": {
+      "fdi": "1.2",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "URXPCU": {
+      "fdi": "1.3",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "UR1PPU": {
+      "fdi": "1.4",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "UR2PPU": {
+      "fdi": "1.5",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "UR1PMU": {
+      "fdi": "1.6",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "UR2PMU": {
+      "fdi": "1.7",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "UR3PMU": {
+      "fdi": "1.8",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "ULCPIU": {
+      "fdi": "2.1",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "ULLPIU": {
+      "fdi": "2.2",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "ULXPCU": {
+      "fdi": "2.3",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "UL1PPU": {
+      "fdi": "2.4",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "UL2PPU": {
+      "fdi": "2.5",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "UL1PMU": {
+      "fdi": "2.6",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "UL2PMU": {
+      "fdi": "2.7",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "UL3PMU": {
+      "fdi": "2.8",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LRCPIU": {
+      "fdi": "4.1",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LRLPIU": {
+      "fdi": "4.2",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LRXPCU": {
+      "fdi": "4.3",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LR1PPU": {
+      "fdi": "4.4",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LR2PPU": {
+      "fdi": "4.5",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LR1PMU": {
+      "fdi": "4.6",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LR2PMU": {
+      "fdi": "4.7",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LR3PMU": {
+      "fdi": "4.8",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LLCPIU": {
+      "fdi": "3.1",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LLLPIU": {
+      "fdi": "3.2",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LLXPCU": {
+      "fdi": "3.3",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LL1PPU": {
+      "fdi": "3.4",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LL2PPU": {
+      "fdi": "3.5",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LL1PMU": {
+      "fdi": "3.6",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LL2PMU": {
+      "fdi": "3.7",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    },
+    "LL3PMU": {
+      "fdi": "3.8",
+      "occupant": "U",
+      "status_layers": "uncertain"
+    }
+  },
+  "ground_truth_meta": {
+    "source": "manual",
+    "session_id": "synth-lity",
+    "sequence_num": 1
+  },
+  "notes": "Severely degraded image — uncertain everywhere"
+}

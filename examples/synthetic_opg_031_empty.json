@@ -1,0 +1,26 @@
+{
+  "$schema": "https://github.com/zmeik/oris/schema/oris-v0.1.json",
+  "oris_version": "0.1.0",
+  "document_id": "SYNTHETIC_OPG_031_empty",
+  "patient": {
+    "anonymized_id": "P_mpty_SYNTHETIC",
+    "age_years": 30,
+    "sex": "M"
+  },
+  "imaging": {
+    "modality": "OPG",
+    "device": "Synthetic Reference Device v1",
+    "acquisition_date": "2026-01-15T10:30:00Z",
+    "kvp": 70,
+    "ma": 12,
+    "exposure_seconds": 13.5,
+    "image_quality_score": 4
+  },
+  "teeth": {},
+  "ground_truth_meta": {
+    "source": "manual",
+    "session_id": "synth-mpty",
+    "sequence_num": 1
+  },
+  "notes": "Empty annotation (test of degenerate case)"
+}

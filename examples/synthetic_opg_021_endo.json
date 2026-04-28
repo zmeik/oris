@@ -1,0 +1,206 @@
+{
+  "$schema": "https://github.com/zmeik/oris/schema/oris-v0.1.json",
+  "oris_version": "0.1.0",
+  "document_id": "SYNTHETIC_OPG_021_endo",
+  "patient": {
+    "anonymized_id": "P_endo_SYNTHETIC",
+    "age_years": 52,
+    "sex": "M"
+  },
+  "imaging": {
+    "modality": "OPG",
+    "device": "Synthetic Reference Device v1",
+    "acquisition_date": "2026-01-15T10:30:00Z",
+    "kvp": 70,
+    "ma": 12,
+    "exposure_seconds": 13.5,
+    "image_quality_score": 4
+  },
+  "teeth": {
+    "URCPIN": {
+      "fdi": "1.1",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "URLPIN": {
+      "fdi": "1.2",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "URXPCN": {
+      "fdi": "1.3",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UR1PPN": {
+      "fdi": "1.4",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UR2PPN": {
+      "fdi": "1.5",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UR1PMN": {
+      "fdi": "1.6",
+      "occupant": "N",
+      "status_layers": "endo:mo+post+crowned",
+      "surfaces": [
+        "m",
+        "o"
+      ]
+    },
+    "UR2PMN": {
+      "fdi": "1.7",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UR3PMN": {
+      "fdi": "1.8",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "ULCPIN": {
+      "fdi": "2.1",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "ULLPIN": {
+      "fdi": "2.2",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "ULXPCN": {
+      "fdi": "2.3",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UL1PPN": {
+      "fdi": "2.4",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UL2PPN": {
+      "fdi": "2.5",
+      "occupant": "N",
+      "status_layers": "endo:od+post+crowned",
+      "surfaces": [
+        "o",
+        "d"
+      ]
+    },
+    "UL1PMN": {
+      "fdi": "2.6",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UL2PMN": {
+      "fdi": "2.7",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "UL3PMN": {
+      "fdi": "2.8",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LRCPIN": {
+      "fdi": "4.1",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LRLPIN": {
+      "fdi": "4.2",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LRXPCN": {
+      "fdi": "4.3",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LR1PPN": {
+      "fdi": "4.4",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LR2PPN": {
+      "fdi": "4.5",
+      "occupant": "N",
+      "status_layers": "endo:od+post+crowned",
+      "surfaces": [
+        "o",
+        "d"
+      ]
+    },
+    "LR1PMN": {
+      "fdi": "4.6",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LR2PMN": {
+      "fdi": "4.7",
+      "occupant": "N",
+      "status_layers": "endo:mo+post+crowned",
+      "surfaces": [
+        "m",
+        "o"
+      ]
+    },
+    "LR3PMN": {
+      "fdi": "4.8",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LLCPIN": {
+      "fdi": "3.1",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LLLPIN": {
+      "fdi": "3.2",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LLXPCN": {
+      "fdi": "3.3",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LL1PPN": {
+      "fdi": "3.4",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LL2PPN": {
+      "fdi": "3.5",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LL1PMN": {
+      "fdi": "3.6",
+      "occupant": "N",
+      "status_layers": "endo:o+post+crowned",
+      "surfaces": [
+        "o"
+      ]
+    },
+    "LL2PMN": {
+      "fdi": "3.7",
+      "occupant": "N",
+      "status_layers": "present"
+    },
+    "LL3PMN": {
+      "fdi": "3.8",
+      "occupant": "N",
+      "status_layers": "present"
+    }
+  },
+  "ground_truth_meta": {
+    "source": "manual",
+    "session_id": "synth-endo",
+    "sequence_num": 1
+  },
+  "notes": "Endo-heavy adult: multiple RCT teeth"
+}
