@@ -479,30 +479,50 @@ init();
   }
 
   /* ---- Center the dental formula on its midline ----
-     .arena-formula-row in production is [formula | row-label 130px | row-score],
-     which puts the FDI midline (between cells 8 and 9) ~65 px left of
-     the visual centre of the panel. In the reference build the right-
-     side row-label only repeats info that already appears in the GT /
-     Inspector column, so we hide it and let the formula self-centre
-     in the row. Row-score (small %-or-text node) stays at the right
-     and is balanced by an equal-width invisible spacer on the left so
-     the midline is true-centred without forcing the formula to grow. */
-  .arena-formula-row .row-label { display: none !important; }
-  .arena-formula-row {
-    justify-content: center;
+     .arena-formula-row in production is [formula | row-label 130 px | row-score].
+     row-label carries the time-machine ▲▼ rollback panel, 🤖 AI-prefill button,
+     vote buttons (👍 / 💀), and the "saved this session" badge — all of which
+     reviewers need. So we KEEP it visible and add an invisible ghost spacer on
+     the LEFT of the same width, balancing the formula about its midline.
+     Result: the dental midline (cells 8|9 in upper, 8|9 in lower) sits at the
+     visual centre of the panel without losing any production controls. */
+  .arena-formula-row { position: relative; }
+  .arena-formula-row::before {
+    content: '';
+    flex: 0 0 130px;
+    order: 0;
+    align-self: stretch;
+    pointer-events: none;
   }
-  .arena-formula-row .row-formula-wrap {
-    margin-left: auto;
-    margin-right: auto;
-  }
+  /* Take row-score out of the flex flow so it doesn't unbalance the
+     midline. The score is a small "GROUND TRUTH" / "—" / percent
+     badge that varies in width; floating it absolutely on the right
+     keeps the [ghost 130px | formula | row-label 130px] triplet
+     symmetric about the dental midline. */
   .arena-formula-row .row-score {
     position: absolute;
-    right: 8px;
+    right: 6px;
     top: 50%;
     transform: translateY(-50%);
-    pointer-events: auto;
+    z-index: 1;
   }
-  .arena-formula-row { position: relative; }
+
+  /* ---- Bridge / bar connectors: zero net width ----
+     .bridge-connector-bar and .bar-connector-bar already declare
+     flex: 0 0 0, but the parent .row-cells uses `gap: var(--cell-gap)`,
+     which inserts a flex gap on EACH side of every flex item — even
+     zero-width ones. So a row with three bridge connectors silently
+     gains three extra `cell-gap` widths over a row with one. That
+     asymmetry was pushing the dental midline a few pixels left of
+     centre on cases with mid-arch bridges. Zero-margin would still
+     leave the gaps; we collapse them by negating `cell-gap` on both
+     sides so an inserted connector contributes zero net horizontal
+     space, keeping every quadrant on the same 8-cell grid. */
+  .row-cells .bridge-connector-bar,
+  .row-cells .bar-connector-bar {
+    margin-left: calc(-1 * var(--cell-gap));
+    margin-right: 0;
+  }
 
   /* ---- Crop carousel column hardening ----
      .carousel-card.active was scaling up to 220 px wide with a -86 px
@@ -525,6 +545,40 @@ init();
   .carousel-card.distant {
     transform: none;
     opacity: 1;
+  }
+
+  /* ---- Lock crops to the same 16-column grid as cells ----
+     Production CSS gives .row-cells `padding: 4px; gap: var(--cell-gap)`
+     but .crop-carousel `padding: 2px 0; gap: 0`. The 4-px horizontal
+     padding mismatch + the missing gap means a crop card lives in a
+     subtly different x-coordinate than the cell directly below it,
+     and the further you go from column 0 the more they drift apart.
+     Hard-set the carousel layout to mirror .row-cells exactly:
+        - same outer padding (4 px)
+        - same inter-card gap (--cell-gap)
+        - same 6-px midline gap on the 8th card, mirroring
+          .arena-cell.midline-right
+     so column k of the carousel sits at the same x as column k of
+     the cells row. */
+  .crop-carousel {
+    padding: 4px;
+    gap: var(--cell-gap);
+  }
+  .crop-carousel .carousel-card:nth-child(8) {
+    margin-right: 6px;
+    box-shadow: inset -1px 0 0 var(--border-strong);
+  }
+  /* Empty / no-detection placeholder card so column k always renders
+     in column k even when SemiT-SAM didn't find a crown there. */
+  .crop-carousel .carousel-card.no-det {
+    visibility: visible;
+    opacity: 0.35;
+  }
+  .crop-carousel .carousel-card.no-det .cc-canvas {
+    width: calc(var(--cell-w) - 8px);
+    height: 32px;
+    background: rgba(255,255,255,0.04);
+    border-style: dashed;
   }
 </style>
 
