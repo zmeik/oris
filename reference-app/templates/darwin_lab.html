@@ -478,33 +478,46 @@ init();
     white-space: nowrap;
   }
 
-  /* ---- Center the dental formula on its midline ----
-     .arena-formula-row in production is [formula | row-label 130 px | row-score].
-     row-label carries the time-machine ▲▼ rollback panel, 🤖 AI-prefill button,
-     vote buttons (👍 / 💀), and the "saved this session" badge — all of which
-     reviewers need. So we KEEP it visible and add an invisible ghost spacer on
-     the LEFT of the same width, balancing the formula about its midline.
-     Result: the dental midline (cells 8|9 in upper, 8|9 in lower) sits at the
-     visual centre of the panel without losing any production controls. */
+  /* ---- Compact row layout so the whole arena fits the viewport ----
+     Production darwin row is [row-label 130 px | formula | row-score]
+     and is rendered inside a panel that is typically 1320 px wide on
+     the RUDN production stack. The reference-app panel is narrower,
+     so the original row was overflowing on the right edge. Solution:
+     shrink the row-label column (it only needs to fit the
+     🤖 / 📋 / ✓ / 🕐 / ▲▼ buttons in two rows) and float row-score
+     out of the flex flow so it no longer adds horizontal width. The
+     FDI midline lands close enough to the panel centre that the
+     remaining offset is well under one cell, while the row-label
+     buttons stay readable and fully inside the panel. */
   .arena-formula-row { position: relative; }
+  /* 96-px invisible spacer on the left mirrors the compact row-label
+     on the right, so the FDI midline lands at panel centre while the
+     row-label buttons stay readable and fully inside the viewport. */
   .arena-formula-row::before {
     content: '';
-    flex: 0 0 130px;
+    flex: 0 0 96px;
     order: 0;
     align-self: stretch;
     pointer-events: none;
   }
-  /* Take row-score out of the flex flow so it doesn't unbalance the
-     midline. The score is a small "GROUND TRUTH" / "—" / percent
-     badge that varies in width; floating it absolutely on the right
-     keeps the [ghost 130px | formula | row-label 130px] triplet
-     symmetric about the dental midline. */
+  .arena-formula-row .row-label {
+    width: 96px !important;
+    min-width: 96px !important;
+    padding: 4px 6px !important;
+  }
+  .arena-formula-row .row-label .gt-confirm-btn,
+  .arena-formula-row .row-label .gt-tm-btn,
+  .arena-formula-row .row-label .crop-toggle-btn {
+    padding: 2px 6px !important;
+    font-size: 10px !important;
+  }
+  /* Take row-score out of the flex flow so it doesn't widen the row. */
   .arena-formula-row .row-score {
     position: absolute;
     right: 6px;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 4px;
     z-index: 1;
+    font-size: 10px;
   }
 
   /* ---- Bridge / bar connectors: zero net width ----
