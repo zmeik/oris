@@ -8,21 +8,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- **`production-arena/`** — full clone of the production Darwin-Lab Arena UI (14 JavaScript modules, 104 KB CSS, 26 KB HTML — ~1.1 MB total) with a Flask mock backend (`mock_app.py`) that runs against in-memory synthetic data. Auto-loads the 3 synthetic examples from `examples/` as 3 sandbox files (`file_id=10001-10003`). Provides the **full clinical interface** with 18-status cycle picker, surface markup, anatomy/TMJ/airway panels, algorithm comparison, time-machine GT history, and D3 evolutionary tree.
-- Synthetic placeholder OPG image (`production-arena/static/images/synthetic_opg_001.png`, 2880×1450, watermarked "SYNTHETIC OPG — ORIS DEMO ONLY")
-- 30+ Flask mock API endpoints in `mock_app.py` covering sandboxes, ground-truth CRUD, history/rollback, algorithm tree, tooth bboxes, card hints, AI hints, implant assessment, and more
+- **`reference-app/`** — single canonical reference application (Flask + SQLite + Pillow) replacing the earlier `production-arena/` clone and `web-demo/` schema test page. Serves two routes:
+  - **`/`** and **`/demo`** — paper-quality static IJOS demo, source for Figure 2. Self-contained vanilla HTML/CSS/JS, EN/RU and light/dark theme toggles, no backend calls.
+  - **`/darwin-lab`** — interactive Arena UI on SQLite with image upload (Pillow EXIF strip + watermark), bridges (FHIR R4, DICOM-SR, MIS, MMOral), 3 anonymised synthetic OPG cases auto-seeded, layer editor, time-machine ground-truth history.
+- Public-domain / synthetic OPG samples shipped in `reference-app/static/images/`, watermarked "SYNTHETIC OPG — ORIS DEMO ONLY"
+- ~60 Flask routes in `mock_app.py` covering sandboxes, ground-truth CRUD, history/rollback, image upload, bridge exports, schema/parser/numbering wrappers
+- `docs/design-reference/DESIGN_HERITAGE.md` — 17-section design rationale documenting the 22-status icon taxonomy, Vertucci canal schemas, surface 5-zone polygons, time-machine ground-truth versioning, and other patterns inherited from the Darwin-Lab production system
 
 ### Changed
 
-- README.md and README.ru.md restructured: now documents two demo options — Option 1 (production-arena, full UI) and Option 2 (web-demo, simplified)
-- `CONTRIBUTING.md` does not yet cover production-arena contributions; planned for next minor release
+- README.md and README.ru.md restructured: single Quick start pointing at `reference-app/` (was: two demo options pointing at `production-arena/` and `web-demo/`)
+- Removed `production-arena/` (folded into `reference-app/`)
+- Removed `web-demo/` (i18n table absorbed into `reference-app/static/demo.html` as `data-i18n` attributes)
 
 ### Privacy
 
-- All `production-arena/` content uses only synthetic data; no real OPG, no real patient identifiers, no PII
-- Two genericisations applied to copied production code: `"КДЦ РУДН (реальные)"` UI dropdown label → `"Synthetic Demo Sandbox"` (in `templates/darwin_lab.html` and `static/js/darwin/arena-core.js`)
-- Mock backend has no PostgreSQL connection, no external network calls (except `d3js.org` for D3 library — replaceable with local copy)
+- All `reference-app/` content uses only synthetic data; no real OPG, no real patient identifiers, no PII
+- Two genericisations preserved from the prior production clone: `"КДЦ РУДН (реальные)"` UI dropdown label → `"Synthetic Demo Sandbox"` (in `templates/darwin_lab.html` and `static/js/darwin/arena-core.js`)
+- Mock backend has no PostgreSQL connection, no external network calls (except `d3js.org` for D3 library — replaceable with local copy) and no telemetry
 - `mock_app.py` runs on `127.0.0.1` only; nothing leaves the machine
+- User OPG upload (where enabled) goes through Pillow EXIF strip and a baked-in watermark "ORIS v0.1 reference app — synthetic / non-clinical"; the privacy_ack flag is required server-side
 
 ## [0.1.0] — 2026-04-27
 

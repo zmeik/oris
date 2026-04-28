@@ -23,16 +23,17 @@ This installs:
 
 If you just want the JSON Schema, copy `schema/oris-v0.1.json` and validate documents with any JSON Schema Draft 2020-12 validator (e.g., `ajv` for JavaScript, `jsonschema` for Python).
 
-### Option C: web demo only
+### Option C: reference application only
 
 ```bash
 git clone https://github.com/zmeik/oris.git
-cd oris/web-demo
-python3 -m http.server 8080
-# open http://localhost:8080
+cd oris/reference-app
+pip install -r requirements.txt
+python3 mock_app.py
+# open http://localhost:5050
 ```
 
-No Python package install required.
+You will land on the static IJOS demo (paper Figure 2 source). The interactive Arena UI lives at `/darwin-lab`.
 
 ## 2. Hello, ORIS
 
@@ -189,7 +190,7 @@ Expected output: all tests pass. The test suite covers:
 - **Read the schema:** [`schema/oris-v0.1.json`](../schema/oris-v0.1.json)
 - **Browse occupants and statuses:** [`numbering/occupants.md`](../numbering/occupants.md), [`grammar/statuses.md`](../grammar/statuses.md)
 - **Understand the anatomy extension:** [`anatomy/landmarks.md`](../anatomy/landmarks.md), [`anatomy/tmj.md`](../anatomy/tmj.md), [`anatomy/airway.md`](../anatomy/airway.md)
-- **Try the web demo:** [`web-demo/`](../web-demo/)
+- **Try the reference application:** [`reference-app/`](../reference-app/)
 - **Contribute:** [`CONTRIBUTING.md`](../CONTRIBUTING.md)
 
 For the foundational paper that motivates ORIS, see the *International Journal of Oral Science* submission (in review, 2026).

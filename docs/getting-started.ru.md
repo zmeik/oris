@@ -23,16 +23,17 @@ pip install -e ".[dev]"
 
 Если нужна только JSON Schema — скопируй `schema/oris-v0.1.json` и валидируй документы любым JSON Schema Draft 2020-12 валидатором (`ajv` для JS, `jsonschema` для Python).
 
-### Вариант C: только web demo
+### Вариант C: только reference application
 
 ```bash
 git clone https://github.com/zmeik/oris.git
-cd oris/web-demo
-python3 -m http.server 8080
-# открой http://localhost:8080
+cd oris/reference-app
+pip install -r requirements.txt
+python3 mock_app.py
+# открой http://localhost:5050
 ```
 
-Без установки Python-пакета.
+Ты попадёшь на статичную IJOS demo (исходник Figure 2). Интерактивный Arena UI — на `/darwin-lab`.
 
 ## 2. Hello, ORIS
 
@@ -184,7 +185,7 @@ pytest tests/ -v
 - **Прочитать schema:** [`schema/oris-v0.1.json`](../schema/oris-v0.1.json)
 - **Просмотреть occupants и statuses:** [`numbering/occupants.md`](../numbering/occupants.md), [`grammar/statuses.md`](../grammar/statuses.md)
 - **Понять anatomy extension:** [`anatomy/landmarks.md`](../anatomy/landmarks.md), [`anatomy/tmj.md`](../anatomy/tmj.md), [`anatomy/airway.md`](../anatomy/airway.md)
-- **Попробовать web demo:** [`web-demo/`](../web-demo/)
+- **Попробовать reference application:** [`reference-app/`](../reference-app/)
 - **Contribute:** [`CONTRIBUTING.md`](../CONTRIBUTING.md)
 
 Foundational paper, мотивирующий ORIS — *International Journal of Oral Science* submission (in review, 2026).

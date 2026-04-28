@@ -42,8 +42,8 @@ A complete ORIS document is organised on three semantic levels:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Web demo (HTML + vanilla JS)        ← schema test mode    │
-│  ../web-demo/                                              │
+│  Reference application (Flask + SQLite + vanilla JS)       │
+│  ../reference-app/   /demo (static IJOS) + /darwin-lab     │
 └─────────────────────────────────────────────────────────────┘
                        ↓ produces JSON
 ┌─────────────────────────────────────────────────────────────┐

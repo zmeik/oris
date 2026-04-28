@@ -40,7 +40,7 @@ PRs without this affirmation will not be reviewed.
 ## Code style
 
 - **Python:** PEP 8, formatted with `black`, type-hinted with `mypy --strict`-clean signatures where reasonable
-- **JavaScript:** Prettier defaults, ES2022, no framework dependencies in `web-demo/` (vanilla JS only)
+- **JavaScript:** Prettier defaults, ES2022, no framework dependencies in `reference-app/static/` (vanilla JS only)
 - **Markdown:** GitHub-flavoured, English headings, with `.ru.md` parallel files for translated documents
 - **JSON / JSON Schema:** 2-space indent, sorted keys where the spec requires, unsorted otherwise
 
@@ -101,7 +101,7 @@ By submitting a pull request, you agree that your contribution is licensed under
 - **Уточнения схемы** — опечатки, неоднозначные определения, missing edge cases
 - **Новые numbering / mapping entries** — дополнительные верифицированные маппинги (например, на национальную dental coding system)
 - **Bridge implementations** — конвертеры в другие стандарты
-- **Улучшения web-demo** — лучший UX, accessibility, дополнительные языковые переводы
+- **Улучшения reference-app** — лучший UX, accessibility, дополнительные языковые переводы (EN/RU уже встроены через `data-i18n`)
 - **Документация** — более ясные tutorials, больше примеров, переводы
 - **Тесты** — дополнительные unit / integration tests
 

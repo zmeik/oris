@@ -30,7 +30,7 @@ Below: a verbatim clone of the production Darwin-Lab Arena UI, served against a 
 From the repo root:
 
 ```bash
-cd production-arena
+cd reference-app
 pip install -r requirements.txt
 python3 mock_app.py
 # then open: http://localhost:5050/darwin-lab
@@ -136,7 +136,7 @@ If you want a more realistic placeholder image, replace `static/images/synthetic
 
 # Русская версия
 
-# `production-arena/` — полный демо-клон Arena с mock-бэкендом
+# `reference-app/` — полный демо-клон Arena с mock-бэкендом
 
 Эта директория содержит **полный клон** production-интерфейса Darwin-Lab Arena из проекта X-RayAnalizer (РУДН), плюс минимальный mock-бэкенд на Flask, чтобы любой мог запустить реальный интерфейс на синтетических данных — **без PostgreSQL, без реальных снимков, без PII**.
 
@@ -156,7 +156,7 @@ If you want a more realistic placeholder image, replace `static/images/synthetic
 Из корня репо:
 
 ```bash
-cd production-arena
+cd reference-app
 pip install -r requirements.txt
 python3 mock_app.py
 # затем открой: http://localhost:5050/darwin-lab

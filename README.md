@@ -25,38 +25,26 @@ ORIS provides a **structured digital format** for what radiologists describe in 
 
 ORIS **does not** perform diagnosis. It structures the descriptive *imaging findings* component of the report (Step 5 in the 8-step ADA/AAOMR diagnostic workflow). Diagnosis remains the clinician's task and integrates anamnesis + intra-oral examination + radiographic interpretation per the ALARA principle.
 
-## Quick start — two demo options
+## Quick start — reference application
 
-### Option 1: Production Arena clone with mock backend (RECOMMENDED — full UI)
-
-A **byte-for-byte clone** of the real Darwin-Lab Arena UI from the X-RayAnalizer project (14 JavaScript modules, ~960 KB) running against a Flask mock backend with synthetic data:
+A single paper-quality reference application is shipped at [`reference-app/`](reference-app/). It runs on Flask + SQLite + Pillow with synthetic data only and serves as the source for **Figure 2 of the ORIS paper**.
 
 ```bash
 git clone https://github.com/zmeik/oris.git
-cd oris/production-arena
+cd oris/reference-app
 pip install -r requirements.txt
 python3 mock_app.py
-# then open http://localhost:5050/darwin-lab
+# then open http://localhost:5050
 ```
 
-The 3 synthetic ORIS examples auto-load. You get the **full clinical interface** — 18-status cycle picker, surface markup (m/d/o/v/l), anatomy/TMJ/airway panels, algorithm comparison, time-machine GT history, D3 evolutionary tree.
+What you get:
 
-Read [`production-arena/README.md`](production-arena/README.md) for details on what's included, what's mocked, and what's intentionally disabled.
+- **`/`** and **`/demo`** — the static IJOS-quality demo (paper Figure 2 source). Fully self-contained vanilla HTML/CSS/JS, no API calls, EN/RU and light/dark theme toggles. Ideal first stop for a journal reviewer.
+- **`/darwin-lab`** — the interactive Arena UI backed by SQLite + Pillow image upload + bridges (FHIR R4, DICOM-SR, MIS, MMOral). Three anonymised synthetic OPG cases auto-seed on first run. Includes the layer editor, time-machine ground-truth history, anatomy/TMJ/airway panels, and bridge exports.
 
-### Option 2: Schema test mode (lightweight, no install — for schema exploration only)
+Read [`reference-app/README.md`](reference-app/README.md) for the route-by-route map, what's mocked vs. real, and how to swap in your own OPGs (under the privacy gate documented there).
 
-A simplified single-page browser tool for poking at the schema without any backend:
-
-```bash
-git clone https://github.com/zmeik/oris.git
-cd oris/web-demo
-python3 -m http.server 8080
-# then open http://localhost:8080
-```
-
-This is a **simplified** test surface (no algorithm comparison, no anatomy SVGs, no D3 tree) — just enough to click cells, pick statuses + surfaces, and see live JSON. Use Option 1 for the full clinical interface.
-
-⚠️ **Both demos use synthetic data only.** Do not enter real patient information. See [PRIVACY.md](PRIVACY.md) for compliance (Russian Federal Law 152-FZ, GDPR, HIPAA-equivalent practices).
+⚠️ **Synthetic data only.** Do not upload real patient OPGs. See [PRIVACY.md](PRIVACY.md) for compliance (Russian Federal Law 152-FZ, GDPR, HIPAA-equivalent practices).
 
 ## Quick start — Python parser
 
@@ -125,9 +113,9 @@ oris/
 ├── bridges/ ......................... FHIR Dental, DICOM-SR, MIS, MMOral converters
 ├── examples/ ........................ 3 synthetic ORIS documents
 ├── tests/ ........................... pytest unit tests
-├── web-demo/ ........................ simplified in-browser test mode (EN + RU)
-└── production-arena/ ................ full Arena clone with Flask mock backend
-                                       — 14 JS modules, full UI, synthetic data
+└── reference-app/ ................... Flask + SQLite reference application
+                                       — static IJOS demo (Fig 2 source) + interactive Arena
+                                       — bridges, image upload, time-machine GT history
 ```
 
 ## The schema in 60 seconds
