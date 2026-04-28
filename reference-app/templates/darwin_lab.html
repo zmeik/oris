@@ -478,6 +478,32 @@ init();
     white-space: nowrap;
   }
 
+  /* ---- Center the dental formula on its midline ----
+     .arena-formula-row in production is [formula | row-label 130px | row-score],
+     which puts the FDI midline (between cells 8 and 9) ~65 px left of
+     the visual centre of the panel. In the reference build the right-
+     side row-label only repeats info that already appears in the GT /
+     Inspector column, so we hide it and let the formula self-centre
+     in the row. Row-score (small %-or-text node) stays at the right
+     and is balanced by an equal-width invisible spacer on the left so
+     the midline is true-centred without forcing the formula to grow. */
+  .arena-formula-row .row-label { display: none !important; }
+  .arena-formula-row {
+    justify-content: center;
+  }
+  .arena-formula-row .row-formula-wrap {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .arena-formula-row .row-score {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: auto;
+  }
+  .arena-formula-row { position: relative; }
+
   /* ---- Crop carousel column hardening ----
      .carousel-card.active was scaling up to 220 px wide with a -86 px
      left margin so it could "balloon" over the OPG. That overflow is
