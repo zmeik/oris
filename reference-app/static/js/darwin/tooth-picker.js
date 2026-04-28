@@ -138,10 +138,13 @@ function renderArenaFormulaRow(type, label, sublabel, formula, groundTruth, file
                 <button class="gt-confirm-btn" style="background:rgba(168,85,247,0.2);border-color:rgba(168,85,247,0.5);font-size:11px;padding:4px 8px;" id="gt-ai-btn-${fileId}" onclick="prefillGTFromAI(${fileId})" title="Prefill ground truth from AI analysis (you can correct any errors before saving)">🤖 AI prefill</button>
               </div>`
             : `<button class="gt-confirm-btn" style="background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.3);font-size:9px;padding:2px 6px;" id="gt-ai-btn-${fileId}" onclick="prefillGTFromAI(${fileId})" title="Re-prefill ground truth from AI (will reset current annotation!)">🤖</button>`;
-        const cardBtn = `<button class="gt-confirm-btn" style="background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.4);font-size:9px;padding:2px 6px;" id="gt-card-btn-${fileId}" onclick="prefillGTFromCard(${fileId})" title="Fill implant positions from patient card (FDIs from dissertation cohort)">📋</button>`;
+        // Card prefill button removed in the reference-app: the
+        // /api/darwin/prefill-from-card endpoint lives in the production
+        // patient-card stack (Dissertation Case Viewer) and is not
+        // shipped here. Leaving the button caused it to hammer the
+        // missing endpoint and report endless save failures.
         gtBtnHtml = `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-end;margin-top:4px">`
             + aiHintBtn
-            + cardBtn
             + `<button class="gt-confirm-btn ${readyClass}" id="gt-btn-${fileId}" onclick="${isReady ? `arenaConfirmGT(${fileId})` : ''}" title="${btnTitle}" style="margin:0">✓</button>`
             + `<span class="gt-save-indicator" id="gt-save-status-${fileId}"></span>`
             + `<button class="gt-tm-btn" id="gt-tm-trigger-${fileId}" onclick="_openTimeMachine(${fileId})" title="Time machine — roll back to a previous annotation snapshot">&#128336;</button>`

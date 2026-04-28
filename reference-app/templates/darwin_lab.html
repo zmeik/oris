@@ -999,15 +999,15 @@ init();
     if (m) return parseInt(m[1], 10);
     return 1001;
   }
-  // Wire up the "🦴 Anatomy · 👁 Viewer" button — opens /play/anatomy/<file_id>
-  // in a new tab so the reviewer keeps the formula context next to the
-  // viewer (which boots read-only and unlocks editing via the in-page
-  // ✏ Edit toggle).
+  // Wire up the "🦴 Anatomy · 👁 Viewer" button — navigates to
+  // /play/anatomy/<file_id> in the SAME tab. The viewer page has a
+  // "← /play" breadcrumb that brings the reviewer back, so opening a
+  // separate tab just orphans windows when the reviewer hits Back.
   const anatomyBtn = document.getElementById('open-anatomy-editor-btn');
   if (anatomyBtn) {
     anatomyBtn.addEventListener('click', () => {
       const id = (typeof window.ARENA_FILE_ID === 'number') ? window.ARENA_FILE_ID : 1001;
-      window.open(`/play/anatomy/${id}`, '_blank', 'noopener');
+      window.location.href = `/play/anatomy/${id}`;
     });
   }
 

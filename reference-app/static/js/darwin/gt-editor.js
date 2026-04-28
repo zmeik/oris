@@ -636,10 +636,13 @@ function _showTimeMachineBar(fileId, seq, snapshot) {
  * Opens history panel & jumps to latest snapshot.
  */
 async function _openTimeMachine(fileId) {
-    // Open the history panel
+    // Toggle the history panel — second click closes it. Previously the
+    // function force-set panel.open = true so a second click did nothing.
     const panel = document.getElementById(`gt-history-${fileId}`);
-    if (panel && !panel.open) panel.open = true;
-    // Load history and jump to latest
+    if (!panel) return;
+    panel.open = !panel.open;
+    if (!panel.open) return;        // closing: nothing to load
+    // Opening: fetch latest snapshot and jump to it
     try {
         const r = await fetch(`/api/darwin/ground-truth/${fileId}/history?limit=1`);
         const d = await r.json();
@@ -647,7 +650,7 @@ async function _openTimeMachine(fileId) {
             _jumpToSnapshot(fileId, d.history[0].sequence_num);
         } else {
             // No history yet — show message
-            const list = panel?.querySelector('.gt-history-list');
+            const list = panel.querySelector('.gt-history-list');
             if (list) list.innerHTML = '<div style="padding:4px 8px;font-size:9px;color:#64748b">Нет истории изменений</div>';
         }
     } catch(e) {

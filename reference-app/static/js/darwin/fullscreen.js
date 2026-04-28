@@ -3,7 +3,8 @@
 // ═══════════════════════════════════════════════════════════════
 
 // ═══ Fullscreen OPG Viewer — zoom, pan, filters ═══
-const _opgFs = { open:false, fileId:null, img:null, scale:1, offsetX:0, offsetY:0, filter:'', overlayMode:'off', overlayImg:null };
+const _opgFs = { open:false, fileId:null, img:null, scale:1, offsetX:0, offsetY:0, filter:'', overlayMode:'off', overlayImg:null,
+                 yoloData:null, expertData:null };
 
 function _opgFsOpen(fileId) {
     const overlay = document.getElementById('opg-fs-overlay');
@@ -12,6 +13,9 @@ function _opgFsOpen(fileId) {
     _opgFs.filter = '';
     _opgFs.overlayMode = 'off';
     _opgFs.overlayImg = null;
+    // Drop overlay caches so the new file fetches its own data on toggle.
+    _opgFs.yoloData = null;
+    _opgFs.expertData = null;
     _opgFs.open = true;
     overlay.classList.add('open');
 
@@ -60,11 +64,76 @@ function _opgFsDraw() {
         ctx.putImageData(id, 0, 0);
     }
 
-    // Draw overlay if active
-    if (_opgFs.overlayMode !== 'off' && _opgFs.overlayImg && _opgFs.overlayImg.complete) {
-        ctx.globalAlpha = 0.6;
-        ctx.drawImage(_opgFs.overlayImg, 0, 0, cvs.width, cvs.height);
-        ctx.globalAlpha = 1.0;
+    // ── Overlays drawn from JSON, not from a server-rendered JPG ──
+    // Production used /api/panorama/<id>/segmentation-overlay.jpg with
+    // source=yolo|expert|both. The reference-app doesn't ship that
+    // server-side compositor, so we read the same data the inline
+    // /play view already uses (tooth-bboxes + anatomy templates) and
+    // paint it ourselves at the right canvas coords.
+    const showYolo   = (_opgFs.overlayMode === 'yolo'   || _opgFs.overlayMode === 'both');
+    const showExpert = (_opgFs.overlayMode === 'expert' || _opgFs.overlayMode === 'both');
+
+    if (showYolo && _opgFs.yoloData && _opgFs.yoloData.detections) {
+        const dets = _opgFs.yoloData.detections;
+        ctx.save();
+        ctx.lineWidth = 2.2;
+        ctx.font = 'bold 18px system-ui';
+        for (const d of dets) {
+            const colour = (typeof YOLO_COLORS !== 'undefined' && YOLO_COLORS[d.cls])
+                            ? YOLO_COLORS[d.cls] : 'rgba(110,231,183,0.9)';
+            ctx.strokeStyle = colour;
+            ctx.fillStyle   = colour;
+            ctx.strokeRect(d.x1, d.y1, d.x2 - d.x1, d.y2 - d.y1);
+            // Label above the bbox
+            const label = d.fdi ? `${d.fdi} · ${d.cls}` : d.cls;
+            const m = ctx.measureText(label);
+            ctx.fillRect(d.x1, d.y1 - 22, m.width + 10, 22);
+            ctx.fillStyle = '#0e1014';
+            ctx.fillText(label, d.x1 + 5, d.y1 - 6);
+        }
+        ctx.restore();
+    }
+
+    if (showExpert && _opgFs.expertData && _opgFs.expertData.groups) {
+        ctx.save();
+        ctx.lineWidth = 2.5;
+        ctx.font = 'bold 16px "IBM Plex Mono", monospace';
+        const W = cvs.width, H = cvs.height;
+        for (const g of _opgFs.expertData.groups) {
+            for (const s of g.structures) {
+                if (!s || s._hidden) continue;
+                const colour = s.color || '#5b8def';
+                ctx.strokeStyle = colour;
+                ctx.fillStyle = colour;
+                if (s.annotation_type === 'bbox') {
+                    if (!s.bbox) continue;
+                    const x1 = s.bbox.x1 * W, y1 = s.bbox.y1 * H;
+                    const x2 = s.bbox.x2 * W, y2 = s.bbox.y2 * H;
+                    ctx.setLineDash([10, 6]);
+                    ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                    ctx.setLineDash([]);
+                    ctx.fillText(s.name || s.id, x1 + 4, y1 - 6);
+                } else {
+                    const pts = s.points || [];
+                    if (pts.length < 2) continue;
+                    ctx.beginPath();
+                    pts.forEach((p, i) => {
+                        const x = p[0] * W, y = p[1] * H;
+                        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                    });
+                    if (s.type === 'closed' && pts.length > 2) {
+                        ctx.closePath();
+                        ctx.fillStyle = colour + '22';
+                        ctx.fill();
+                        ctx.fillStyle = colour;
+                    }
+                    ctx.stroke();
+                    const x0 = pts[0][0] * W, y0 = pts[0][1] * H;
+                    ctx.fillText(s.name || s.id, x0 + 6, y0 - 6);
+                }
+            }
+        }
+        ctx.restore();
     }
 
     // Position
@@ -96,21 +165,29 @@ function _opgFsSliderChange() {
     _opgFsDraw();
 }
 
-function _opgFsOverlay(mode, btn) {
+async function _opgFsOverlay(mode, btn) {
     _opgFs.overlayMode = mode;
     document.getElementById('opg-fs-overlay').querySelectorAll('[data-fs-overlay]')
         .forEach(b => b.classList.toggle('active', b.dataset.fsOverlay === mode));
-    if (mode === 'off') {
-        _opgFs.overlayImg = null;
-        _opgFsDraw();
-        return;
+    if (mode === 'off') { _opgFsDraw(); return; }
+    // Fetch JSON sources lazily; cache per fullscreen session.
+    const needYolo   = (mode === 'yolo'   || mode === 'both');
+    const needExpert = (mode === 'expert' || mode === 'both');
+    const tasks = [];
+    if (needYolo && !_opgFs.yoloData) {
+        tasks.push(fetch(`/api/darwin/tooth-bboxes/${_opgFs.fileId}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { _opgFs.yoloData = d; })
+            .catch(e => { console.warn('YOLO overlay load failed', e); _opgFs.yoloData = null; }));
     }
-    // Load segmentation overlay image
-    const url = `/api/panorama/${_opgFs.fileId}/segmentation-overlay.jpg?source=${mode}&w=${_opgFs.img?.naturalWidth || 2000}`;
-    const img = new Image();
-    img.onload = () => { _opgFs.overlayImg = img; _opgFsDraw(); };
-    img.onerror = () => { _opgFs.overlayImg = null; _opgFsDraw(); console.warn('Overlay load failed:', url); };
-    img.src = url;
+    if (needExpert && !_opgFs.expertData) {
+        tasks.push(fetch(`/api/anatomy/${_opgFs.fileId}/templates`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { _opgFs.expertData = d; })
+            .catch(e => { console.warn('Expert overlay load failed', e); _opgFs.expertData = null; }));
+    }
+    if (tasks.length) await Promise.all(tasks);
+    _opgFsDraw();
 }
 
 function _opgFsFit() {

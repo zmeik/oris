@@ -335,22 +335,38 @@ function _arenaOPGTransform(wrap) {
     });
 }
 
+// CSS-filter map for client-side OPG enhancement. The reference-app
+// doesn't ship the full Pillow/numpy filter pipeline from production
+// (/api/implant-assessment/<id>/filtered → CLAHE, etc.), so we apply
+// equivalent CSS filters on the IMG element. They are not pixel-exact
+// matches for true CLAHE/bone-window operators but give the reviewer
+// the same "see more contrast / see bone better / invert" affordance
+// that production exposes — instant, no round-trip.
+const _OPG_CSS_FILTERS = {
+    original:    '',
+    clahe:       'contrast(1.55) brightness(1.05) saturate(0)',
+    contrast:    'contrast(1.45) brightness(1.05)',
+    bone_window: 'contrast(1.85) brightness(0.85) saturate(0)',
+    inverted:    'invert(1) hue-rotate(180deg)',
+};
+
 function arenaOPGFilter(fileId, filter, btn) {
     const img = document.getElementById(`arena-opg-img-${fileId}`);
     if (!img) return;
-    // Update active button
+    // Update active button (only among Original/CLAHE/Contrast/Bone/Invert —
+    // not Objects / FDI / Segments / Expert which are toggles, not filters).
     const toolbar = btn.parentElement;
-    toolbar.querySelectorAll('.opg-filter-btn').forEach(b => b.classList.remove('active'));
+    toolbar.querySelectorAll('.opg-filter-btn').forEach(b => {
+        const oc = b.getAttribute('onclick') || '';
+        if (oc.includes('arenaOPGFilter(')) b.classList.remove('active');
+    });
     btn.classList.add('active');
-    // Remove segmentation active
-    const segBtn = toolbar.querySelector('.opg-filter-btn:last-child');
-    if (segBtn) segBtn.classList.remove('active');
-    // Set source
-    if (filter === 'original') {
-        img.src = `/panorama/${fileId}/image`;
-    } else {
-        img.src = `/api/implant-assessment/${fileId}/filtered?filter=${filter}`;
-    }
+    // Apply the CSS filter — preserves the underlying /panorama/<id>/image
+    // src so segmentation / objects overlays drawn on the canvas remain
+    // aligned with the displayed image (no source-swap needed).
+    const css = (filter in _OPG_CSS_FILTERS) ? _OPG_CSS_FILTERS[filter] : '';
+    img.style.filter = css;
+    img.dataset.filter = filter;
 }
 
 function arenaOPGToggleSeg(fileId, btn) {
