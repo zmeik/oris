@@ -1,0 +1,61 @@
+# docker-compose.yml — optional PostgreSQL deployment of the reference app
+#
+# The reference app (reference-app/mock_app.py) ships with SQLite by default
+# so that `python3 mock_app.py` works out of the box on a clean clone.
+# For deployments closer to the paper §5.2 production architecture
+# ("PostgreSQL JSONB storage … panorama_analysis + gt_change_history"), this
+# compose file brings up Postgres 16 alongside the Flask app and wires them
+# via the ORIS_DB_URL environment variable.
+#
+# Usage:
+#   docker compose up                 # start postgres + reference-app
+#   docker compose up reference-app   # SQLite mode — no postgres container
+#
+# Privacy note: the postgres data volume is named `oris-pgdata` and lives on
+# the host's docker volume namespace; nothing leaves localhost. The default
+# password below is a placeholder for development only — rotate before any
+# real deployment.
+
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: oris-postgres
+    environment:
+      POSTGRES_USER: oris
+      POSTGRES_PASSWORD: oris_dev_only
+      POSTGRES_DB: oris
+    volumes:
+      - oris-pgdata:/var/lib/postgresql/data
+      - ./reference-app/migrations/postgres-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U oris -d oris"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  reference-app:
+    build:
+      context: .
+      dockerfile: reference-app/Dockerfile
+    container_name: oris-reference-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # When set, mock_app.py uses Postgres in place of SQLite. Schema is
+      # mirrored: panorama_analysis + gt_change_history tables (paper §5.2).
+      ORIS_DB_URL: "postgresql://oris:oris_dev_only@postgres:5432/oris"
+      PORT: "5050"
+    ports:
+      - "127.0.0.1:5050:5050"
+    volumes:
+      - ./reference-app/uploads:/app/reference-app/uploads
+      - ./reference-app/data:/app/reference-app/data
+
+volumes:
+  oris-pgdata:
+    name: oris-pgdata

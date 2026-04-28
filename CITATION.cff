@@ -1,0 +1,67 @@
+cff-version: 1.2.0
+title: "ORIS v0.1 — Open Radiographic Imaging Schema"
+message: >-
+  If you use ORIS in academic work, please cite the foundation paper
+  AND this software repository.
+type: software
+authors:
+  - given-names: "Sergo G."
+    family-names: "Manukov"
+    email: "smanukov@newvision.ge"
+    orcid: "https://orcid.org/0000-0002-7659-2677"
+    affiliation: >-
+      Peoples' Friendship University of Russia (RUDN) /
+      New Vision University, Tbilisi
+  - given-names: "Sergey Yu."
+    family-names: "Ivanov"
+    affiliation: >-
+      Peoples' Friendship University of Russia (RUDN);
+      Corresponding Member, Russian Academy of Sciences
+
+repository-code: "https://github.com/zmeik/oris"
+url: "https://github.com/zmeik/oris"
+abstract: >-
+  ORIS v0.1 (Open Radiographic Imaging Schema, Latin oris — "of the
+  mouth") is an open MIT-licensed machine-readable schema for the
+  imaging-findings section of dental panoramic radiograph (OPG) reports.
+  It encodes 32 permanent + 20 primary teeth via a universal six-character
+  position code with a 13-occupant identifier, supports a layered
+  encoding for multi-finding teeth (e.g. endo:mo+post+crowned), and
+  ships three extension blocks for non-tooth findings: Anatomical
+  Landmarks, TMJ Findings, and Airway/Sinus. Reference implementation:
+  Python parser/serialiser, JavaScript Arena UI, JSON Schema Draft
+  2020-12, bridges to FHIR R4, DICOM-SR with RadLex Dental Subset
+  codes, MIS chart, and MMOral 8-class.
+keywords:
+  - "dental panoramic radiography"
+  - "structured reporting"
+  - "imaging findings schema"
+  - "universal tooth nomenclature"
+  - "temporomandibular joint"
+  - "maxillary sinus"
+  - "mandibular canal"
+  - "dental implants"
+  - "machine-readable"
+  - "open standard"
+license: MIT
+version: "0.1.0"
+date-released: "2026-04-28"
+
+preferred-citation:
+  type: article
+  authors:
+    - given-names: "Sergo G."
+      family-names: "Manukov"
+      orcid: "https://orcid.org/0000-0002-7659-2677"
+    - given-names: "Sergey Yu."
+      family-names: "Ivanov"
+  title: >-
+    ORIS v0.1 — Open Radiographic Imaging Schema:
+    A Structured Digital Format for Imaging Findings in
+    Dental Panoramic Reports
+  journal: "International Journal of Oral Science"
+  year: 2026
+  url: "https://github.com/zmeik/oris"
+  notes: >-
+    Manuscript prepared for submission to International Journal of
+    Oral Science (Springer Nature, Q1, IF=12.2).

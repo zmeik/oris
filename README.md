@@ -96,6 +96,10 @@ oris/
 │   ├── oris-v0.1.json ............... JSON Schema Draft 2020-12 (master)
 │   ├── oris-anatomy-v0.1.json ....... anatomy/TMJ/airway extension schemas
 │   └── README.md
+├── grammar.md ....................... layered-status grammar overview (paper §5.1 entry point)
+├── references.bib ................... 35 BibTeX entries cited by the paper (Vancouver-numbered)
+├── CITATION.cff ..................... how to cite this software + the paper
+├── dental_scene_graph.py ............ source-of-truth ontology for the three extension blocks
 ├── numbering/
 │   ├── permanent-teeth.csv .......... 32 entries: ORIS, FDI, Universal, Palmer, anatomical (EN+RU), layperson
 │   ├── primary-teeth.csv ............ 20 entries
@@ -103,20 +107,33 @@ oris/
 ├── grammar/
 │   ├── statuses.md .................. 18 layer statuses
 │   ├── surfaces.md .................. 5 surfaces (m/d/o/v/l) + literature
+│   ├── complications.md ............. 23-code prosthetic-complication ontology
 │   ├── ebnf.txt ..................... formal EBNF
 │   └── README.md
 ├── anatomy/
 │   ├── landmarks.md ................. mandibular canal, foramina, sinus, etc.
 │   ├── tmj.md ....................... condyle, articular eminence, joint space
 │   ├── airway.md .................... pharyngeal airway, sinus pneumatization
-│   └── ontology.md .................. full hierarchy
+│   ├── ontology.md .................. full hierarchy
+│   ├── vertucci.md .................. Vertucci I–VIII canal classification (1984)
+│   ├── pai.md ....................... Ørstavik Periapical Index 1–5 (1986)
+│   └── furcation.md ................. Glickman Furcation grades I–IV (1953)
 ├── parser/ .......................... Python implementation
-├── bridges/ ......................... FHIR Dental, DICOM-SR, MIS, MMOral converters
-├── examples/ ........................ 3 synthetic ORIS documents
-├── tests/ ........................... pytest unit tests
+├── bridges/
+│   ├── fhir.py ...................... FHIR R4 Bundle (Patient + Observation per tooth)
+│   ├── dicom_sr.py .................. DICOM-SR XML with RadLex Dental Subset codes (RID5780, RID11907, …)
+│   ├── mis.py ....................... flat MIS chart for Russian dental information systems
+│   ├── mmoral.py .................... 8-class MMOral benchmark mapping
+│   └── RADLEX_MAPPING.md ............ ORIS → RadLex code table
+├── examples/ ........................ 28 synthetic ORIS documents (3 baseline + 25 generated variants)
+├── tests/ ........................... 255 pytest unit tests (parser, numbering, schema, bridges, examples)
+├── tools/
+│   ├── generate_examples.py ......... deterministically regenerate the 25 generated examples
+│   └── extract_case_bboxes.py ....... bake SemiT-SAM detections into reference-app/data/cases/
 └── reference-app/ ................... Flask + SQLite reference application
                                        — static IJOS demo (Fig 2 source) + interactive Arena
-                                       — bridges, image upload, time-machine GT history
+                                       — bridges, image upload, time-machine GT history,
+                                       — anatomy side panel + change-history strip (paper Fig 2)
 ```
 
 ## The schema in 60 seconds
