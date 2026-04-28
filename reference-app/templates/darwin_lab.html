@@ -490,16 +490,12 @@ init();
      remaining offset is well under one cell, while the row-label
      buttons stay readable and fully inside the panel. */
   .arena-formula-row { position: relative; }
-  /* 120-px invisible spacer on the left mirrors the redesigned
-     row-label column on the right, so the FDI midline lands at
-     the panel centre. */
-  .arena-formula-row::before {
-    content: '';
-    flex: 0 0 142px;
-    order: 0;
-    align-self: stretch;
-    pointer-events: none;
-  }
+  /* No left ghost spacer: per reviewer preference the formula hugs
+     the left edge of the arena column, with the redesigned row-label
+     control panel sitting on the right. The dental midline ends up
+     left-of-centre by ~half a row-label width, which the reviewer
+     finds easier to read because the eye lands on the cells first
+     and the controls sit out of the way at the right. */
   /* Take row-score out of the flex flow so its variable width
      ("GROUND TRUTH" / "—" / percent) doesn't unbalance the centre. */
   .arena-formula-row .row-score {
