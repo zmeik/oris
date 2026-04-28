@@ -301,15 +301,38 @@ function _arenaOPGTransform(wrap) {
     const py = parseFloat(wrap.dataset.py)||0;
     const img = wrap.querySelector('img');
     if (img) img.style.transform = `scale(${z}) translate(${px/z}px, ${py/z}px)`;
-    // Redraw active tooth highlight after zoom/pan so overlay follows image
+    // Redraw EVERY canvas overlay after zoom/pan so all bboxes follow the X-ray.
+    // The CSS transform changes img.getBoundingClientRect(), which is the input
+    // to _getOPGMapping(); without redrawing, all bboxes/labels stay anchored to
+    // the pre-zoom image position and visibly drift away from the teeth.
     const fileId = wrap.dataset.file;
-    if (fileId) {
+    if (!fileId) return;
+    const caseEl = wrap.closest('.arena-case') || wrap.closest('[id^="arena-case-"]');
+    if (!caseEl) return;
+    requestAnimationFrame(() => {
         const state = _carouselState[fileId];
-        if (state && state.activeFdi) {
-            const caseEl = wrap.closest('.arena-case') || wrap.closest('[id^="arena-case-"]');
-            if (caseEl) requestAnimationFrame(() => _highlightToothOnOPG(fileId, state.activeFdi, caseEl));
+        const childMode = (state && state.opgChildrenMode) || 'off';
+        if (childMode !== 'off') {
+            // Objects overlay (crops / all): _refreshOPGChildrenOverlay clears + redraws
+            // grouped children + the active crop highlight on top.
+            if (typeof _refreshOPGChildrenOverlay === 'function') {
+                _refreshOPGChildrenOverlay(fileId);
+            }
+        } else {
+            // No object overlay: redraw active crop highlight + GT status badges.
+            if (typeof _refreshOPGForActiveCrop === 'function') {
+                _refreshOPGForActiveCrop(fileId);
+            } else if (state && state.activeFdi) {
+                _highlightToothOnOPG(fileId, state.activeFdi, caseEl);
+            }
         }
-    }
+        // Expert overlay sits on top of everything else — re-paint it last.
+        if (typeof _expertOverlayVisible !== 'undefined'
+            && _expertOverlayVisible[fileId]
+            && typeof _redrawExpertAnnotations === 'function') {
+            _redrawExpertAnnotations(fileId, caseEl);
+        }
+    });
 }
 
 function arenaOPGFilter(fileId, filter, btn) {

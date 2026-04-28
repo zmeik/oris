@@ -21,50 +21,56 @@ async function _toggleExpertOverlay(fileId, btn) {
 
     const caseEl = document.getElementById(`arena-case-${fileId}`);
     if (!caseEl) return;
-    const m = _getOPGMapping(caseEl);
-    if (!m) return;
 
     if (_expertOverlayVisible[fileId]) {
         // Clear overlay first, then redraw GT + expert bboxes
         _refreshOPGForActiveCrop(fileId);
-        // Re-get mapping after refresh (canvas was cleared and redrawn)
-        const m2 = _getOPGMapping(caseEl, true);
-        if (!m2) return;
-        const anns = _expertAnnotCache[fileId] || [];
-        for (const ea of anns) {
-            if (!ea.bbox_pct || ea.type !== 'child_bbox') continue;
-            const bp = ea.bbox_pct;
-            const x1 = m2.tx(bp.x1 * m2.img.naturalWidth), y1 = m2.ty(bp.y1 * m2.img.naturalHeight);
-            const x2 = m2.tx(bp.x2 * m2.img.naturalWidth), y2 = m2.ty(bp.y2 * m2.img.naturalHeight);
-            const color = YOLO_COLORS[ea.label] || 'rgba(245,158,11,0.9)';
-            // Source badge: green for manual, orange for override
-            const srcColor = (ea.source === 'manual_crop' || ea.source === 'manual_contour')
-                ? 'rgba(34,197,94,0.95)' : 'rgba(245,158,11,0.95)';
-            const srcTag = ea.source === 'bbox_override' ? '✎ resize'
-                : ea.source === 'manual_contour' ? '✎ контур'
-                : '✎ добавлен';
-            // Dashed bbox
-            m2.ctx.setLineDash([6, 4]);
-            m2.ctx.strokeStyle = color;
-            m2.ctx.lineWidth = 2.5;
-            m2.ctx.shadowColor = color;
-            m2.ctx.shadowBlur = 6;
-            m2.ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-            m2.ctx.setLineDash([]);
-            m2.ctx.shadowBlur = 0;
-            // Label (drawn BELOW bbox to avoid overlapping with Objects layer labels above)
-            const eLabelY = y2 + 12;
-            _drawLabelWithBg(m2.ctx, `${ea.label} ${srcTag}`, x1 + 2, eLabelY,
-                {font:'bold 9px system-ui', color:'#fff', bg: srcColor.replace('0.95','0.85')});
-        }
-        if (anns.filter(a => a.type === 'child_bbox').length === 0) {
-            // No expert annotations — show message
-            m2.ctx.font = '12px system-ui';
-            m2.ctx.fillStyle = 'rgba(148,163,184,0.7)';
-            m2.ctx.fillText('Нет экспертных правок bbox', 10, 20);
-        }
+        _redrawExpertAnnotations(fileId, caseEl);
     } else {
         _refreshOPGForActiveCrop(fileId);
+    }
+}
+
+/** Draw expert child_bbox annotations on top of the existing overlay canvas.
+ *  Pure draw — does not touch _expertOverlayVisible state. Safe to call from
+ *  the zoom/pan transform handler so expert bboxes follow the X-ray image. */
+function _redrawExpertAnnotations(fileId, caseEl) {
+    if (!caseEl) caseEl = document.getElementById(`arena-case-${fileId}`);
+    if (!caseEl) return;
+    const m2 = _getOPGMapping(caseEl, true);
+    if (!m2) return;
+    const anns = _expertAnnotCache[fileId] || [];
+    for (const ea of anns) {
+        if (!ea.bbox_pct || ea.type !== 'child_bbox') continue;
+        const bp = ea.bbox_pct;
+        const x1 = m2.tx(bp.x1 * m2.img.naturalWidth), y1 = m2.ty(bp.y1 * m2.img.naturalHeight);
+        const x2 = m2.tx(bp.x2 * m2.img.naturalWidth), y2 = m2.ty(bp.y2 * m2.img.naturalHeight);
+        const color = YOLO_COLORS[ea.label] || 'rgba(245,158,11,0.9)';
+        // Source badge: green for manual, orange for override
+        const srcColor = (ea.source === 'manual_crop' || ea.source === 'manual_contour')
+            ? 'rgba(34,197,94,0.95)' : 'rgba(245,158,11,0.95)';
+        const srcTag = ea.source === 'bbox_override' ? '✎ resize'
+            : ea.source === 'manual_contour' ? '✎ контур'
+            : '✎ добавлен';
+        // Dashed bbox
+        m2.ctx.setLineDash([6, 4]);
+        m2.ctx.strokeStyle = color;
+        m2.ctx.lineWidth = 2.5;
+        m2.ctx.shadowColor = color;
+        m2.ctx.shadowBlur = 6;
+        m2.ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+        m2.ctx.setLineDash([]);
+        m2.ctx.shadowBlur = 0;
+        // Label (drawn BELOW bbox to avoid overlapping with Objects layer labels above)
+        const eLabelY = y2 + 12;
+        _drawLabelWithBg(m2.ctx, `${ea.label} ${srcTag}`, x1 + 2, eLabelY,
+            {font:'bold 9px system-ui', color:'#fff', bg: srcColor.replace('0.95','0.85')});
+    }
+    if (anns.filter(a => a.type === 'child_bbox').length === 0) {
+        // No expert annotations — show message
+        m2.ctx.font = '12px system-ui';
+        m2.ctx.fillStyle = 'rgba(148,163,184,0.7)';
+        m2.ctx.fillText('Нет экспертных правок bbox', 10, 20);
     }
 }
 

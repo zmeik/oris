@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ORIS · Anatomy Editor · file_id {{ file_id }}</title>
+<title>ORIS · Anatomy Viewer · file_id {{ file_id }}</title>
 <meta name="oris-file-id" content="{{ file_id }}">
-<meta name="description" content="Dual-mode (bbox + polyline) anatomy markup editor for the ORIS reference application. Paper Figure 2 anatomical-landmarks side panel, full-page editor variant.">
+<meta name="description" content="Dual-mode (bbox + polyline) anatomy viewer for the ORIS reference application. Boots in read-only Viewer mode with pan + zoom; toggles to Editor for drag-to-reshape + add/delete custom structures. Paper Figure 2 anatomical-landmarks side panel, full-page variant.">
 
 <style>
 :root {
@@ -89,6 +89,35 @@ body {
   background: var(--surface-2);
   color: var(--text); font-weight: 600;
   box-shadow: 0 0 0 1px var(--border-strong);
+}
+/* Page-level Viewer / Editor toggle. The page boots in Viewer
+   (read-only pan + zoom + highlight); Editor unlocks drag-to-reshape. */
+.page-toggle {
+  display: inline-flex; gap: 1px; background: var(--hairline);
+  border-radius: 4px; padding: 2px;
+}
+.page-toggle button {
+  background: transparent; border: 0;
+  padding: 4px 10px; font: inherit; font-size: 11.5px;
+  color: var(--text-muted); border-radius: 3px;
+  cursor: pointer;
+}
+.page-toggle button.active {
+  background: var(--accent-soft);
+  color: var(--accent); font-weight: 600;
+  box-shadow: 0 0 0 1px rgba(91,141,239,0.6);
+}
+/* In viewer mode, hide every chrome that mutates state. The canvas
+   keeps pan + zoom + hover-highlight; drag-to-reshape is suppressed
+   in JS (mousedown guard) so structures cannot be edited accidentally. */
+body.viewer-mode #mode-polyline,
+body.viewer-mode #mode-bbox,
+body.viewer-mode #btn-save,
+body.viewer-mode #btn-reset,
+body.viewer-mode .add-btn,
+body.viewer-mode .struct-mode,
+body.viewer-mode .delete-custom {
+  display: none !important;
 }
 .tb-meta {
   font-family: "IBM Plex Mono", monospace;
@@ -283,10 +312,16 @@ body {
     <span class="logo">ORIS</span>
     <span class="ver">v0.1</span>
     <span class="sep">·</span>
-    <span class="mode">Anatomy editor</span>
+    <span class="mode" id="brand-mode">Anatomy viewer</span>
   </div>
   <a href="/play" class="tb-btn back">← /play</a>
   <span class="tb-meta">file_id <b id="meta-file-id">{{ file_id }}</b></span>
+  <div class="page-toggle" role="tablist" aria-label="Page mode">
+    <button id="page-viewer" class="active" data-page="viewer"
+            title="Read-only — pan + zoom + highlight (no editing)">👁 Viewer</button>
+    <button id="page-editor" data-page="editor"
+            title="Unlock drag-to-reshape, +Add, Save">✏ Edit</button>
+  </div>
   <div class="tb-spacer"></div>
   <div class="mode-toggle" role="tablist" aria-label="Annotation mode">
     <button id="mode-polyline" class="active" data-mode="polyline">⌒ Polyline</button>
@@ -355,6 +390,15 @@ const S = {
   byId:      {},         // {sid: structure}
   activeId:  null,       // currently selected structure (highlighted)
   globalMode:'polyline', // 'polyline' | 'bbox' — default mode for new strokes
+  // Page mode: 'viewer' = read-only (pan + zoom + highlight on click),
+  // 'editor' = full drag-to-reshape + +Add + Save. The page boots in
+  // viewer so reviewers can browse anatomy without risk of accidental
+  // edits; clicking '✏ Edit' in the topbar unlocks mutation. The CSS
+  // class `body.viewer-mode` hides editor-only chrome (Save / Reset /
+  // +Add / per-row mode-toggle / delete-custom / global polyline-bbox
+  // toggle), and the mousedown/keydown handlers below short-circuit
+  // every editing path when pageMode === 'viewer'.
+  pageMode: 'viewer',    // 'viewer' | 'editor'
   zoom: 1, panX: 0, panY: 0,
   drag: null,            // { type: 'point'|'corner'|'pan'|'translate'|'new', ... }
   hoverPoint: null,      // index of hovered vertex on activeId
@@ -611,6 +655,17 @@ canvas.addEventListener('mousedown', e => {
   const s = S.byId[S.activeId];
 
   // ────────────────────────────────────────────────
+  // Viewer mode: pan only — no editing of any kind.
+  // Right-click and middle-click are ignored.
+  // ────────────────────────────────────────────────
+  if (S.pageMode === 'viewer') {
+    if (e.button !== 0) return;
+    S.drag = { type: 'pan', startX: sx - S.panX, startY: sy - S.panY };
+    host.classList.add('dragging');
+    return;
+  }
+
+  // ────────────────────────────────────────────────
   // Drawing mode for newly-added custom structures
   // ────────────────────────────────────────────────
   if (S.drawMode && s) {
@@ -783,6 +838,12 @@ canvas.addEventListener('wheel', e => {
 // ─────────────────────────────────────────────────────────────
 window.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  // Viewer mode: only navigation keys allowed (F = fit, Esc = deselect).
+  if (S.pageMode === 'viewer') {
+    if (e.key === 'f' || e.key === 'F') { fit(); return; }
+    if (e.key === 'Escape') { S.activeId = null; renderSidebar(); render(); return; }
+    return;
+  }
   if ((e.ctrlKey || e.metaKey) && e.key === 's') {
     e.preventDefault(); save(); return;
   }
@@ -1073,6 +1134,34 @@ document.querySelectorAll('.mode-toggle button').forEach(btn => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// Page mode (Viewer ↔ Editor)
+// ─────────────────────────────────────────────────────────────
+function setPageMode(mode) {
+  if (mode !== 'viewer' && mode !== 'editor') return;
+  // Cancel any in-progress custom-structure drawing when leaving editor —
+  // otherwise the half-drawn structure becomes editable invisibly.
+  if (S.drawMode && mode === 'viewer') cancelDrawing();
+  S.pageMode = mode;
+  document.body.classList.toggle('viewer-mode', mode === 'viewer');
+  document.querySelectorAll('.page-toggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.page === mode);
+  });
+  const brand = document.getElementById('brand-mode');
+  if (brand) brand.textContent = (mode === 'viewer') ? 'Anatomy viewer' : 'Anatomy editor';
+  const hint = document.getElementById('sb-hint');
+  if (hint) {
+    hint.textContent = (mode === 'viewer')
+      ? 'view-only · drag = pan · scroll = zoom · click structure on the left to highlight'
+      : 'drag points · click segment to insert · right-click point to delete · B / P toggle mode';
+  }
+  renderSidebar();
+  render();
+}
+document.querySelectorAll('.page-toggle button').forEach(btn => {
+  btn.addEventListener('click', () => setPageMode(btn.dataset.page));
+});
+
+// ─────────────────────────────────────────────────────────────
 // Image load + fit
 // ─────────────────────────────────────────────────────────────
 function fit() {
@@ -1121,6 +1210,12 @@ async function load() {
 }
 
 // Boot
+// Page boots in Viewer mode: apply CSS class + brand label + sb-hint text
+// before the first render so the user never sees Editor chrome flash.
+document.body.classList.add('viewer-mode');
+document.getElementById('brand-mode').textContent = 'Anatomy viewer';
+document.getElementById('sb-hint').textContent =
+  'view-only · drag = pan · scroll = zoom · click structure on the left to highlight';
 fitCanvasSize();
 loadImage();
 load();

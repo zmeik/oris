@@ -236,11 +236,11 @@
                 <button class="sbx-btn" id="batch-gt-btn" onclick="batchPrepopulateGT('preview')" style="color:var(--purple);border-color:rgba(168,85,247,0.4);" title="Prefill ground truth from W8 model (V5b) for all OPGs without GT — demonstrates §5.3 AI workflow" hidden>🤖 Batch W8→GT</button>
                 <button class="sbx-btn" id="batch-w0-btn" onclick="batchW0ToGT('preview')" style="color:var(--cyan);border-color:rgba(34,211,238,0.4);" title="Prefill GT from YOLO+SemiT-SAM (W0) on K08.1 cohort" hidden>🧠 W0→GT (K08.1)</button>
                 <span id="batch-gt-status" style="font-size:11px;color:var(--text-dim);" hidden></span>
-                <span style="display:inline-flex;align-items:center;gap:4px;" title="Open the dual-mode (bbox + polyline) anatomy editor for the currently loaded file. Reviewers can drag points or bbox corners to reshape any of the 23 production landmark templates.">
+                <span style="display:inline-flex;align-items:center;gap:4px;" title="Open the dual-mode (bbox + polyline) anatomy viewer for the currently loaded file. Boots in read-only Viewer (pan + zoom + highlight); ✏ Edit toggle inside the page unlocks drag-to-reshape on any of the 23 production landmark templates.">
                     <span style="font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;text-transform:uppercase;">🦴 Anatomy</span>
                     <button class="sbx-btn" id="open-anatomy-editor-btn"
                             style="color:var(--cyan,#22d3ee);border-color:rgba(34,211,238,0.45);background:rgba(34,211,238,0.08);"
-                            title="Open the anatomy editor in a new tab for the currently selected file_id (B / P toggle bbox vs polyline mode)">⌒ Editor</button>
+                            title="Open the anatomy viewer in a new tab. Boots read-only (pan + zoom). Use the ✏ Edit toggle inside the page to enable drag-to-reshape.">👁 Viewer</button>
                 </span>
                 <span style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding-left:10px;border-left:1px solid var(--border);" title="ORIS export — runs the bridges/* converters on the saved ground truth of the currently loaded file. No DB writes are triggered.">
                     <span style="font-size:10px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;text-transform:uppercase;">🌐 ORIS</span>
@@ -268,11 +268,12 @@
 
         <!-- ═══ Change-history strip (paper §2.1 Figure 2 caption, "bottom") ═══
              The dedicated anatomy summary panel that used to live above this
-             section was retired in favour of the full-page editor at
-             /play/anatomy/<file_id> (button "🦴 Anatomy · ⌒ Editor" in the
-             topbar action row). Only the change-history strip remains here:
-             it surfaces both tooth GT edits and anatomy_template_update
-             rows in a single chronological view. -->
+             section was retired in favour of the full-page viewer at
+             /play/anatomy/<file_id> (button "🦴 Anatomy · 👁 Viewer" in the
+             topbar action row, which boots read-only and unlocks editing
+             via an in-page ✏ Edit toggle). Only the change-history strip
+             remains here: it surfaces both tooth GT edits and the
+             anatomy_template_update rows in a single chronological view. -->
         <section id="change-history-strip" class="chist-host" aria-label="Change history">
             <!-- populated by anatomy-panel.js -->
         </section>
@@ -998,9 +999,10 @@ init();
     if (m) return parseInt(m[1], 10);
     return 1001;
   }
-  // Wire up the "🦴 Anatomy editor" button — opens /play/anatomy/<file_id>
+  // Wire up the "🦴 Anatomy · 👁 Viewer" button — opens /play/anatomy/<file_id>
   // in a new tab so the reviewer keeps the formula context next to the
-  // editor.
+  // viewer (which boots read-only and unlocks editing via the in-page
+  // ✏ Edit toggle).
   const anatomyBtn = document.getElementById('open-anatomy-editor-btn');
   if (anatomyBtn) {
     anatomyBtn.addEventListener('click', () => {
