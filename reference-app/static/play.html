@@ -2,306 +2,787 @@
 <html lang="en" data-theme="light" data-lang="en">
 <head>
 <meta charset="utf-8">
-<title>ORIS v0.1 · Playground</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ORIS v0.1 · Playground (interactive)</title>
+<meta name="viewport" content="width=1280">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  /* ==========================================================
-     Reviewer playground — minimal interactive ORIS editor.
-     Three cases (A/B/C), click-to-cycle status, live JSON,
-     bridge exports. No backend writes (stateless via /api/play/export).
-     ========================================================== */
-
+  /* ============ TOKENS ============ */
   :root {
-    --bg: #f7f6f3;
-    --panel: #ffffff;
-    --text: #1a1d22;
-    --text-muted: #5d6470;
-    --text-dim: #8a909a;
-    --border: #e1ddd5;
-    --border-strong: #b6b1a8;
-    --accent: #2d4a8b;
-    --accent-soft: #e3eaf6;
-    --code-bg: #f3f1ec;
-    --st-present: #4a8074;
-    --st-missing: #a8a8a8;
-    --st-caries: #b85c40;
-    --st-restored: #d8a04a;
-    --st-crowned: #b8860b;
+    --bg: #050507;
+    --surface: #0e1117;
+    --surface-2: #161a24;
+    --surface-3: #1d2230;
+    --border: #242a3a;
+    --border-soft: #1b202c;
+    --border-strong: #3a4256;
+    --text: #e6e8ee;
+    --text-muted: #8a93a6;
+    --text-dim: #5b6478;
+    --accent: #6dc4d8;
+    --accent-ink: #061013;
+    --danger: #e0556b;
+
+    --src-manual: #8a93a6;
+    --src-ai: #a78bfa;
+    --src-ai-manual: #5fbab2;
+
+    /* status palette — print-safe, identical in both themes */
+    --st-present: #2c7a4a;
+    --st-missing: #6b6b6b;
+    --st-impacted: #8a4a20;
+    --st-caries: #c0392b;
+    --st-attrition: #a89e58;
+    --st-root: #8c5e2a;
+    --st-restored: #2c7a7a;
     --st-endo: #7e3f8c;
-    --st-post: #c08438;
-    --st-impl: #4a6b8a;
-    --st-impacted: #a8643a;
-    --st-uncertain: #888;
-    --warn-bg: #fff8e1;
-    --warn-bd: #d8b465;
+    --st-impl: #34495e;
+    --st-impl-cover: #4a5d70;
+    --st-impl-heal: #5e6f80;
+    --st-impl-rest: #1f5f8c;
+    --st-post: #b8860b;
+    --st-crowned: #b8860b;
+    --st-bridge: #7a7a7a;
+    --st-bar: #4a4a4a;
+    --st-cantilever: #7a6a7a;
+    --st-uncertain: #c0a83a;
+
+    --font-ui: 'Inter', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  [data-theme="light"] {
+    --bg: #fafaf8;
+    --surface: #ffffff;
+    --surface-2: #f3f1ea;
+    --surface-3: #ebe8de;
+    --border: #d9d6cc;
+    --border-soft: #e6e3d9;
+    --border-strong: #b6b1a3;
+    --text: #15181f;
+    --text-muted: #5b6273;
+    --text-dim: #8a8f9c;
+    --accent: #1d4f8c;
+    --accent-ink: #ffffff;
+    --danger: #b8323f;
+
+    --src-manual: #6b7180;
+    --src-ai: #6b4cc8;
+    --src-ai-manual: #2a8a82;
   }
 
-  [data-theme="dark"] {
-    --bg: #0e1014;
-    --panel: #1a1d22;
-    --text: #e6e7eb;
-    --text-muted: #9aa1ad;
-    --text-dim: #5e646e;
-    --border: #2a2e36;
-    --border-strong: #3e434c;
-    --accent: #6a8fcf;
-    --accent-soft: #1a2438;
-    --code-bg: #161920;
-    --st-present: #6db09f;
-    --st-caries: #d97a5a;
-    --st-restored: #e6b461;
-    --st-crowned: #d4a040;
-    --st-endo: #b56fc4;
-    --st-post: #d4995a;
-    --st-impl: #7a9ed0;
-    --warn-bg: #2a2418;
-    --warn-bd: #6a5a32;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    font-family: 'Inter', system-ui, sans-serif;
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
     background: var(--bg);
     color: var(--text);
-    font-size: 14px;
-    line-height: 1.5;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
   }
-  .mono { font-family: 'IBM Plex Mono', monospace; }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .tabular { font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
 
-  /* ── Topbar ── */
-  .topbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 18px;
-    background: var(--panel);
-    border-bottom: 1px solid var(--border);
-    position: sticky; top: 0; z-index: 10;
+  button { font: inherit; }
+
+  /* ============ SHELL ============ */
+  .app {
+    width: 1280px;
+    margin: 0 auto;
+    background: var(--bg);
+    border-left: 1px solid var(--border-soft);
+    border-right: 1px solid var(--border-soft);
   }
-  .brand {
+
+  /* ============ TOPBAR ============ */
+  .topbar {
+    height: 52px;
+    display: flex; align-items: center;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    gap: 10px;
+    white-space: nowrap;
+  }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; letter-spacing: 0.01em; white-space: nowrap; flex-shrink: 0; }
+  .brand-mark {
+    width: 22px; height: 22px; border-radius: 5px;
+    background: var(--accent); color: var(--accent-ink);
+    display: grid; place-items: center;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  }
+  .brand-sep { color: var(--text-dim); font-weight: 400; padding: 0 2px; }
+  .brand-sub { color: var(--text-muted); font-weight: 400; }
+  .brand-mode { color: var(--text); font-weight: 600; }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 8px; border-radius: 999px;
+    font-family: var(--font-mono); font-size: 10.5px;
+    border: 1px solid;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .pill.synthetic {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+  .pill.no-pii {
+    background: color-mix(in srgb, var(--st-present) 14%, transparent);
+    color: var(--st-present);
+    border-color: color-mix(in srgb, var(--st-present) 40%, transparent);
+  }
+
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .seg {
+    display: inline-flex; padding: 2px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .seg button {
+    height: 24px; padding: 0 10px;
+    background: transparent; border: 0;
+    color: var(--text-muted);
+    font-size: 11.5px; font-weight: 500;
+    border-radius: 4px; cursor: pointer;
+    font-family: var(--font-mono);
+    letter-spacing: 0.03em;
+  }
+  .seg button[aria-pressed="true"] {
+    background: var(--surface); color: var(--text);
+    box-shadow: 0 1px 2px rgba(0,0,0,.06);
+  }
+  [data-theme="dark"] .seg button[aria-pressed="true"] { background: var(--surface-3); }
+
+  .icon-btn {
+    height: 28px; min-width: 28px; padding: 0 8px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    background: transparent; color: var(--text-muted);
+    border: 1px solid var(--border); border-radius: 5px;
+    font-size: 12px; cursor: pointer;
+    transition: color .12s, border-color .12s;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--text-dim); }
+  .icon-btn svg { width: 13px; height: 13px; }
+
+  /* ============ INFO STRIP ============ */
+  .infostrip {
+    height: 26px;
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 16px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    font-size: 11px; color: var(--text-muted);
+    font-family: var(--font-mono);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .infostrip b { color: var(--text); font-weight: 500; }
+  .infostrip .sep { color: var(--text-dim); }
+  .infostrip .right { margin-left: auto; display: flex; gap: 14px; }
+
+  /* ============ MAIN: production darwin_lab pattern ============ */
+  /* Grid layout: 520px OPG + fluid formulas. Sticky disabled — preview widths
+     are too narrow for sticky to behave as in production (1600+ workstation). */
+  .arena-body {
+    display: grid;
+    grid-template-columns: 520px 1fr;
+    align-items: start;
+    min-width: 0;
+  }
+  .arena-opg-col {
+    border-right: 1px solid var(--border);
+    min-width: 0;
+  }
+  .arena-formulas-col {
+    min-width: 0;
+    padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .legend-wrap {
+    padding: 0 16px 14px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+
+  /* ============ LEFT: OPG ============ */
+  .left { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+
+  .panel-head {
     display: flex; align-items: baseline; gap: 10px;
   }
-  .brand .logo {
-    font-weight: 700; font-size: 16px; letter-spacing: -0.01em;
+  .panel-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-muted); font-weight: 600;
   }
-  .brand .ver {
-    font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent);
-    background: var(--accent-soft); padding: 1px 6px; border-radius: 3px;
+  .panel-meta {
+    margin-left: auto;
+    font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim);
   }
-  .brand .mode {
-    font-size: 13px; color: var(--text-muted);
-  }
-  .brand .mode::before { content: "·"; margin-right: 8px; color: var(--text-dim); }
 
-  .top-controls {
-    display: flex; align-items: center; gap: 12px;
+  .opg-stage {
+    width: 100%;
+    aspect-ratio: 488 / 250;
+    background: #08090b;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
   }
-  .case-picker {
-    display: inline-flex; gap: 1px; background: var(--border); border-radius: 5px; padding: 1px;
+  [data-theme="light"] .opg-stage { background: #1a1a1a; }
+  .opg-stage svg { width: 100%; height: 100%; display: block; }
+  .opg-overlay {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    color: rgba(220,230,240,.55);
+    font-family: var(--font-mono); font-size: 9.5px;
+    letter-spacing: 0.06em; text-transform: uppercase;
   }
-  .case-picker button {
-    background: transparent; border: 0;
-    font: inherit; font-size: 12px; padding: 4px 11px; cursor: pointer;
-    color: var(--text-muted); border-radius: 4px;
+  .opg-overlay .corner { position: absolute; width: 10px; height: 10px; border: 1px solid rgba(255,255,255,.35); }
+  .opg-overlay .corner.tl { top: 6px; left: 6px; border-right: 0; border-bottom: 0; }
+  .opg-overlay .corner.tr { top: 6px; right: 6px; border-left: 0; border-bottom: 0; }
+  .opg-overlay .corner.bl { bottom: 6px; left: 6px; border-right: 0; border-top: 0; }
+  .opg-overlay .corner.br { bottom: 6px; right: 6px; border-left: 0; border-top: 0; }
+  .opg-overlay .meta-tl { position: absolute; top: 8px; left: 14px; }
+  .opg-overlay .meta-tr { position: absolute; top: 8px; right: 14px; }
+  .opg-overlay .meta-bl { position: absolute; bottom: 8px; left: 14px; }
+  .opg-overlay .meta-br { position: absolute; bottom: 8px; right: 14px; }
+  .opg-overlay .axis { position: absolute; left: 50%; top: 6px; bottom: 6px; width: 1px; background: linear-gradient(to bottom, transparent, rgba(109,196,216,.25), transparent); }
+
+  .filter-bar {
+    display: flex; gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px;
+  }
+  .filter-btn {
+    flex: 1; height: 28px;
+    background: transparent; border: 1px solid transparent;
+    color: var(--text-muted);
+    font-size: 11.5px; font-weight: 500;
+    border-radius: 4px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    transition: color .12s, background .12s;
+  }
+  .filter-btn:hover { color: var(--text); background: var(--surface-2); }
+  .filter-btn[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+  .filter-btn .kbd {
+    font-family: var(--font-mono); font-size: 9px;
+    color: var(--text-dim); border: 1px solid var(--border); border-radius: 2px;
+    padding: 0 3px; line-height: 1.4;
+  }
+  .filter-btn[aria-pressed="true"] .kbd { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+
+  .opg-meta-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px;
+    font-size: 11px;
+    padding: 4px 2px;
+  }
+  .opg-meta-grid .row { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; min-width: 0; }
+  .opg-meta-grid .label { color: var(--text-muted); white-space: nowrap; flex-shrink: 0; font-size: 10.5px; }
+  .opg-meta-grid .val { color: var(--text); font-family: var(--font-mono); font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  .qa-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    font-size: 11.5px;
+  }
+  .qa-row .label { color: var(--text-muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; }
+  .qa-row .grade {
+    font-family: var(--font-mono); color: var(--st-present);
+    background: color-mix(in srgb, var(--st-present) 14%, transparent);
+    padding: 1px 7px; border-radius: 3px;
+    font-size: 11px; font-weight: 600;
+  }
+  .qa-row .meta { margin-left: auto; font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); }
+
+  /* ============ FORMULA blocks ============ */
+  .right { display: contents; }
+  .formula-head {
+    display: flex; align-items: baseline; gap: 10px;
+  }
+  .formula-actions { margin-left: auto; display: flex; gap: 6px; }
+
+  /* Wrapper blocks */
+  .block {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px 12px;
+    display: flex; flex-direction: column; gap: 6px;
+    min-width: 0;
+    background: var(--surface);
+  }
+  .block.gt {
+    background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+    border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent) inset;
+  }
+  .block.ai {
+    background: var(--surface-2);
+    border-color: var(--border-soft);
+    opacity: 0.96;
+  }
+  .block-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 2px 4px;
+    border-bottom: 1px dashed var(--border-soft);
+    margin-bottom: 4px;
+    white-space: nowrap;
+  }
+  .block-head .ttl {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text); font-weight: 700;
+  }
+  .block.gt .block-head .ttl {
+    color: var(--accent);
+  }
+  .block-head .meta {
+    font-family: var(--font-mono); font-size: 10.5px;
+    color: var(--text-dim);
+  }
+  .block-head .meta b { color: var(--text-muted); font-weight: 500; }
+  .block-head .badge {
+    margin-left: auto;
+    font-family: var(--font-mono); font-size: 10px;
+    padding: 2px 7px; border-radius: 3px;
+    letter-spacing: 0.06em; font-weight: 600;
+  }
+  .block.gt .block-head .badge { background: var(--accent); color: var(--accent-ink); }
+  .block.ai .block-head .badge { background: color-mix(in srgb, var(--src-ai) 16%, transparent); color: var(--src-ai); border: 1px solid color-mix(in srgb, var(--src-ai) 35%, transparent); }
+
+  /* Block-internal midline divider */
+  .midline {
+    position: relative;
+    height: 1px;
+    margin: 6px 0;
+    background: var(--border);
+  }
+  .block.gt .midline { background: color-mix(in srgb, var(--accent) 50%, var(--border)); }
+  .midline::before, .midline::after {
+    content: ''; position: absolute; top: -3px; width: 6px; height: 6px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 50%;
+  }
+  .block.gt .midline::before, .block.gt .midline::after {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .midline::before { left: -3px; }
+  .midline::after { right: -3px; }
+  .midline .lab {
+    position: absolute; top: -7px; left: 50%; transform: translateX(-50%);
+    background: var(--surface);
+    padding: 0 8px;
+    font-family: var(--font-mono); font-size: 9px;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+  .block.gt .midline .lab { background: color-mix(in srgb, var(--accent) 6%, var(--surface)); color: var(--accent); }
+  .block.ai .midline .lab { background: var(--surface-2); }
+
+  /* AI block — same cell scale as GT (production pattern: identical structure, only chrome differs) */
+  /* No size overrides; cells share --cell-w / --cell-h via .cells grid */
+
+  /* mismatch indicator on AI cells */
+  .cell.mismatch { position: relative; }
+  .cell.mismatch .mm-flag {
+    position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%);
+    display: inline-flex; align-items: center; gap: 2px;
+    font-family: var(--font-mono); font-size: 8.5px;
+    color: white; background: var(--danger);
+    padding: 1px 4px; border-radius: 3px;
+    line-height: 1; font-weight: 600;
+    z-index: 2;
+    white-space: nowrap;
+  }
+  .cell.mismatch[data-diff]:hover::before {
+    content: '✗ ' attr(data-ai) ' → ' attr(data-diff);
+    position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+    background: var(--danger); color: white;
+    font-family: var(--font-mono); font-size: 10px;
+    padding: 3px 7px; border-radius: 3px; white-space: nowrap;
+    z-index: 10; pointer-events: none;
+  }
+  .cell.mismatch[data-diff]:hover::after {
+    content: ''; position: absolute; bottom: calc(100% + 2px); left: 50%; transform: translateX(-50%);
+    border: 4px solid transparent; border-top-color: var(--danger);
+    z-index: 10; pointer-events: none;
+  }
+  .cell.selected[data-ostr]:hover::before {
+    content: attr(data-ostr);
+    position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: var(--accent-ink);
+    font-family: var(--font-mono); font-size: 10px;
+    padding: 3px 7px; border-radius: 3px; white-space: nowrap;
+    z-index: 10; pointer-events: none;
+  }
+
+  /* Quadrant labels above carousel */
+  .quad-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    font-family: var(--font-mono); font-size: 9.5px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0 2px 4px;
+    border-bottom: 1px dashed var(--border-soft);
+  }
+  .quad-row .q { display: flex; align-items: center; gap: 6px; }
+  .quad-row .q.right { justify-content: flex-end; }
+  .quad-row .q .num { color: var(--text-muted); font-weight: 600; }
+
+  /* Carousel of crops */
+  .crops {
+    display: grid;
+    grid-template-columns: repeat(16, minmax(0, 1fr));
+    gap: 3px;
+    min-width: 0;
+  }
+  .crop {
+    position: relative;
+    aspect-ratio: 80 / 56;
+    background: #0a0a0a;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: zoom-in;
+    transition: border-color .12s, transform .12s;
+  }
+  .crop:hover { border-color: var(--accent); transform: translateY(-1px); }
+  [data-theme="light"] .crop { background: #1f1f1f; }
+  .crop svg { width: 100%; height: 100%; display: block; }
+  .crop .crop-fdi {
+    position: absolute; top: 1px; right: 2px;
+    font-family: var(--font-mono); font-size: 8.5px;
+    color: rgba(220,230,240,.55);
+  }
+  .crop.flipped svg { transform: scaleY(-1); }
+
+  /* AI prefill row */
+  .row-band {
+    display: grid;
+    grid-template-columns: 78px 1fr;
+    gap: 6px;
+    align-items: stretch;
+  }
+  .band-label {
+    display: flex; flex-direction: column; justify-content: center;
+    padding: 4px 6px;
+    border-right: 1px dashed var(--border-soft);
+  }
+  .band-label .ttl {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--text-muted); font-weight: 600;
+  }
+  .band-label .sub {
+    font-family: var(--font-mono); font-size: 9.5px; color: var(--text-dim); margin-top: 2px;
+  }
+  .band-label .conf {
+    font-family: var(--font-mono); font-size: 10.5px;
+    margin-top: 4px; color: var(--src-ai); font-weight: 500;
+  }
+  .row-band.gt .band-label .ttl { color: var(--text); }
+  .row-band.gt .band-label .pip {
+    display: inline-block; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--accent);
+    margin-right: 5px; vertical-align: middle;
+  }
+
+  .cells {
+    display: grid;
+    grid-template-columns: repeat(16, minmax(0, 1fr));
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .cell {
+    aspect-ratio: 48 / 64;
+    min-width: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    position: relative;
+    display: flex; flex-direction: column;
+    align-items: stretch;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color .12s, transform .12s, box-shadow .12s;
+  }
+  .cell:hover { border-color: var(--text-muted); }
+  .cell.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  .cell.mismatch {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent);
+  }
+  .cell.flipped .anatomy { transform: scaleY(-1); }
+  .cell.flipped .surfaces { transform: scaleY(-1); }
+
+  /* Vertical midline (FDI sagittal plane) — separator on 8th cell of each row */
+  /* Vertical anatomical centerline — one independent line per chart.
+     Each chart's line is positioned absolutely on the .block element and
+     spans from that block's top crops/cell row down to its bottom one,
+     never crossing the gap to the other block. */
+  .cell.midline-right { /* class kept for legacy; no styling */ }
+  .block.gt, .block.ai { position: relative; }
+  .anatomical-axis {
+    position: absolute;
+    left: 50%;
+    width: 1.5px;
+    transform: translateX(-0.75px);
+    pointer-events: none;
+    z-index: 5;
+    /* Dashed look via mask. */
+    -webkit-mask-image: repeating-linear-gradient(to bottom, #000 0 5px, transparent 5px 9px);
+            mask-image: repeating-linear-gradient(to bottom, #000 0 5px, transparent 5px 9px);
+  }
+  .block.gt .anatomical-axis {
+    background: color-mix(in srgb, var(--accent) 70%, transparent);
+  }
+  .block.ai .anatomical-axis {
+    background: color-mix(in srgb, var(--text-muted) 70%, transparent);
+  }
+
+  /* Inline cell-root SVG block — sits above crown for upper, below for lower (production darwin_lab pattern) */
+  .cell .cell-root {
+    height: 11px;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+    opacity: 0.75;
+    flex-shrink: 0;
+  }
+  .cell .cell-root svg { display: block; width: 100%; height: 100%; }
+  /* hide cell-root for cells without endo/root indication */
+  .cell:not(.has-root) .cell-root { display: none; }
+
+  /* Cell internals — flex column with ordered rows.
+     Top row: FDI label + status abbr (no overlap).
+     Middle: anatomy SVG (flex:1).
+     Optional: cell-root SVG (above for upper, below for lower).
+     Bottom: surface map polygon. */
+  .cell .head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1px 3px 0;
+    gap: 2px;
+    min-height: 11px;
+    order: 1;
+  }
+  .cell .fdi {
+    font-family: var(--font-mono); font-size: 8.5px;
+    color: var(--text-dim);
     font-weight: 500;
+    line-height: 1;
+    flex-shrink: 0;
   }
-  .case-picker button[aria-pressed="true"] {
-    background: var(--accent); color: #fff;
+  .cell .abbr {
+    font-family: var(--font-mono); font-size: 9px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    text-align: right;
   }
-  .toggle {
-    display: inline-flex; gap: 1px; background: var(--border); border-radius: 5px; padding: 1px;
+  .cell .anatomy {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    padding: 1px;
+    min-height: 0;
+    order: 2;
   }
-  .toggle button {
-    background: transparent; border: 0;
-    font: inherit; font-size: 12px; padding: 3px 9px; cursor: pointer;
-    color: var(--text-muted); border-radius: 4px;
+  .cell .anatomy svg { display: block; width: 100%; height: 100%; }
+  .cell .surfaces {
+    height: 13px;
+    display: flex; align-items: center; justify-content: center;
+    border-top: 1px solid var(--border-soft);
+    background: var(--surface-2);
+    order: 3;
+    flex-shrink: 0;
   }
-  .toggle button[aria-pressed="true"] {
-    background: var(--panel); color: var(--text); font-weight: 600;
-    box-shadow: 0 0 0 1px var(--border-strong);
-  }
-  .nav-link {
-    font-size: 12px; color: var(--text-muted); text-decoration: none;
-    padding: 4px 8px; border-radius: 4px;
-  }
-  .nav-link:hover { color: var(--accent); background: var(--accent-soft); }
+  .cell .surfaces svg { display: block; height: 11px; width: 11px; }
 
-  /* ── Privacy banner ── */
-  .privacy-banner {
-    background: var(--warn-bg);
-    border-bottom: 1px solid var(--warn-bd);
-    padding: 6px 18px; font-size: 12px;
+  /* upper: cell-root above crown (visually) but in flow ordered first.
+     But .flipped flips anatomy via scaleY — so for upper cells the cell-root
+     stays anatomically "below" the inverted crown, which is correct. */
+  .cell.flipped .cell-root { order: 0; }
+  .cell:not(.flipped) .cell-root { order: 4; }
+
+  /* Visual cell variants by status */
+  .cell.s-missing { background: repeating-linear-gradient(135deg, var(--surface) 0 4px, var(--surface-2) 4px 8px); color: var(--text-dim); }
+  .cell.s-missing .abbr { color: var(--text-dim); }
+  .cell.s-impl-cover { background: color-mix(in srgb, var(--st-impl) 8%, var(--surface)); }
+  .cell.s-impl-restored { background: color-mix(in srgb, var(--st-impl-rest) 9%, var(--surface)); }
+  .cell.s-endo-post-crowned { background: color-mix(in srgb, var(--st-crowned) 8%, var(--surface)); }
+  .cell.s-restored { background: color-mix(in srgb, var(--st-restored) 8%, var(--surface)); }
+
+  /* Small status legend */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 4px 6px;
+    padding: 8px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+  }
+  .legend-item {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 1px 6px;
+    font-size: 11px;
+    border-radius: 3px;
+    background: var(--surface);
+    border: 1px solid var(--border-soft);
+  }
+  .legend-item .swatch {
+    width: 10px; height: 10px; border-radius: 2px;
+    border: 1px solid var(--border);
+  }
+  .legend-item .ab { font-family: var(--font-mono); font-size: 10.5px; color: var(--text); font-weight: 600; }
+  .legend-item .nm { color: var(--text-muted); font-size: 10.5px; }
+
+  /* ============ HISTORY ============ */
+  .history {
+    border-top: 1px solid var(--border);
+    padding: 12px 16px 14px;
+    background: var(--surface);
+  }
+  .history-head { white-space: nowrap; }
+  .history-head {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 8px;
+  }
+  .history-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); font-weight: 600; }
+  .history-meta { font-family: var(--font-mono); font-size: 10.5px; color: var(--text-dim); }
+  .history-actions { margin-left: auto; display: flex; gap: 6px; }
+  .history-link {
+    background: transparent; border: 0;
+    color: var(--accent); font-size: 11.5px;
+    cursor: pointer; padding: 4px 8px;
+    border-radius: 4px;
+  }
+  .history-link:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+
+  .history-strip {
+    display: grid; gap: 4px;
+  }
+  .hist-item {
+    display: grid;
+    grid-template-columns: 28px 60px 78px 1fr 28px;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-soft);
+    border-radius: 4px;
+    font-size: 11.5px;
+  }
+  .hist-item .seq {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--text-dim);
+  }
+  .hist-item .ts {
+    font-family: var(--font-mono); font-size: 11px;
     color: var(--text-muted);
   }
-  .privacy-banner strong { color: var(--text); }
+  .hist-item .src {
+    font-size: 10px; font-family: var(--font-mono);
+    text-transform: uppercase; letter-spacing: 0.04em;
+    padding: 1px 6px; border-radius: 3px;
+    text-align: center;
+    border: 1px solid;
+    font-weight: 600;
+  }
+  .hist-item .src.manual { color: var(--src-manual); background: color-mix(in srgb, var(--src-manual) 10%, transparent); border-color: color-mix(in srgb, var(--src-manual) 30%, transparent); }
+  .hist-item .src.ai_prefill { color: var(--src-ai); background: color-mix(in srgb, var(--src-ai) 10%, transparent); border-color: color-mix(in srgb, var(--src-ai) 30%, transparent); }
+  .hist-item .src.ai_prefill_then_manual { color: var(--src-ai-manual); background: color-mix(in srgb, var(--src-ai-manual) 10%, transparent); border-color: color-mix(in srgb, var(--src-ai-manual) 30%, transparent); }
+  .hist-item .diff { color: var(--text); font-family: var(--font-mono); font-size: 11px; }
+  .hist-item .diff em { color: var(--text-dim); font-style: normal; padding: 0 4px; }
+  .hist-item .diff .a { color: var(--text-muted); }
+  .hist-item .diff .b { color: var(--accent); }
+  .hist-item .diff .fdi { color: var(--text); font-weight: 600; padding-right: 6px; }
+  .hist-item .roll {
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 10px; padding: 1px 4px;
+    border-radius: 3px; cursor: pointer;
+    font-family: var(--font-mono);
+  }
+  .hist-item .roll:hover { color: var(--danger); border-color: var(--danger); }
 
-  /* ── Main grid ── */
-  main {
+  /* ============ FOOTER ============ */
+  .footer {
+    border-top: 1px solid var(--border);
+    background: var(--surface-2);
+    padding: 8px 16px;
+    display: flex; align-items: center; gap: 14px;
+    font-family: var(--font-mono); font-size: 10.5px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .footer .right { margin-left: auto; display: flex; gap: 14px; }
+  .footer .ref { color: var(--text-dim); }
+  .footer a { color: var(--accent); text-decoration: none; }
+
+  /* ============ PLAY-EXTRAS (JSON pane + bridges) ============ */
+  .play-extras {
+    border-top: 1px solid var(--border);
+    background: var(--surface-1);
+    padding: 14px 16px;
+  }
+  .play-extras-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
-    gap: 16px;
-    padding: 16px 18px;
-    max-width: 1440px; margin: 0 auto;
+    grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr);
+    gap: 14px;
   }
-
   @media (max-width: 1100px) {
-    main { grid-template-columns: 1fr; }
+    .play-extras-grid { grid-template-columns: 1fr; }
   }
-
-  .panel {
+  .play-card {
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 6px;
     overflow: hidden;
+    display: flex; flex-direction: column;
   }
-  .panel-head {
+  .play-card-head {
     display: flex; align-items: baseline; justify-content: space-between;
-    padding: 10px 14px;
+    padding: 8px 12px;
     border-bottom: 1px solid var(--border);
   }
-  .panel-head h2 {
-    font-size: 13px; font-weight: 600; letter-spacing: -0.01em;
-  }
-  .panel-head .meta {
-    font-size: 11px; color: var(--text-muted);
-    font-family: 'IBM Plex Mono', monospace;
-  }
-  .panel-body { padding: 14px; }
-
-  /* ── OPG panel ── */
-  .opg-stage {
-    background: #0a0a0a;
-    aspect-ratio: 2 / 1;
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
-    position: relative;
-  }
-  .opg-stage img {
-    width: 100%; height: 100%; object-fit: contain;
-  }
-  .opg-watermark {
-    position: absolute; bottom: 6px; right: 10px;
-    font-family: 'IBM Plex Mono', monospace; font-size: 9.5px;
-    color: rgba(255,255,255,0.5);
-    letter-spacing: 0.04em;
-  }
-  .opg-meta {
-    padding: 10px 14px;
-    font-size: 12px; color: var(--text-muted);
-    border-top: 1px solid var(--border);
-    display: flex; justify-content: space-between;
-  }
-  .opg-meta b { color: var(--text); font-family: 'IBM Plex Mono', monospace; font-weight: 500; }
-
-  /* ── Formula grid ── */
-  .formula-area {
-    padding: 14px;
-  }
-  .arch-row-label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px; color: var(--text-dim); text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin: 6px 0 4px;
-    display: flex; justify-content: space-between;
-  }
-  .cells {
-    display: grid;
-    grid-template-columns: repeat(16, 1fr);
-    gap: 3px;
-  }
-  .cell {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 3px;
-    min-height: 56px;
-    padding: 3px 2px;
-    font: inherit;
-    cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; gap: 1px;
-    transition: border-color 0.08s, background 0.08s;
-    position: relative;
-  }
-  .cell:hover { border-color: var(--accent); }
-  .cell:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  .cell.midline-right { box-shadow: 4px 0 0 var(--accent-soft); }
-  .cell .fdi {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9.5px; color: var(--text-dim);
-  }
-  .cell .label {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 9px;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-align: center;
-    word-break: break-all;
-    line-height: 1.15;
-    padding: 0 1px;
-  }
-  .cell .label.has-status { color: var(--text); }
-  .cell.s-missing { background: color-mix(in srgb, var(--st-missing) 12%, var(--bg)); }
-  .cell.s-impacted { background: color-mix(in srgb, var(--st-impacted) 12%, var(--bg)); }
-  .cell.s-impl { background: color-mix(in srgb, var(--st-impl) 14%, var(--bg)); border-color: color-mix(in srgb, var(--st-impl) 35%, var(--border)); }
-  .cell.s-endo { background: color-mix(in srgb, var(--st-endo) 12%, var(--bg)); }
-  .cell.s-restored { background: color-mix(in srgb, var(--st-restored) 14%, var(--bg)); }
-  .cell.s-crowned { background: color-mix(in srgb, var(--st-crowned) 14%, var(--bg)); }
-  .cell.s-caries { background: color-mix(in srgb, var(--st-caries) 14%, var(--bg)); }
-  .cell.s-uncertain { background: color-mix(in srgb, var(--st-uncertain) 12%, var(--bg)); }
-
-  .cell.empty .label::before {
-    content: "·"; color: var(--text-dim); font-size: 14px;
-  }
-
-  /* Helper text under cells */
-  .helper {
-    font-size: 11px; color: var(--text-muted);
-    margin-top: 12px;
-    padding: 8px 10px;
-    background: var(--code-bg);
-    border-radius: 4px;
-    line-height: 1.6;
-  }
-  .helper kbd {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px;
-    background: var(--panel); border: 1px solid var(--border-strong);
-    padding: 0 4px; border-radius: 2px;
-  }
-
-  /* ── Bottom row: JSON + bridges ── */
-  .bottom-row {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 16px;
-  }
-  @media (max-width: 1100px) {
-    .bottom-row { grid-template-columns: 1fr; }
-  }
-
+  .play-card-head .panel-meta { display: flex; gap: 6px; align-items: center; }
+  .play-card-head .panel-meta .sep { color: var(--text-dim); }
   .json-pane {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11.5px;
+    font-family: var(--font-mono);
+    font-size: 11px;
     line-height: 1.55;
-    background: var(--code-bg);
-    border-radius: 4px;
+    background: var(--surface-2);
     padding: 10px 12px;
+    margin: 0;
     max-height: 380px;
     overflow: auto;
     white-space: pre;
     color: var(--text);
   }
   .json-pane .k { color: var(--accent); }
-  .json-pane .s { color: #2c7a4a; }
-  .json-pane .n { color: #b8860b; }
-
-  [data-theme="dark"] .json-pane .s { color: #76b88e; }
-  [data-theme="dark"] .json-pane .n { color: #d4a040; }
-
-  /* ── Bridges ── */
+  .json-pane .s { color: var(--st-restored, #2c7a4a); }
+  .json-pane .n { color: var(--st-crowned, #b8860b); }
   .bridges-list {
-    display: flex; flex-direction: column; gap: 6px;
+    display: grid; grid-template-columns: 1fr; gap: 6px;
+    padding: 10px 12px;
   }
   .bridge-btn {
     display: flex; align-items: center; justify-content: space-between;
@@ -309,7 +790,7 @@
     border: 1px solid var(--border);
     border-radius: 4px;
     padding: 8px 12px;
-    font: inherit; font-size: 12.5px;
+    font: inherit; font-size: 12px;
     color: var(--text);
     cursor: pointer;
     text-align: left;
@@ -319,244 +800,472 @@
   .bridge-btn.primary {
     background: var(--accent); color: #fff; border-color: var(--accent);
   }
-  .bridge-btn.primary:hover { background: color-mix(in srgb, var(--accent) 80%, #000); color: #fff; }
+  .bridge-btn.primary:hover { filter: brightness(0.92); color: #fff; }
   .bridge-btn .fmt {
-    font-family: 'IBM Plex Mono', monospace;
     font-size: 10.5px; color: var(--text-muted);
   }
-  .bridge-btn.primary .fmt { color: rgba(255,255,255,0.75); }
-
-  .stat {
-    font-size: 11px; color: var(--text-muted); margin-top: 8px;
-    font-family: 'IBM Plex Mono', monospace;
+  .bridge-btn.primary .fmt { color: rgba(255,255,255,0.78); }
+  .bridges-note {
+    font-size: 11px; color: var(--text-muted);
+    padding: 0 12px 10px;
+    line-height: 1.55;
   }
 
-  footer {
-    text-align: center; padding: 16px;
-    font-size: 11.5px; color: var(--text-dim);
+  /* Cell hover affordance — playground cell click feels different */
+  .block.gt .cell { cursor: pointer; }
+  .block.ai .cell { cursor: default; opacity: 0.95; }
+  .block.gt .cell.just-edited {
+    box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px var(--accent-soft, rgba(45,74,139,0.25));
+    transition: box-shadow 0.6s ease-out;
   }
-  footer a { color: var(--accent); }
+
+  /* ============ I18N ============ */
+  [data-lang="en"] .ru-only { display: none; }
+  [data-lang="ru"] .en-only { display: none; }
 </style>
 </head>
 <body>
+<div class="app">
+  <!-- =========== TOPBAR =========== -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">O</span>
+      <span>ORIS</span>
+      <span class="brand-sep">·</span>
+      <span class="brand-sub">Arena</span>
+      <span class="brand-sep">·</span>
+      <span class="brand-mode" data-i18n="mode.play">Playground</span>
+    </div>
+    <span class="pill synthetic"><span style="width:5px;height:5px;border-radius:50%;background:currentColor"></span>SYNTHETIC</span>
+    <span class="pill no-pii">NO&nbsp;PII</span>
 
-<!-- ── Topbar ── -->
-<header class="topbar">
-  <div class="brand">
-    <span class="logo">ORIS</span>
-    <span class="ver">v0.1</span>
-    <span class="mode" data-i18n="mode.play">Playground</span>
+    <div class="topbar-right">
+      <div class="seg" id="casePicker" role="tablist" aria-label="Case">
+        <button data-case="A" aria-pressed="true">Case A</button>
+        <button data-case="B" aria-pressed="false">Case B</button>
+        <button data-case="C" aria-pressed="false">Case C</button>
+      </div>
+      <div class="seg" role="tablist" aria-label="Language">
+        <button data-lang-toggle="en" aria-pressed="true">EN</button>
+        <button data-lang-toggle="ru" aria-pressed="false">RU</button>
+      </div>
+      <div class="seg" role="tablist" aria-label="Theme">
+        <button data-theme-toggle="light" aria-pressed="true" title="Light"><span aria-hidden="true">☀</span></button>
+        <button data-theme-toggle="dark" aria-pressed="false" title="Dark"><span aria-hidden="true">☾</span></button>
+      </div>
+      <a href="/demo" class="icon-btn" title="Static IJOS demo (Figure 2 source)" style="text-decoration:none; padding:4px 10px; font-size:12px; font-weight:500; letter-spacing:0.01em;" data-i18n="nav.demoBack">← Demo</a>
+      <a href="https://github.com/zmeik/oris" target="_blank" rel="noopener" class="icon-btn" title="GitHub" aria-label="GitHub repository">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 005.47 7.59c.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <!-- =========== INFO STRIP =========== -->
+  <div class="infostrip">
+    <span><b id="caseDocId">CASE_A</b></span>
+    <span class="sep">·</span>
+    <span><span data-i18n="meta.case">Case</span>: <span id="caseLabel">case_A · synthetic</span></span>
+    <span class="sep">·</span>
+    <span><span data-i18n="meta.captured">Captured</span> 2026-01-01&thinsp;UTC</span>
+    <span class="sep">·</span>
+    <span><span data-i18n="meta.modality">Modality</span> OPG</span>
+    <div class="right">
+      <span data-i18n="play.editing">Editing as Expert</span>: <b>E-04</b>
+      <span class="sep">·</span>
+      <span><span data-i18n="play.session">Session</span>: <b id="caseSession">play-local</b></span>
+    </div>
   </div>
-  <div class="top-controls">
-    <div class="case-picker" id="casePicker">
-      <button data-case="A" aria-pressed="true">Case A</button>
-      <button data-case="B" aria-pressed="false">Case B</button>
-      <button data-case="C" aria-pressed="false">Case C</button>
-    </div>
-    <div class="toggle">
-      <button data-lang-toggle="en" aria-pressed="true">EN</button>
-      <button data-lang-toggle="ru" aria-pressed="false">RU</button>
-    </div>
-    <div class="toggle">
-      <button data-theme-toggle="light" aria-pressed="true" title="Light">☀</button>
-      <button data-theme-toggle="dark"  aria-pressed="false" title="Dark">☾</button>
-    </div>
-    <a class="nav-link" href="/demo" data-i18n="nav.demo">← Demo</a>
-    <a class="nav-link" href="/darwin-lab" data-i18n="nav.arena">Arena ↗</a>
-  </div>
-</header>
 
-<!-- ── Privacy banner ── -->
-<div class="privacy-banner">
-  <strong>⚠</strong>
-  <span data-i18n="privacy.banner">
-    Synthetic data only. Three anonymised K08.1 cases — Case A (multi-tooth + multiple implants),
-    Case B (heavy restoration), Case C (full-arch implant prosthesis). Localhost only, no telemetry.
-  </span>
-</div>
-
-<!-- ── Main ── -->
-<main>
-
-  <!-- OPG -->
-  <section class="panel">
-    <div class="panel-head">
-      <h2 data-i18n="opg.title">Panoramic radiograph</h2>
-      <span class="meta" id="opgLabel">case_A · synthetic</span>
-    </div>
-    <div class="opg-stage">
-      <img id="opgImage" alt="OPG" src="">
-      <span class="opg-watermark">ORIS v0.1 reference app — synthetic / non-clinical</span>
-    </div>
-    <div class="opg-meta">
-      <span><span data-i18n="opg.modality">Modality</span> <b>OPG</b></span>
-      <span><span data-i18n="opg.case">Case</span> <b id="metaCase">A</b></span>
-      <span><span data-i18n="opg.teeth">Teeth</span> <b id="metaTeethCount">32</b></span>
-    </div>
-  </section>
-
-  <!-- Formula -->
-  <section class="panel">
-    <div class="panel-head">
-      <h2 data-i18n="formula.title">Dental formula · FDI</h2>
-      <span class="meta" data-i18n="formula.tip">click cell → cycle status</span>
-    </div>
-    <div class="formula-area">
-      <div class="arch-row-label">
-        <span><span data-i18n="quad.q2">Q2</span> · 2.8 → 2.1</span>
-        <span>1.1 → 1.8 · <span data-i18n="quad.q1">Q1</span></span>
-      </div>
-      <div class="cells" id="upperRow"></div>
-      <div class="arch-row-label" style="margin-top:10px">
-        <span><span data-i18n="quad.q3">Q3</span> · 3.8 → 3.1</span>
-        <span>4.1 → 4.8 · <span data-i18n="quad.q4">Q4</span></span>
-      </div>
-      <div class="cells" id="lowerRow"></div>
-
-      <div class="helper">
-        <span data-i18n="helper.click">Click any cell to cycle through statuses:</span>
-        <span class="mono">empty → present → caries → restored:o → crowned → endo:mo+post+crowned → missing → impacted → impl_restored → uncertain</span>.
-        <br>
-        <span data-i18n="helper.shift">Hold</span> <kbd>⇧ Shift</kbd> <span data-i18n="helper.shiftClear">+ click to clear a cell back to empty.</span>
-        <span data-i18n="helper.note">Status changes never write to the database — your edits stay in the browser until you press Download.</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- Bottom row: JSON + Bridges -->
-  <div class="bottom-row">
-    <section class="panel">
+  <!-- =========== MAIN =========== -->
+  <main>
+   <div class="arena-body">
+    <!-- ===== LEFT: OPG col (sticky) ===== -->
+    <section class="arena-opg-col left">
       <div class="panel-head">
-        <h2 data-i18n="json.title">ORIS document (live)</h2>
-        <span class="meta">
-          <button id="copyJson" class="bridge-btn" style="padding:3px 10px; display:inline-flex">
-            <span data-i18n="json.copy">Copy</span>
-          </button>
-        </span>
+        <span class="panel-title" data-i18n="opg.title">Panoramic radiograph</span>
+        <span class="panel-meta">FOV 14×6 cm · 70 kVp · 8 mA</span>
       </div>
-      <div class="panel-body">
-        <pre class="json-pane" id="jsonView"></pre>
-        <div class="stat">
-          <span data-i18n="json.teeth">teeth:</span> <b id="statTeeth">0</b> ·
-          <span data-i18n="json.modified">modified since load:</span> <b id="statMods">0</b>
+
+      <div class="opg-stage">
+        <img id="opgImage" alt="OPG (anonymised)" src="/static/images/cases/case_A.png" style="width:100%; height:100%; object-fit:contain; display:block;">
+        <div class="opg-overlay" aria-hidden="true">
+          <span class="corner tl"></span><span class="corner tr"></span>
+          <span class="corner bl"></span><span class="corner br"></span>
+          <span class="meta-tl">R</span>
+          <span class="meta-tr">L</span>
+          <span class="meta-bl" id="opgMetaLabel">case_A</span>
+          <span class="meta-br">synthetic / non-clinical</span>
+          <span class="axis"></span>
         </div>
+      </div>
+
+      <!-- Filter buttons -->
+      <div class="filter-bar" role="group" aria-label="Image filter">
+        <button class="filter-btn" aria-pressed="true" data-filter="orig"><span data-i18n="filter.orig">Original</span><span class="kbd">1</span></button>
+        <button class="filter-btn" aria-pressed="false" data-filter="clahe">CLAHE<span class="kbd">2</span></button>
+        <button class="filter-btn" aria-pressed="false" data-filter="contrast"><span data-i18n="filter.contrast">Contrast</span><span class="kbd">3</span></button>
+        <button class="filter-btn" aria-pressed="false" data-filter="bone"><span data-i18n="filter.bone">Bone</span><span class="kbd">4</span></button>
+        <button class="filter-btn" aria-pressed="false" data-filter="sharp"><span data-i18n="filter.sharp">Sharp</span><span class="kbd">5</span></button>
+      </div>
+
+      <!-- Technical metadata grid -->
+      <div class="opg-meta-grid">
+        <div class="row"><span class="label" data-i18n="meta.dim">Dimensions</span><span class="val">2872 × 1504</span></div>
+        <div class="row"><span class="label" data-i18n="meta.bit">Bit depth</span><span class="val">14 bpp</span></div>
+        <div class="row"><span class="label" data-i18n="meta.kvp">kVp / mA</span><span class="val">70 / 8.0</span></div>
+        <div class="row"><span class="label" data-i18n="meta.expmA">Exposure</span><span class="val">0.45 s</span></div>
+        <div class="row"><span class="label" data-i18n="meta.det">Detections</span><span class="val">28 teeth · 4 impl</span></div>
+        <div class="row"><span class="label" data-i18n="meta.qa">QA flags</span><span class="val">none</span></div>
+      </div>
+
+      <div class="qa-row">
+        <span class="label" data-i18n="qa.label">Image quality</span>
+        <span class="grade">A</span>
+        <span class="meta">SNR 32.4 dB · contrast 0.71</span>
       </div>
     </section>
 
-    <section class="panel">
-      <div class="panel-head">
-        <h2 data-i18n="bridges.title">Bridges & download</h2>
-        <span class="meta" data-i18n="bridges.meta">stateless</span>
+    <!-- ===== RIGHT: formulas col (GT + AI stack) ===== -->
+    <section class="arena-formulas-col">
+      <div class="formula-head">
+        <span class="panel-title" data-i18n="formula.title">Dental formula · FDI</span>
+        <span class="panel-meta">32 / 32 cells · 2 mismatches resolved</span>
       </div>
-      <div class="panel-body">
+
+      <!-- ===================================================
+           BLOCK 1 — GROUND TRUTH (full documentation w/ crops)
+           =================================================== -->
+      <section class="block gt" aria-label="Ground truth block">
+        <div class="anatomical-axis" aria-hidden="true"></div>
+        <div class="block-head">
+          <span class="ttl" data-i18n="block.gt.title">Ground truth</span>
+          <span class="meta">· <span data-i18n="block.gt.final">Final</span> · <span data-i18n="meta.expert">Expert</span> <b>E-04</b> · <span data-i18n="meta.session">Session</span> <b>14:05</b></span>
+          <span class="badge" data-i18n="block.gt.badge">FINAL · SIGNED</span>
+        </div>
+
+        <!-- Quadrant labels above upper crops -->
+        <div class="quad-row">
+          <span class="q"><span class="num">Q2</span><span data-i18n="quad.upperRight">Upper right (patient)</span> · 2.8 → 2.1</span>
+          <span class="q right">1.1 → 1.8 · <span data-i18n="quad.upperLeft">Upper left (patient)</span><span class="num" style="margin-left:6px">Q1</span></span>
+        </div>
+
+        <!-- Crops upper (roots UP — flipped) -->
+        <div class="crops" id="cropsUpper" aria-label="Upper crops carousel"></div>
+
+        <!-- GT row UPPER -->
+        <div class="cells" id="gtUpper"></div>
+
+        <!-- Midline divider -->
+        <div class="midline" style="color: rgba(120, 140, 29, 0.404)"></div>
+
+        <!-- GT row LOWER -->
+        <div class="cells" id="gtLower"></div>
+
+        <!-- Crops lower (roots DOWN) -->
+        <div class="crops" id="cropsLower" aria-label="Lower crops carousel"></div>
+
+        <!-- Quadrant labels under lower crops -->
+        <div class="quad-row" style="border-bottom: 0; border-top: 1px dashed var(--border-soft); padding-top: 4px; padding-bottom: 0;">
+          <span class="q"><span class="num">Q3</span><span data-i18n="quad.lowerRight">Lower right (patient)</span> · 3.8 → 3.1</span>
+          <span class="q right">4.1 → 4.8 · <span data-i18n="quad.lowerLeft">Lower left (patient)</span><span class="num" style="margin-left:6px">Q4</span></span>
+        </div>
+      </section><!-- /.block.gt -->
+
+      <!-- ===================================================
+           BLOCK 2 — AI PREFILL (sibling of GT, same scale)
+           =================================================== -->
+      <section class="block ai" aria-label="AI prefill block">
+        <div class="anatomical-axis" aria-hidden="true"></div>
+        <div class="block-head">
+          <span class="ttl" data-i18n="block.ai.title">AI prefill</span>
+          <span class="meta">· YOLOv9-FDI <b>2025-10</b> · <span data-i18n="block.ai.det">28/32 detected</span> · μ 0.94 · <span data-i18n="block.ai.diff">2 mismatches with GT</span></span>
+          <span class="badge" data-i18n="block.ai.badge">SNAPSHOT 14:08</span>
+        </div>
+        <div class="cells" id="aiUpper"></div>
+        <div class="midline"></div>
+        <div class="cells" id="aiLower"></div>
+      </section><!-- /.block.ai -->
+
+    </section><!-- /.arena-formulas-col -->
+   </div><!-- /.arena-body -->
+
+   <!-- Status legend — full-width below arena, above history -->
+   <div class="legend-wrap">
+     <div class="legend" id="legend"></div>
+   </div>
+  </main>
+
+  <!-- =========== HISTORY =========== -->
+  <section class="history" aria-labelledby="histTitle">
+    <div class="history-head">
+      <span class="history-title" id="histTitle" data-i18n="hist.title">Change history</span>
+      <span class="history-meta" id="histMeta">— entries</span>
+      <div class="history-actions">
+        <button class="history-link" id="undoLast" data-i18n="hist.undo">Undo last edit</button>
+      </div>
+    </div>
+    <div class="history-strip" id="histStrip"></div>
+  </section>
+
+  <!-- =========== PLAY: live ORIS doc + bridge exports =========== -->
+  <section class="play-extras" aria-labelledby="playExtrasTitle">
+    <div class="play-extras-grid">
+      <div class="play-card">
+        <div class="play-card-head">
+          <span class="panel-title" id="playExtrasTitle" data-i18n="play.jsonTitle">ORIS document (live)</span>
+          <span class="panel-meta">
+            <span data-i18n="play.teeth">teeth:</span> <b id="statTeeth">0</b>
+            <span class="sep">·</span>
+            <span data-i18n="play.modified">modified since load:</span> <b id="statMods">0</b>
+            <span class="sep">·</span>
+            <button class="history-link" id="copyJson" data-i18n="play.copy">Copy</button>
+          </span>
+        </div>
+        <pre class="json-pane" id="jsonView"></pre>
+      </div>
+      <div class="play-card">
+        <div class="play-card-head">
+          <span class="panel-title" data-i18n="play.bridgesTitle">Bridges &amp; download</span>
+          <span class="panel-meta" data-i18n="play.bridgesMeta">stateless · POST /api/play/export</span>
+        </div>
         <div class="bridges-list">
           <button class="bridge-btn primary" data-fmt="oris">
-            <span><span data-i18n="bridges.oris">Download ORIS</span></span>
-            <span class="fmt">JSON · v0.1</span>
+            <span data-i18n="play.dlOris">Download ORIS</span>
+            <span class="fmt mono">JSON · v0.1</span>
           </button>
           <button class="bridge-btn" data-fmt="fhir">
             <span>FHIR</span>
-            <span class="fmt">R4 Bundle</span>
+            <span class="fmt mono">R4 Bundle</span>
           </button>
           <button class="bridge-btn" data-fmt="dicom">
             <span>DICOM-SR</span>
-            <span class="fmt">XML · TID 5300</span>
+            <span class="fmt mono">XML · TID 5300</span>
           </button>
           <button class="bridge-btn" data-fmt="mis">
             <span>MIS chart</span>
-            <span class="fmt">flat JSON</span>
+            <span class="fmt mono">flat JSON</span>
           </button>
           <button class="bridge-btn" data-fmt="mmoral">
             <span>MMOral</span>
-            <span class="fmt">8-class</span>
+            <span class="fmt mono">8-class</span>
           </button>
         </div>
-        <div class="stat" data-i18n="bridges.note">
-          Each download generates the export from your current edits.
-          POST /api/play/export · no DB writes.
+        <div class="bridges-note" data-i18n="play.bridgesNote">
+          Each download generates the export from your current edits. No DB writes.
         </div>
       </div>
-    </section>
-  </div>
-</main>
+    </div>
+  </section>
 
-<footer>
-  <span data-i18n="footer.line">
-    Reviewer playground for ORIS v0.1 · part of the IJOS submission
-  </span>
-  · <a href="https://github.com/zmeik/oris" target="_blank">github.com/zmeik/oris</a>
-</footer>
+  <!-- =========== FOOTER =========== -->
+  <footer class="footer">
+    <span class="pill synthetic">SYNTHETIC</span>
+    <span class="ref" data-i18n="footer.refPlay">Interactive playground for ORIS v0.1 · IJOS submission</span>
+    <div class="right">
+      <span>build 2026.04.28-play.v1</span>
+      <a href="https://github.com/zmeik/oris" target="_blank" rel="noopener">github ↗</a>
+    </div>
+  </footer>
+</div>
 
 <script>
-/* ============================================================
-   I18N
-   ============================================================ */
+/* =========================================================
+   Dictionaries
+   ========================================================= */
 const I18N = {
   en: {
-    "mode.play": "Playground",
-    "privacy.banner": "Synthetic data only. Three anonymised K08.1 cases — Case A (multi-tooth + multiple implants), Case B (heavy restoration), Case C (full-arch implant prosthesis). Localhost only, no telemetry.",
-    "opg.title": "Panoramic radiograph",
-    "opg.modality": "Modality",
-    "opg.case": "Case",
-    "opg.teeth": "Teeth in formula",
-    "formula.title": "Dental formula · FDI",
-    "formula.tip": "click cell → cycle status",
-    "quad.q1": "Upper left (patient)",
-    "quad.q2": "Upper right (patient)",
-    "quad.q3": "Lower right (patient)",
-    "quad.q4": "Lower left (patient)",
-    "helper.click": "Click any cell to cycle through statuses:",
-    "helper.shift": "Hold",
-    "helper.shiftClear": "+ click to clear a cell back to empty.",
-    "helper.note": "Status changes never write to the database — your edits stay in the browser until you press Download.",
-    "json.title": "ORIS document (live)",
-    "json.copy": "Copy",
-    "json.teeth": "teeth:",
-    "json.modified": "modified since load:",
-    "bridges.title": "Bridges & download",
-    "bridges.meta": "stateless",
-    "bridges.oris": "Download ORIS",
-    "bridges.note": "Each download generates the export from your current edits. POST /api/play/export · no DB writes.",
-    "footer.line": "Reviewer playground for ORIS v0.1 · part of the IJOS submission",
-    "nav.demo": "← Demo",
-    "nav.arena": "Arena ↗",
+    'mode.gt': 'Ground Truth',
+    'mode.play': 'Playground',
+    'nav.play': 'Try it ↗',
+    'nav.demoBack': '← Demo',
+    'play.editing': 'Editing as Expert',
+    'play.session': 'Session',
+    'play.jsonTitle': 'ORIS document (live)',
+    'play.bridgesTitle': 'Bridges & download',
+    'play.bridgesMeta': 'stateless · POST /api/play/export',
+    'play.bridgesNote': 'Each download generates the export from your current edits. Nothing is written to the database — your edits live in the browser until you press Download. Click any GT cell to cycle status; Shift-click to clear.',
+    'play.dlOris': 'Download ORIS',
+    'play.teeth': 'teeth:',
+    'play.modified': 'modified since load:',
+    'play.copy': 'Copy',
+    'hist.undo': 'Undo last edit',
+    'meta.case': 'Case',
+    'meta.captured': 'Captured',
+    'meta.modality': 'Modality',
+    'meta.expert': 'Expert',
+    'meta.session': 'Session',
+    'opg.title': 'Panoramic radiograph',
+    'filter.orig': 'Original',
+    'filter.contrast': 'Contrast',
+    'filter.bone': 'Bone',
+    'filter.sharp': 'Sharp',
+    'meta.dim': 'Dimensions',
+    'meta.bit': 'Bit depth',
+    'meta.kvp': 'kVp / mA',
+    'meta.expmA': 'Exposure',
+    'meta.det': 'Detections',
+    'meta.qa': 'QA flags',
+    'qa.label': 'Image quality',
+    'formula.title': 'Dental formula · FDI',
+    'quad.upperRight': 'Upper right (patient)',
+    'quad.upperLeft': 'Upper left (patient)',
+    'quad.lowerRight': 'Lower right (patient)',
+    'quad.lowerLeft': 'Lower left (patient)',
+    'row.ai': 'AI prefill',
+    'row.gt': 'Ground truth',
+    'block.gt.title': 'Ground truth',
+    'block.gt.final': 'Final',
+    'block.gt.badge': 'FINAL · SIGNED',
+    'block.ai.title': 'AI prefill',
+    'block.ai.det': '28/32 detected',
+    'block.ai.diff': '2 mismatches with GT',
+    'block.ai.badge': 'SNAPSHOT 14:08',
+    'midline': '\\n',
+    'hist.title': 'Change history',
+    'hist.viewAll': 'View all (15) ↗',
+    'footer.ref': 'Reference UI for IJOS submission · Figure 2',
+    'footer.refPlay': 'Interactive playground for ORIS v0.1 · IJOS submission',
   },
   ru: {
-    "mode.play": "Песочница",
-    "privacy.banner": "Только синтетические данные. Три анонимизированных кейса К08.1 — Кейс А (мультизубный + множественные импланты), Кейс B (heavy restoration), Кейс C (full-arch implant prosthesis). Localhost only, без телеметрии.",
-    "opg.title": "Ортопантомограмма",
-    "opg.modality": "Модальность",
-    "opg.case": "Кейс",
-    "opg.teeth": "Зубов в формуле",
-    "formula.title": "Зубная формула · FDI",
-    "formula.tip": "клик по ячейке → следующий статус",
-    "quad.q1": "Верх слева (пациент)",
-    "quad.q2": "Верх справа (пациент)",
-    "quad.q3": "Низ справа (пациент)",
-    "quad.q4": "Низ слева (пациент)",
-    "helper.click": "Клик по ячейке циклит статус:",
-    "helper.shift": "Удерживай",
-    "helper.shiftClear": "+ клик чтобы очистить ячейку.",
-    "helper.note": "Изменения статусов не пишутся в БД — твои правки живут в браузере до нажатия «Скачать».",
-    "json.title": "ORIS-документ (live)",
-    "json.copy": "Копировать",
-    "json.teeth": "зубов:",
-    "json.modified": "изменено с загрузки:",
-    "bridges.title": "Bridges и экспорт",
-    "bridges.meta": "stateless",
-    "bridges.oris": "Скачать ORIS",
-    "bridges.note": "Каждая кнопка генерит экспорт из текущих правок. POST /api/play/export · без записи в БД.",
-    "footer.line": "Песочница для рецензентов ORIS v0.1 · часть submission в IJOS",
-    "nav.demo": "← Demo",
-    "nav.arena": "Arena ↗",
+    'mode.gt': 'Эталон',
+    'mode.play': 'Песочница',
+    'nav.play': 'Поиграть ↗',
+    'nav.demoBack': '← Demo',
+    'play.editing': 'Редактирует эксперт',
+    'play.session': 'Сессия',
+    'play.jsonTitle': 'ORIS-документ (live)',
+    'play.bridgesTitle': 'Bridges и экспорт',
+    'play.bridgesMeta': 'stateless · POST /api/play/export',
+    'play.bridgesNote': 'Каждая кнопка генерит экспорт из текущих правок. Никаких записей в БД — правки живут в браузере до нажатия «Скачать». Клик по ячейке GT циклит статус; Shift+клик очищает.',
+    'play.dlOris': 'Скачать ORIS',
+    'play.teeth': 'зубов:',
+    'play.modified': 'изменено с загрузки:',
+    'play.copy': 'Копировать',
+    'hist.undo': 'Отменить последнюю правку',
+    'meta.case': 'Случай',
+    'meta.captured': 'Снято',
+    'meta.modality': 'Модальность',
+    'meta.expert': 'Эксперт',
+    'meta.session': 'Сессия',
+    'opg.title': 'Панорамный снимок',
+    'filter.orig': 'Оригинал',
+    'filter.contrast': 'Контраст',
+    'filter.bone': 'Кость',
+    'filter.sharp': 'Резкость',
+    'meta.dim': 'Размер',
+    'meta.bit': 'Битность',
+    'meta.kvp': 'кВп / мА',
+    'meta.expmA': 'Экспозиция',
+    'meta.det': 'Детекции',
+    'meta.qa': 'QA-флаги',
+    'qa.label': 'Качество снимка',
+    'formula.title': 'Зубная формула · FDI',
+    'quad.upperRight': 'Верх. правый (пациент)',
+    'quad.upperLeft': 'Верх. левый (пациент)',
+    'quad.lowerRight': 'Ниж. правый (пациент)',
+    'quad.lowerLeft': 'Ниж. левый (пациент)',
+    'row.ai': 'AI-черновик',
+    'row.gt': 'Эталон',
+    'block.gt.title': 'Эталон',
+    'block.gt.final': 'Финал',
+    'block.gt.badge': 'ФИНАЛ · ПОДПИСАН',
+    'block.ai.title': 'AI-черновик',
+    'block.ai.det': '28 из 32 найдено',
+    'block.ai.diff': '2 расхождения с GT',
+    'block.ai.badge': 'СНИМОК 14:08',
+    'midline': '\\n',
+    'hist.title': 'История изменений',
+    'hist.viewAll': 'Показать все (15) ↗',
+    'footer.ref': 'Референсный UI для IJOS · Figure 2',
+    'footer.refPlay': 'Интерактивная песочница для ORIS v0.1 · IJOS submission',
   },
 };
 
-/* ============================================================
-   Data
-   ============================================================ */
-// Click-to-cycle status sequence (kept short for reviewer-friendliness;
-// the schema allows much more — see grammar/statuses.md).
+/* =========================================================
+   Status taxonomy — abbr per RU/EN convention (§1)
+   ========================================================= */
+const STATUSES = {
+  present:           { ru: '·',   en: '·',  color: 'var(--st-present)',   name: { en: 'Intact',     ru: 'Интактный' } },
+  missing:           { ru: 'О',   en: 'A',  color: 'var(--st-missing)',   name: { en: 'Absent',     ru: 'Отсутствует' } },
+  impacted:          { ru: 'Rt',  en: 'It', color: 'var(--st-impacted)',  name: { en: 'Impacted',   ru: 'Ретинирован' } },
+  caries:            { ru: 'С',   en: 'Ca', color: 'var(--st-caries)',    name: { en: 'Caries',     ru: 'Кариес' } },
+  attrition:         { ru: 'Ст',  en: 'At', color: 'var(--st-attrition)', name: { en: 'Wear',       ru: 'Стираемость' } },
+  root:              { ru: 'R',   en: 'R',  color: 'var(--st-root)',      name: { en: 'Root',       ru: 'Корень' } },
+  restored:          { ru: 'П',   en: 'F',  color: 'var(--st-restored)',  name: { en: 'Filling',    ru: 'Пломба' } },
+  endo:              { ru: 'Э',   en: 'E',  color: 'var(--st-endo)',      name: { en: 'Endo',       ru: 'Эндо' } },
+  impl_fixture:      { ru: 'И',   en: 'IF', color: 'var(--st-impl)',      name: { en: 'Implant',    ru: 'Имплантат' } },
+  impl_cover:        { ru: 'ИЗ',  en: 'IC', color: 'var(--st-impl-cover)',name: { en: 'Impl+cover', ru: 'И+Заглушка' } },
+  impl_healing:      { ru: 'ИФ',  en: 'IH', color: 'var(--st-impl-heal)', name: { en: 'Impl+heal',  ru: 'И+Формирователь' } },
+  impl_abutment:     { ru: 'И',   en: 'IA', color: 'var(--st-impl)',      name: { en: 'Impl+abut',  ru: 'И+Абатмент' } },
+  impl_temp_abut:    { ru: 'И',   en: 'IT', color: 'var(--st-impl)',      name: { en: 'Impl+temp',  ru: 'И+Времен.' } },
+  impl_provisional:  { ru: 'И',   en: 'IP', color: 'var(--st-impl)',      name: { en: 'Impl+prov',  ru: 'И+Провиз.' } },
+  impl_restored:     { ru: 'ИК',  en: 'IR', color: 'var(--st-impl-rest)', name: { en: 'Impl+crown', ru: 'И+Коронка' } },
+  post:              { ru: 'Ш',   en: 'P',  color: 'var(--st-post)',      name: { en: 'Post',       ru: 'Штифт' } },
+  crowned:           { ru: 'К',   en: 'C',  color: 'var(--st-crowned)',   name: { en: 'Crown',      ru: 'Коронка' } },
+  bridge:            { ru: 'М',   en: 'B',  color: 'var(--st-bridge)',    name: { en: 'Bridge',     ru: 'Мост' } },
+  bar:               { ru: 'Б',   en: 'Bar',color: 'var(--st-bar)',       name: { en: 'Bar',        ru: 'Балка' } },
+  cantilever:        { ru: 'Кн',  en: 'Ct', color: 'var(--st-cantilever)',name: { en: 'Cantilever', ru: 'Консоль' } },
+  uncertain:         { ru: '?',   en: '?',  color: 'var(--st-uncertain)', name: { en: 'Uncertain',  ru: 'Неясно' } },
+  empty:             { ru: '✕',   en: '✕',  color: 'var(--text-dim)',     name: { en: 'Reset',      ru: 'Сброс' } },
+};
+
+/* primary status from layered string (first layer minus surfaces) */
+function primary(layered) {
+  if (!layered) return 'empty';
+  const first = layered.split('+')[0].split(':')[0];
+  return first;
+}
+function abbr(layered, lang) {
+  if (!layered) return STATUSES.empty[lang];
+  const layers = layered.split('+').map(l => l.split(':')[0]);
+  // collapse implant series + post + crowned
+  return layers.map(k => STATUSES[k]?.[lang] ?? '?').join('');
+}
+function surfacesOf(layered) {
+  if (!layered) return null;
+  for (const layer of layered.split('+')) {
+    const [k, s] = layer.split(':');
+    if (s) return { status: k, surfaces: s.split('') };
+  }
+  return null;
+}
+
+/* =========================================================
+   FDI ordering — Q2(28..21) Q1(11..18) for upper, Q3 / Q4 for lower
+   The user's eye reads left→right within the image
+   ========================================================= */
+const UPPER_FDI = ['2.8','2.7','2.6','2.5','2.4','2.3','2.2','2.1', '1.1','1.2','1.3','1.4','1.5','1.6','1.7','1.8'];
+const LOWER_FDI = ['3.8','3.7','3.6','3.5','3.4','3.3','3.2','3.1', '4.1','4.2','4.3','4.4','4.5','4.6','4.7','4.8'];
+
+/* tooth type by FDI second digit */
+function toothType(fdi) {
+  const n = parseInt(fdi.split('.')[1], 10);
+  const upper = fdi[0] === '1' || fdi[0] === '2';
+  if (n === 1 || n === 2) return upper ? 'UP_I' : 'LO_I';
+  if (n === 3) return upper ? 'UP_C' : 'LO_C';
+  if (n === 4 || n === 5) return upper ? 'UP_PM' : 'LO_PM';
+  return upper ? 'UP_M' : 'LO_M'; // 6,7,8
+}
+
+/* =========================================================
+   Playground state
+   GT — mutable, the user's edits (this is "expert ground truth")
+   AI — immutable, the case formula at load time (acts as the "AI prefill")
+   HISTORY — every GT edit appends a row, so reviewers see the same
+   provenance trail (sequence_num + source) the paper §5.3 describes
+   ========================================================= */
+let GT = {};            // FDI -> status, user-editable
+let AI = {};            // FDI -> status, immutable per case (snapshot at load)
+let HISTORY = [];
+let CURRENT_CASE = 'A';
+let CASES = [];
+let SEQ_COUNTER = 0;
+let LOAD_TIME = '';
+
+// Click-to-cycle preset; sequence is the same one used in the minimal /play
+// before; covers the most common reviewer-relevant statuses, leaves room
+// for the more complex "endo+restored+crowned" type strings to be reached
+// by clicking through.
 const STATUS_CYCLE = [
   '',
   'present',
@@ -570,129 +1279,570 @@ const STATUS_CYCLE = [
   'uncertain',
 ];
 
-const UPPER_FDI = ['2.8','2.7','2.6','2.5','2.4','2.3','2.2','2.1', '1.1','1.2','1.3','1.4','1.5','1.6','1.7','1.8'];
-const LOWER_FDI = ['3.8','3.7','3.6','3.5','3.4','3.3','3.2','3.1', '4.1','4.2','4.3','4.4','4.5','4.6','4.7','4.8'];
-
-let CASES = [];                  // populated from /api/play/cases
-let currentCase = 'A';
-let originalFormula = {};        // formula at load (for "modified since load" stat)
-let formula = {};                // live editable formula
-
-/* ============================================================
-   Helpers
-   ============================================================ */
-function primaryLayer(layered) {
-  if (!layered) return '';
-  return layered.split('+')[0].split(':')[0];
-}
-
-function statusClass(layered) {
-  const p = primaryLayer(layered);
-  if (!p) return 'empty';
-  if (p === 'missing')  return 's-missing';
-  if (p === 'impacted') return 's-impacted';
-  if (p === 'caries')   return 's-caries';
-  if (p === 'restored') return 's-restored';
-  if (p === 'crowned')  return 's-crowned';
-  if (p === 'endo')     return 's-endo';
-  if (p === 'uncertain') return 's-uncertain';
-  if (p.startsWith('impl_') || p === 'implant' || p === 'bridge' || p === 'cantilever') return 's-impl';
-  return '';
-}
-
-// short label inside the cell — first 9 chars of primary layer for readability
-function cellLabel(layered) {
-  if (!layered) return '';
-  const p = primaryLayer(layered);
-  const map = {
-    'present': '·',
-    'missing': 'miss',
-    'impacted': 'imp',
-    'caries': 'caries',
-    'restored': 'rest',
-    'crowned': 'crown',
-    'endo': 'endo',
-    'post': 'post',
-    'impl_restored': 'impl·c',
-    'impl_cover': 'impl·cv',
-    'impl_fixture': 'impl',
-    'impl_healing': 'impl·h',
-    'uncertain': '?',
-    'bridge': 'bridge',
-    'root': 'root',
-    'attrition': 'wear',
-  };
-  return map[p] || p.slice(0, 6);
+function nowHHMM() {
+  const d = new Date();
+  return d.toTimeString().slice(0, 5);
 }
 
 function nextStatus(current) {
-  // Match exact, or fall back to primary-layer match, otherwise advance from 0
   let idx = STATUS_CYCLE.indexOf(current);
   if (idx === -1) {
-    const p = primaryLayer(current);
-    idx = STATUS_CYCLE.findIndex(s => primaryLayer(s) === p);
+    // try matching primary layer
+    const p = (current || '').split('+')[0].split(':')[0];
+    idx = STATUS_CYCLE.findIndex(s => (s || '').split('+')[0].split(':')[0] === p);
   }
   if (idx === -1) idx = 0;
   return STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
 }
 
-/* ============================================================
+/* =========================================================
+   SVG: per-tooth anatomy (TOOTH_LIBRARY-light)
+   roots always pointing DOWN in svg (y+); cell flips for upper.
+   ========================================================= */
+function anatomySvg({ type, status, fdi }) {
+  const W = 28, H = 36;
+  const isUpper = fdi[0] === '1' || fdi[0] === '2';
+  const layers = (status||'').split('+').map(s => s.split(':')[0]);
+  const has = k => layers.includes(k);
+
+  // Crown shape per type
+  let crownPath, neckY = 16, neckW = 14;
+  if (type === 'UP_I' || type === 'LO_I')      { crownPath = `M 9 4 L 19 4 L 21 16 L 7 16 Z`;  neckW = 14; }
+  else if (type === 'UP_C' || type === 'LO_C') { crownPath = `M 11 3 L 17 3 L 21 16 L 7 16 Z`;  neckW = 14; }
+  else if (type === 'UP_PM'|| type === 'LO_PM'){ crownPath = `M 8 5 L 20 5 L 22 16 L 6 16 Z`;   neckW = 16; }
+  else                                          { crownPath = `M 6 5 L 22 5 L 23 16 L 5 16 Z`;  neckW = 18; }
+
+  // Roots — number per type
+  let roots = [];
+  if (type === 'UP_I' || type === 'LO_I' || type === 'LO_C' || type === 'UP_C')
+    roots = [{ x:14, w:6, len:18, curve:0 }];
+  else if (type === 'UP_PM') roots = [{x:11,w:4,len:16,curve:-1},{x:17,w:4,len:16,curve:1}];
+  else if (type === 'LO_PM') roots = [{x:14,w:6,len:18,curve:0}];
+  else if (type === 'UP_M')  roots = [{x:9,w:4,len:16,curve:-2},{x:14,w:4,len:18,curve:0},{x:19,w:4,len:16,curve:2}];
+  else                       roots = [{x:11,w:4,len:18,curve:-1},{x:17,w:4,len:18,curve:1}];
+
+  const stroke = 'currentColor';
+  const crownFill = (() => {
+    if (has('crowned') || has('impl_restored')) return 'var(--st-crowned)';
+    if (has('restored')) return 'var(--st-restored)';
+    if (has('caries'))   return 'var(--st-caries)';
+    return 'transparent';
+  })();
+  const crownStroke = has('endo') ? 'var(--st-endo)' : 'currentColor';
+
+  // Implant fixture rendered as threaded rectangle in place of roots
+  const isImpl = has('impl_fixture') || has('impl_cover') || has('impl_healing') || has('impl_abutment') || has('impl_temp_abut') || has('impl_provisional') || has('impl_restored');
+
+  const paths = [];
+
+  // crown
+  if (has('missing')) {
+    paths.push(`<path d="M 6 8 L 22 22 M 22 8 L 6 22" stroke="var(--text-dim)" stroke-width="1.4" fill="none" opacity="0.7"/>`);
+  } else if (has('impacted')) {
+    paths.push(`<g transform="rotate(28 14 14)"><path d="${crownPath}" fill="${crownFill}" fill-opacity="0.55" stroke="${crownStroke}" stroke-width="1"/></g>`);
+  } else {
+    paths.push(`<path d="${crownPath}" fill="${crownFill}" fill-opacity="0.55" stroke="${crownStroke}" stroke-width="1.1"/>`);
+  }
+
+  // roots
+  if (isImpl) {
+    // implant fixture
+    paths.push(`<rect x="9" y="16" width="10" height="18" fill="var(--st-impl)" fill-opacity="0.7" stroke="var(--st-impl)" stroke-width="0.8" rx="1"/>`);
+    for (let y = 18; y <= 32; y += 2) paths.push(`<line x1="9" y1="${y}" x2="19" y2="${y}" stroke="rgba(255,255,255,.35)" stroke-width="0.4"/>`);
+    if (has('impl_restored')) {
+      paths.push(`<rect x="6" y="13" width="16" height="4" fill="var(--st-crowned)" fill-opacity="0.85" rx="1"/>`);
+    } else if (has('impl_cover')) {
+      paths.push(`<rect x="11" y="14" width="6" height="2" fill="var(--text-muted)"/>`);
+    } else if (has('impl_healing')) {
+      paths.push(`<rect x="11" y="12" width="6" height="4" fill="var(--st-impl-heal)" rx="1"/>`);
+    }
+  } else if (!has('missing') && !has('impacted')) {
+    for (const r of roots) {
+      const tipX = r.x + r.curve;
+      const baseTopX1 = r.x - r.w/2;
+      const baseTopX2 = r.x + r.w/2;
+      const tipY = 16 + r.len;
+      const tipW = Math.max(1, r.w * 0.4);
+      const d = `M ${baseTopX1} 16 Q ${r.x - 0.5} ${16 + r.len*0.6} ${tipX - tipW/2} ${tipY} L ${tipX + tipW/2} ${tipY} Q ${r.x + 0.5} ${16 + r.len*0.6} ${baseTopX2} 16 Z`;
+      paths.push(`<path d="${d}" fill="rgba(0,0,0,0.04)" stroke="${has('endo') ? 'var(--st-endo)' : 'currentColor'}" stroke-width="0.9" stroke-linejoin="round"/>`);
+      // canal fill if endo
+      if (has('endo')) {
+        const canalD = `M ${tipX} 16.5 Q ${r.x - 0.3} ${16 + r.len*0.55} ${tipX} ${tipY - 1.2}`;
+        paths.push(`<path d="${canalD}" stroke="var(--st-endo)" stroke-width="1.1" fill="none" stroke-linecap="round"/>`);
+      }
+      // post
+      if (has('post')) {
+        const postD = `M ${tipX - 0.6} 13 L ${tipX + 0.6} 13 L ${tipX + 0.4} ${16 + r.len*0.55} L ${tipX - 0.4} ${16 + r.len*0.55} Z`;
+        paths.push(`<path d="${postD}" fill="var(--st-post)"/>`);
+      }
+    }
+  }
+
+  // FDI quadrant flip — done at the cell level via CSS
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" style="color:var(--text-muted)">${paths.join('')}</svg>`;
+}
+
+/* =========================================================
+   SVG: surface polygon (5 zones m d o v l)
+   ========================================================= */
+function surfacesSvg({ surfaces, status, fdi }) {
+  // m on left if Q2/Q3, on right if Q1/Q4
+  const q = parseInt(fdi[0], 10);
+  const mLeft = (q === 2 || q === 3);
+  // viewBox 24x24
+  const fill = (s) => surfaces?.includes(s) ? 'var(--st-restored)' : 'transparent';
+  // zones: outer ring 4 zones (m d v l), center o
+  const m = mLeft
+    ? `M 2 2 L 12 12 L 2 22 Z`     // mesial = LEFT triangle
+    : `M 22 2 L 12 12 L 22 22 Z`;
+  const d = mLeft
+    ? `M 22 2 L 12 12 L 22 22 Z`
+    : `M 2 2 L 12 12 L 2 22 Z`;
+  const v = `M 2 2 L 22 2 L 12 12 Z`;
+  const l = `M 2 22 L 22 22 L 12 12 Z`;
+  const o = `M 8 8 L 16 8 L 16 16 L 8 16 Z`;
+  return `<svg viewBox="0 0 24 24" preserveAspectRatio="xMidYMid meet">
+    <path d="${v}" fill="${fill('v')}" stroke="var(--border)" stroke-width="0.6"/>
+    <path d="${l}" fill="${fill('l')}" stroke="var(--border)" stroke-width="0.6"/>
+    <path d="${m}" fill="${fill('m')}" stroke="var(--border)" stroke-width="0.6"/>
+    <path d="${d}" fill="${fill('d')}" stroke="var(--border)" stroke-width="0.6"/>
+    <rect x="8" y="8" width="8" height="8" fill="${fill('o')}" stroke="var(--border)" stroke-width="0.6"/>
+  </svg>`;
+}
+
+/* =========================================================
+   Crop SVG (mini-radiograph stub)
+   ========================================================= */
+function cropSvg(fdi) {
+  const seed = (fdi.charCodeAt(0) + fdi.charCodeAt(2)) % 10;
+  const xCrown = 28 + (seed % 3) * 2;
+  const status = GT[fdi];
+  const isImpl = /impl/.test(status||'');
+  const isMissing = status === 'missing';
+  const hasCrown = /crowned|impl_restored/.test(status||'');
+  const xrayCrown = hasCrown ? '#ece2bd' : '#bcb39a';
+  if (isMissing) {
+    return `<svg viewBox="0 0 80 56" preserveAspectRatio="xMidYMid slice">
+      <rect width="80" height="56" fill="#13110d"/>
+      <ellipse cx="40" cy="38" rx="18" ry="6" fill="#2a261c"/>
+      <text x="40" y="32" font-family="IBM Plex Mono" font-size="6" fill="#5b6478" text-anchor="middle">MISSING</text>
+    </svg>`;
+  }
+  return `<svg viewBox="0 0 80 56" preserveAspectRatio="xMidYMid slice">
+    <defs><radialGradient id="cg${fdi.replace('.','')}" cx="50%" cy="55%"><stop offset="0%" stop-color="#3a3530"/><stop offset="100%" stop-color="#0a0908"/></radialGradient></defs>
+    <rect width="80" height="56" fill="url(#cg${fdi.replace('.','')})"/>
+    <rect x="${30+seed}" y="6" width="${20-seed}" height="14" rx="1.5" fill="${xrayCrown}"/>
+    ${isImpl ? `
+      <rect x="${33+seed}" y="20" width="${14-seed}" height="26" rx="1" fill="#cfd6e0"/>
+      ${[22,25,28,31,34,37,40,43].map(y => `<line x1="${33+seed}" y1="${y}" x2="${47-seed}" y2="${y}" stroke="#7a8290" stroke-width="0.5"/>`).join('')}
+    ` : `
+      <path d="M ${32+seed} 20 Q ${37+seed} 35 ${36+seed} 48 L ${44-seed} 48 Q ${43-seed} 35 ${48-seed} 20 Z" fill="#2a2620" stroke="#5a5246" stroke-width="0.5"/>
+      ${/endo/.test(status||'') ? `<path d="M 40 22 L 40 46" stroke="#7e3f8c" stroke-width="1" fill="none"/>` : ''}
+      ${/post/.test(status||'') ? `<rect x="39" y="19" width="2" height="14" fill="#b8860b"/>` : ''}
+    `}
+    <text x="2" y="9" font-family="IBM Plex Mono" font-size="6" fill="rgba(255,255,255,.55)">${fdi}</text>
+  </svg>`;
+}
+
+/* =========================================================
+   SVG: inline cell-root indicator (production darwin_lab)
+   Tiny vertical strokes representing rooted/endo status.
+   ========================================================= */
+function rootSvg(status, type) {
+  // canal count: 1 for incisors/canines/premolars-single, 2 for upper PM, 3 for molars
+  let canals = 2;
+  if (type === 'UP_I' || type === 'UP_C' || type === 'LO_I' || type === 'LO_C') canals = 1;
+  if (type === 'UP_PM') canals = 2;
+  if (type === 'LO_PM') canals = 1;
+  if (type === 'UP_M') canals = 3;
+  if (type === 'LO_M') canals = 2;
+
+  const W = 28, H = 11;
+  const isImpl = /impl_restored/.test(status);
+  const isPost = /post/.test(status);
+  const isEndo = /endo/.test(status);
+  const isRoot = status === 'root';
+
+  // Implant: solid threaded fixture mini
+  if (isImpl) {
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">
+      <rect x="11" y="0" width="6" height="${H}" rx="0.5" fill="#cfd6e0" stroke="#7a8290" stroke-width="0.4"/>
+      <line x1="11" y1="2.5" x2="17" y2="2.5" stroke="#7a8290" stroke-width="0.5"/>
+      <line x1="11" y1="5" x2="17" y2="5" stroke="#7a8290" stroke-width="0.5"/>
+      <line x1="11" y1="7.5" x2="17" y2="7.5" stroke="#7a8290" stroke-width="0.5"/>
+      <line x1="11" y1="10" x2="17" y2="10" stroke="#7a8290" stroke-width="0.5"/>
+    </svg>`;
+  }
+
+  // Endo / post / root: vertical canal strokes
+  const cx = W / 2;
+  const spread = canals === 1 ? 0 : canals === 2 ? 4 : 5;
+  const positions = canals === 1 ? [cx]
+    : canals === 2 ? [cx - spread/2, cx + spread/2]
+    : [cx - spread, cx, cx + spread];
+
+  const canalColor = isPost ? 'var(--st-post, #e0a85a)'
+    : isEndo ? 'var(--st-endo, #d8b4d8)'
+    : 'var(--text-dim, #6a7080)';
+  const canalW = isPost ? 2.2 : 1.6;
+
+  const strokes = positions.map(x => {
+    if (isPost) {
+      // Filled dense post
+      return `<rect x="${x - canalW/2}" y="1" width="${canalW}" height="${H - 2}" fill="${canalColor}" rx="0.4"/>`;
+    }
+    if (isEndo) {
+      return `<line x1="${x}" y1="1" x2="${x}" y2="${H - 1}" stroke="${canalColor}" stroke-width="${canalW}" stroke-linecap="round"/>`;
+    }
+    // root only: outline
+    return `<line x1="${x}" y1="1.5" x2="${x}" y2="${H - 1.5}" stroke="${canalColor}" stroke-width="0.9" stroke-dasharray="1.5 1" stroke-linecap="round"/>`;
+  }).join('');
+
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${strokes}</svg>`;
+}
+
+/* =========================================================
    Render
-   ============================================================ */
-function renderRow(host, fdiList) {
+   ========================================================= */
+function statusClass(layered) {
+  if (!layered) return '';
+  if (layered === 'missing') return 's-missing';
+  if (layered === 'impl_cover') return 's-impl-cover';
+  if (layered === 'impl_restored') return 's-impl-restored';
+  if (layered.startsWith('endo') && /post/.test(layered) && /crowned/.test(layered)) return 's-endo-post-crowned';
+  if (layered.startsWith('restored')) return 's-restored';
+  return '';
+}
+
+function renderCells(host, fdiList, sourceMap, opts={}) {
   host.innerHTML = '';
   fdiList.forEach((fdi, i) => {
-    const status = formula[fdi] || '';
+    const layered = sourceMap[fdi] ?? '';
+    const lang = document.documentElement.dataset.lang;
+    const sf = surfacesOf(layered);
+    const isUpper = fdi[0] === '1' || fdi[0] === '2';
+    const cls = ['cell', statusClass(layered)];
+    if (isUpper) cls.push('flipped');
+    // Vertical midline (FDI sagittal plane) — separator on 8th cell of each row
+    if (i === 7) cls.push('midline-right');
+    // Inline cell-root SVG for endodontically treated / rooted teeth
+    const hasRoot = /endo|^root|impl_restored|post/.test(layered);
+    if (hasRoot) cls.push('has-root');
+    // mismatch flag — show on the AI row (where the original disagreement lived)
+    const isAi = opts.ai;
+    const isMismatch = AI[fdi] !== GT[fdi];
+    if (isAi && isMismatch) cls.push('mismatch');
+    const ttype = toothType(fdi);
     const cell = document.createElement('button');
+    cell.className = cls.filter(Boolean).join(' ');
     cell.type = 'button';
-    cell.className = ['cell', statusClass(status), status ? '' : 'empty', i === 7 ? 'midline-right' : ''].filter(Boolean).join(' ');
     cell.dataset.fdi = fdi;
-    cell.title = status ? `${fdi} — ${status}` : `${fdi} — empty`;
-    cell.setAttribute('aria-label', `FDI ${fdi}, status ${status || 'empty'}`);
+    if (isAi && isMismatch) {
+      cell.dataset.ai = abbr(AI[fdi], lang) || '∅';
+      cell.dataset.diff = abbr(GT[fdi], lang) || '∅';
+    }
+    cell.setAttribute('aria-label', `FDI ${fdi} — ${layered || 'empty'}`);
     cell.innerHTML = `
-      <span class="fdi">${fdi}</span>
-      <span class="label ${status ? 'has-status' : ''}">${cellLabel(status)}</span>
+      ${hasRoot ? `<span class="cell-root">${rootSvg(layered, ttype)}</span>` : ''}
+      <span class="head">
+        <span class="fdi mono">${fdi}</span>
+        <span class="abbr" style="${layered && layered !== 'present' ? 'color:'+(STATUSES[primary(layered)]?.color || 'var(--text)') : ''}">${abbr(layered, lang)}</span>
+      </span>
+      <span class="anatomy">${anatomySvg({ type: ttype, status: layered, fdi })}</span>
+      <span class="surfaces">${surfacesSvg({ surfaces: sf?.surfaces || [], status: sf?.status, fdi })}</span>
+      ${isAi && isMismatch ? `<span class="mm-flag" title="AI ≠ GT">≠ ${abbr(GT[fdi], lang) || '∅'}</span>` : ''}
     `;
     host.appendChild(cell);
   });
 }
 
-function renderFormula() {
-  renderRow(document.getElementById('upperRow'), UPPER_FDI);
-  renderRow(document.getElementById('lowerRow'), LOWER_FDI);
+function renderCrops(host, fdiList, flip) {
+  host.innerHTML = '';
+  fdiList.forEach(fdi => {
+    const c = document.createElement('button');
+    c.type = 'button';
+    c.className = 'crop' + (flip ? ' flipped' : '');
+    c.dataset.fdi = fdi;
+    c.setAttribute('aria-label', `Crop ${fdi}`);
+    c.innerHTML = cropSvg(fdi) + `<span class="crop-fdi">${fdi}</span>`;
+    host.appendChild(c);
+  });
 }
 
+function renderLegend() {
+  const host = document.getElementById('legend');
+  const lang = document.documentElement.dataset.lang;
+  const order = ['present','missing','impacted','caries','restored','endo','post','crowned','impl_fixture','impl_cover','impl_restored','attrition','root','bridge','uncertain'];
+  host.innerHTML = order.map(k => {
+    const s = STATUSES[k];
+    return `<span class="legend-item"><span class="swatch" style="background:${s.color}"></span><span class="ab">${s[lang]}</span><span class="nm">${s.name[lang]}</span></span>`;
+  }).join('');
+}
+
+function renderHistory() {
+  const host = document.getElementById('histStrip');
+  const lang = document.documentElement.dataset.lang;
+  const SRC_LABEL = {
+    en: { manual:'manual', ai_prefill:'ai_prefill', ai_prefill_then_manual:'ai+manual' },
+    ru: { manual:'вручную', ai_prefill:'ai_prefill', ai_prefill_then_manual:'ai+вручную' }
+  };
+  host.innerHTML = HISTORY.map(h => `
+    <div class="hist-item">
+      <span class="seq">#${h.seq}</span>
+      <span class="ts">${h.ts}</span>
+      <span class="src ${h.src}">${SRC_LABEL[lang][h.src]}</span>
+      <span class="diff">
+        ${h.bulk
+          ? `<span class="fdi">${lang==='en'?'all':'все'}</span><em>·</em>${h.note}`
+          : h.fdi === 'doc' || h.fdi === 'expert'
+              ? `<span class="fdi">${lang==='en'?'system':'система'}</span><em>·</em>${h.note}`
+              : `<span class="fdi">${h.fdi}</span><span class="a">"${h.a}"</span><em>→</em><span class="b">"${h.b}"</span>`
+        }
+      </span>
+      <button class="roll" title="${lang==='en'?'Rollback':'Откатить'}" aria-label="Rollback">↶</button>
+    </div>
+  `).join('');
+}
+
+function applyI18n() {
+  const lang = document.documentElement.dataset.lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (I18N[lang][key]) el.textContent = I18N[lang][key];
+  });
+}
+
+function renderAll() {
+  renderCrops(document.getElementById('cropsUpper'), UPPER_FDI, true);
+  renderCrops(document.getElementById('cropsLower'), LOWER_FDI, false);
+  renderCells(document.getElementById('gtUpper'), UPPER_FDI, GT);
+  renderCells(document.getElementById('gtLower'), LOWER_FDI, GT);
+  renderCells(document.getElementById('aiUpper'), UPPER_FDI, AI, { ai:true });
+  renderCells(document.getElementById('aiLower'), LOWER_FDI, AI, { ai:true });
+  renderLegend();
+  renderHistory();
+  applyI18n();
+  positionAnatomicalAxis();
+}
+
+function positionAnatomicalAxis() {
+  // GT axis: top of cropsUpper to bottom of cropsLower (within .block.gt).
+  const gtBlock = document.querySelector('.block.gt');
+  const gtAxis  = gtBlock?.querySelector('.anatomical-axis');
+  const gtTop   = document.getElementById('cropsUpper');
+  const gtBot   = document.getElementById('cropsLower');
+  if (gtBlock && gtAxis && gtTop && gtBot) {
+    const bR = gtBlock.getBoundingClientRect();
+    const tR = gtTop.getBoundingClientRect();
+    const cR = gtBot.getBoundingClientRect();
+    gtAxis.style.top    = (tR.top - bR.top) + 'px';
+    gtAxis.style.bottom = (bR.bottom - cR.bottom) + 'px';
+  }
+
+  // AI axis: top of aiUpper to bottom of aiLower (within .block.ai).
+  const aiBlock = document.querySelector('.block.ai');
+  const aiAxis  = aiBlock?.querySelector('.anatomical-axis');
+  const aiTop   = document.getElementById('aiUpper');
+  const aiBot   = document.getElementById('aiLower');
+  if (aiBlock && aiAxis && aiTop && aiBot) {
+    const bR = aiBlock.getBoundingClientRect();
+    const tR = aiTop.getBoundingClientRect();
+    const cR = aiBot.getBoundingClientRect();
+    aiAxis.style.top    = (tR.top - bR.top) + 'px';
+    aiAxis.style.bottom = (bR.bottom - cR.bottom) + 'px';
+  }
+}
+
+window.addEventListener('resize', () => positionAnatomicalAxis());
+
+/* =========================================================
+   Toggles & state
+   ========================================================= */
+function setLang(l) {
+  document.documentElement.dataset.lang = l;
+  localStorage.setItem('oris.lang', l);
+  document.querySelectorAll('[data-lang-toggle]').forEach(b => {
+    b.setAttribute('aria-pressed', String(b.dataset.langToggle === l));
+  });
+  renderAll();
+}
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  localStorage.setItem('oris.theme', t);
+  document.querySelectorAll('[data-theme-toggle]').forEach(b => {
+    b.setAttribute('aria-pressed', String(b.dataset.themeToggle === t));
+  });
+}
+
+document.querySelectorAll('[data-lang-toggle]').forEach(b => b.addEventListener('click', () => setLang(b.dataset.langToggle)));
+document.querySelectorAll('[data-theme-toggle]').forEach(b => b.addEventListener('click', () => setTheme(b.dataset.themeToggle)));
+
+/* Filter buttons */
+document.querySelectorAll('.filter-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(x => x.setAttribute('aria-pressed','false'));
+    b.setAttribute('aria-pressed','true');
+  });
+});
+
+/* =========================================================
+   Cell selection + click-to-cycle (GT only)
+   AI block stays read-only; clicking GT cell cycles status
+   and appends a row to HISTORY.
+   ========================================================= */
+document.addEventListener('click', e => {
+  const cell = e.target.closest('.cell');
+  if (!cell) return;
+  document.querySelectorAll('.cell.selected').forEach(c => c.classList.remove('selected'));
+  cell.classList.add('selected');
+
+  const inGtBlock = cell.closest('.block.gt');
+  if (!inGtBlock) return;        // AI cells: read-only
+
+  const fdi = cell.dataset.fdi;
+  if (!fdi) return;
+
+  const before = GT[fdi] || '';
+  const after  = e.shiftKey ? '' : nextStatus(before);
+  if (after) GT[fdi] = after;
+  else delete GT[fdi];
+
+  SEQ_COUNTER += 1;
+  HISTORY.unshift({
+    seq: SEQ_COUNTER,
+    ts: nowHHMM(),
+    src: 'manual',
+    fdi,
+    a: before,
+    b: after,
+  });
+
+  renderAll();
+  // Highlight just-edited cell once it re-renders
+  requestAnimationFrame(() => {
+    const fresh = document.querySelector(`.block.gt .cell[data-fdi="${fdi}"]`);
+    if (fresh) {
+      fresh.classList.add('just-edited');
+      setTimeout(() => fresh.classList.remove('just-edited'), 700);
+    }
+  });
+});
+
+/* Keyboard 1..5 for filters */
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea')) return;
+  if (e.key >= '1' && e.key <= '5') {
+    const btns = document.querySelectorAll('.filter-btn');
+    const idx = parseInt(e.key,10) - 1;
+    if (btns[idx]) btns[idx].click();
+  }
+});
+
+/* =========================================================
+   Playground: case loader + JSON pane + bridge exports
+   ========================================================= */
+async function loadCases() {
+  try {
+    const r = await fetch('/api/play/cases');
+    const data = await r.json();
+    CASES = data.cases || [];
+    LOAD_TIME = nowHHMM();
+    if (CASES.length) selectCase(CASES[0].letter);
+  } catch (err) {
+    console.error('Could not load cases:', err);
+  }
+}
+
+function selectCase(letter) {
+  const c = CASES.find(x => x.letter === letter);
+  if (!c) return;
+
+  CURRENT_CASE = letter;
+  GT = { ...c.formula };
+  AI = { ...c.formula };           // initial AI = case ground truth (immutable)
+  SEQ_COUNTER = 1;
+  HISTORY = [
+    { seq: 1, ts: LOAD_TIME, src: 'ai_prefill', bulk: true,
+      note: `case ${letter} bulk prefill · ${Object.keys(c.formula).length} teeth` },
+  ];
+
+  // Topbar + infostrip
+  document.querySelectorAll('#casePicker button').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.case === letter)));
+  document.getElementById('opgImage').src = c.image_url;
+  document.getElementById('opgMetaLabel').textContent = `case_${letter}`;
+  document.getElementById('caseDocId').textContent = `CASE_${letter}`;
+  document.getElementById('caseLabel').textContent = c.label || `case_${letter} · synthetic`;
+  document.getElementById('caseSession').textContent = `play-${LOAD_TIME}`;
+
+  renderAll();
+}
+
+document.getElementById('casePicker').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-case]');
+  if (!btn) return;
+  selectCase(btn.dataset.case);
+});
+
+/* Override renderHistory + renderAll to also refresh JSON pane */
+const _origRenderHistory = renderHistory;
+renderHistory = function() {
+  const host = document.getElementById('histStrip');
+  const lang = document.documentElement.dataset.lang;
+  const SRC_LABEL = {
+    en: { manual:'manual', ai_prefill:'ai_prefill', ai_prefill_then_manual:'ai+manual' },
+    ru: { manual:'вручную', ai_prefill:'ai_prefill', ai_prefill_then_manual:'ai+вручную' }
+  };
+  host.innerHTML = HISTORY.slice(0, 10).map(h => `
+    <div class="hist-item">
+      <span class="seq">#${h.seq}</span>
+      <span class="ts">${h.ts}</span>
+      <span class="src ${h.src}">${SRC_LABEL[lang][h.src] || h.src}</span>
+      <span class="diff">
+        ${h.bulk
+          ? `<span class="fdi">${lang==='en'?'all':'все'}</span><em>·</em>${h.note || ''}`
+          : `<span class="fdi">${h.fdi}</span><span class="a">"${h.a}"</span><em>→</em><span class="b">"${h.b}"</span>`
+        }
+      </span>
+    </div>
+  `).join('');
+  document.getElementById('histMeta').textContent =
+    `${HISTORY.length} ${lang === 'ru' ? 'записей' : 'entries'} · ${lang === 'ru' ? 'кейс' : 'case'} ${CURRENT_CASE}`;
+};
+
+const _origRenderAll = renderAll;
+renderAll = function() {
+  _origRenderAll();
+  renderJson();
+};
+
 function buildOrisDocPreview() {
-  // Build a preview ORIS doc in the same shape /api/play/export will return
   const teeth = {};
-  for (const fdi of [...UPPER_FDI, ...LOWER_FDI]) {
-    const status = formula[fdi];
+  const allFdi = [...UPPER_FDI, ...LOWER_FDI];
+  for (const fdi of allFdi) {
+    const status = GT[fdi];
     if (!status) continue;
     const occupant =
       status === 'missing' ? 'A' :
-      /^impl|^implant$/.test(status) ? 'F' :
+      /^impl_|^implant$/.test(status) ? 'F' :
       status === 'bridge' ? 'B' :
       status === 'cantilever' ? 'C' :
       status === 'uncertain' ? 'U' : 'N';
-    // 6-char ORIS code derivation is server-side; show FDI key as a stand-in here
     teeth[fdi] = { fdi, occupant, status_layers: status };
   }
+  const userEdited = Object.keys(GT).some(k => GT[k] !== AI[k])
+                  || Object.keys(AI).some(k => !(k in GT));
   return {
     oris_version: '0.1.0',
-    document_id: `PLAY_${currentCase}`,
-    patient: { anonymized_id: `P_PLAY_${currentCase}_DEMO`, age_years: null, sex: null },
-    imaging: {
-      modality: 'OPG',
-      device: 'ORIS Reference Application — Playground',
-      acquisition_date: '2026-01-01T00:00:00Z',
-    },
+    document_id: `PLAY_${CURRENT_CASE}`,
+    patient: { anonymized_id: `P_PLAY_${CURRENT_CASE}_DEMO`, age_years: null, sex: null },
+    imaging: { modality: 'OPG', device: 'ORIS Reference Application — Playground' },
     teeth,
     ground_truth_meta: {
-      source: 'manual',
-      session_id: 'play-session',
-      sequence_num: 1,
+      source: userEdited ? 'ai_prefill_then_manual' : 'ai_prefill',
+      session_id: `play-${LOAD_TIME}`,
+      sequence_num: SEQ_COUNTER,
     },
-    notes: `Playground export for Case ${currentCase}`,
   };
 }
 
@@ -710,101 +1860,50 @@ function syntaxHighlight(jsonStr) {
 function renderJson() {
   const doc = buildOrisDocPreview();
   const teethCount = Object.keys(doc.teeth).length;
-  const mods = Object.keys(formula).filter(fdi =>
-    (formula[fdi] || '') !== (originalFormula[fdi] || '')
-  ).length + Object.keys(originalFormula).filter(fdi =>
-    !(fdi in formula) && originalFormula[fdi]
-  ).length;
-
-  const jsonStr = JSON.stringify(doc, null, 2);
-  document.getElementById('jsonView').innerHTML = syntaxHighlight(jsonStr);
+  const allFdi = new Set([...Object.keys(GT), ...Object.keys(AI)]);
+  let mods = 0;
+  for (const fdi of allFdi) {
+    if ((GT[fdi] || '') !== (AI[fdi] || '')) mods += 1;
+  }
+  document.getElementById('jsonView').innerHTML = syntaxHighlight(JSON.stringify(doc, null, 2));
   document.getElementById('statTeeth').textContent = teethCount;
   document.getElementById('statMods').textContent = mods;
-  document.getElementById('metaTeethCount').textContent = teethCount;
 }
 
-/* ============================================================
-   Case loading
-   ============================================================ */
-async function loadCases() {
-  const r = await fetch('/api/play/cases');
-  const data = await r.json();
-  CASES = data.cases || [];
-  if (CASES.length) selectCase(CASES[0].letter);
-}
-
-function selectCase(letter) {
-  const c = CASES.find(x => x.letter === letter);
-  if (!c) return;
-  currentCase = letter;
-  originalFormula = { ...c.formula };
-  formula = { ...c.formula };
-
-  document.getElementById('opgImage').src = c.image_url;
-  document.getElementById('opgLabel').textContent = `${c.label} · synthetic`;
-  document.getElementById('metaCase').textContent = letter;
-
-  document.querySelectorAll('#casePicker button').forEach(b =>
-    b.setAttribute('aria-pressed', String(b.dataset.case === letter))
-  );
-
-  renderFormula();
-  renderJson();
-}
-
-/* ============================================================
-   Click & cycle
-   ============================================================ */
-document.addEventListener('click', e => {
-  const cell = e.target.closest('.cell');
-  if (!cell) return;
-  const fdi = cell.dataset.fdi;
-  if (!fdi) return;
-  if (e.shiftKey) {
-    delete formula[fdi];
-  } else {
-    const cur = formula[fdi] || '';
-    formula[fdi] = nextStatus(cur);
-    if (!formula[fdi]) delete formula[fdi];
-  }
-  renderFormula();
-  renderJson();
-});
-
-document.getElementById('casePicker').addEventListener('click', e => {
-  const btn = e.target.closest('button');
-  if (!btn) return;
-  selectCase(btn.dataset.case);
-});
-
-document.getElementById('copyJson').addEventListener('click', async () => {
+/* Copy current JSON to clipboard */
+document.getElementById('copyJson')?.addEventListener('click', async () => {
   const text = document.getElementById('jsonView').textContent;
   try {
     await navigator.clipboard.writeText(text);
-    const old = document.querySelector('#copyJson [data-i18n="json.copy"]').textContent;
-    document.querySelector('#copyJson [data-i18n="json.copy"]').textContent = '✓';
-    setTimeout(() => {
-      document.querySelector('#copyJson [data-i18n="json.copy"]').textContent = old;
-    }, 1200);
+    const btn = document.getElementById('copyJson');
+    const old = btn.textContent;
+    btn.textContent = '✓';
+    setTimeout(() => { btn.textContent = old; }, 1100);
   } catch (err) {
-    alert('Copy failed — your browser may block clipboard access on http.');
+    alert('Copy failed (clipboard API may need https or user gesture).');
   }
 });
 
-/* ============================================================
-   Bridges
-   ============================================================ */
+/* Undo last GT edit */
+document.getElementById('undoLast')?.addEventListener('click', () => {
+  // Find first non-bulk row in HISTORY
+  const idx = HISTORY.findIndex(h => !h.bulk && h.src === 'manual');
+  if (idx < 0) return;
+  const row = HISTORY[idx];
+  if (row.a) GT[row.fdi] = row.a;
+  else delete GT[row.fdi];
+  HISTORY.splice(idx, 1);
+  renderAll();
+});
+
+/* Bridge buttons */
 document.querySelectorAll('.bridge-btn[data-fmt]').forEach(btn => {
   btn.addEventListener('click', async () => {
     const fmt = btn.dataset.fmt;
     const r = await fetch('/api/play/export', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        formula,
-        format: fmt,
-        case: currentCase,
-      }),
+      body: JSON.stringify({ formula: GT, format: fmt, case: CURRENT_CASE }),
     });
     if (!r.ok) {
       const err = await r.json().catch(() => ({}));
@@ -814,7 +1913,7 @@ document.querySelectorAll('.bridge-btn[data-fmt]').forEach(btn => {
     const blob = await r.blob();
     const cd = r.headers.get('Content-Disposition') || '';
     const m = /filename=([^;]+)/.exec(cd);
-    const filename = m ? m[1].trim() : `export_${fmt}_${currentCase}`;
+    const filename = m ? m[1].trim() : `export_${fmt}_${CURRENT_CASE}`;
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename;
@@ -824,47 +1923,14 @@ document.querySelectorAll('.bridge-btn[data-fmt]').forEach(btn => {
   });
 });
 
-/* ============================================================
-   Lang & theme toggles
-   ============================================================ */
-function applyI18n() {
-  const lang = document.documentElement.dataset.lang;
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    if (I18N[lang] && I18N[lang][key]) el.textContent = I18N[lang][key];
-  });
-}
-
-function setLang(l) {
-  document.documentElement.dataset.lang = l;
-  document.documentElement.lang = l;
-  localStorage.setItem('oris.play.lang', l);
-  document.querySelectorAll('[data-lang-toggle]').forEach(b =>
-    b.setAttribute('aria-pressed', String(b.dataset.langToggle === l))
-  );
-  applyI18n();
-}
-function setTheme(t) {
-  document.documentElement.dataset.theme = t;
-  localStorage.setItem('oris.play.theme', t);
-  document.querySelectorAll('[data-theme-toggle]').forEach(b =>
-    b.setAttribute('aria-pressed', String(b.dataset.themeToggle === t))
-  );
-}
-document.querySelectorAll('[data-lang-toggle]').forEach(b =>
-  b.addEventListener('click', () => setLang(b.dataset.langToggle))
-);
-document.querySelectorAll('[data-theme-toggle]').forEach(b =>
-  b.addEventListener('click', () => setTheme(b.dataset.themeToggle))
-);
-
-/* ============================================================
+/* =========================================================
    Init
-   ============================================================ */
-const savedLang = localStorage.getItem('oris.play.lang');
-const savedTheme = localStorage.getItem('oris.play.theme');
-setLang(savedLang || 'en');
-setTheme(savedTheme || 'light');
+   ========================================================= */
+const savedLang = localStorage.getItem('oris.lang');
+const savedTheme = localStorage.getItem('oris.theme');
+if (savedLang) setLang(savedLang); else setLang('en');
+if (savedTheme) setTheme(savedTheme); else setTheme('light');
+
 loadCases();
 </script>
 </body>
