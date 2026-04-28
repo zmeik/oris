@@ -4,15 +4,24 @@
   "coordinate_system": "normalized 0..1 (relative to image dimensions)",
   "groups": [
     {
-      "name": "Нижняя челюсть",
+      "name": {
+        "ru": "Нижняя челюсть",
+        "en": "Mandible"
+      },
       "icon": "🦴",
       "structures": [
         {
           "id": "mandible",
-          "name": "Мандибула (целиком)",
+          "name": {
+            "ru": "Мандибула (целиком)",
+            "en": "Mandible (whole)"
+          },
           "color": "#00ffcc",
           "type": "closed",
-          "hint": "Нижняя челюсть: мыщелки → ветви → угол → тело → альвеол. гребень",
+          "hint": {
+            "ru": "Нижняя челюсть: мыщелки → ветви → угол → тело → альвеол. гребень",
+            "en": "Mandible: condyles → rami → angle → body → alveolar crest"
+          },
           "points": [
             [
               0.887,
@@ -202,26 +211,44 @@
         },
         {
           "id": "occlusal_plane",
-          "name": "Окклюзионная плоск.",
+          "name": {
+            "ru": "Окклюзионная плоск.",
+            "en": "Occlusal plane"
+          },
           "color": "#00ff44",
           "type": "open",
-          "hint": "Линия по окклюзионным (жевательным/резцовым) поверхностям нижних зубов",
+          "hint": {
+            "ru": "Линия по окклюзионным (жевательным/резцовым) поверхностям нижних зубов",
+            "en": "Occlusal plane (lower): line through cusp tips of lower posterior teeth"
+          },
           "points": []
         },
         {
           "id": "basal_line",
-          "name": "Базальная линия",
+          "name": {
+            "ru": "Базальная линия",
+            "en": "Basal line"
+          },
           "color": "#ff6644",
           "type": "open",
-          "hint": "Линия по апексам корней нижних зубов",
+          "hint": {
+            "ru": "Линия по апексам корней нижних зубов",
+            "en": "Basal line: lower mandibular border"
+          },
           "points": []
         },
         {
           "id": "alveolar_crest",
-          "name": "Альвеол. гребень (ниж)",
+          "name": {
+            "ru": "Альвеол. гребень (ниж)",
+            "en": "Alveolar crest (lower)"
+          },
           "color": "#88ffaa",
           "type": "open",
-          "hint": "Линия по вершине альвеолярного гребня нижней челюсти (между зубами и костью)",
+          "hint": {
+            "ru": "Линия по вершине альвеолярного гребня нижней челюсти (между зубами и костью)",
+            "en": "Lower alveolar crest: line of bone above lower tooth roots"
+          },
           "points": [
             [
               0.213,
@@ -255,10 +282,16 @@
         },
         {
           "id": "canal_L",
-          "name": "Канал н/ч нерва L",
+          "name": {
+            "ru": "Канал н/ч нерва L",
+            "en": "Mandibular canal L"
+          },
           "color": "#44ff88",
           "type": "open",
-          "hint": "Тёмная полоска внутри тела мандибулы — от foramen mandibulae до ment. foramen",
+          "hint": {
+            "ru": "Тёмная полоска внутри тела мандибулы — от foramen mandibulae до ment. foramen",
+            "en": "Left mandibular nerve canal"
+          },
           "points": [
             [
               0.105,
@@ -284,10 +317,16 @@
         },
         {
           "id": "canal_R",
-          "name": "Канал н/ч нерва R",
+          "name": {
+            "ru": "Канал н/ч нерва R",
+            "en": "Mandibular canal R"
+          },
           "color": "#44cc88",
           "type": "open",
-          "hint": "Тёмная полоска внутри тела мандибулы — от foramen mandibulae до ment. foramen",
+          "hint": {
+            "ru": "Тёмная полоска внутри тела мандибулы — от foramen mandibulae до ment. foramen",
+            "en": "Right mandibular nerve canal"
+          },
           "points": [
             [
               0.63,
@@ -313,10 +352,16 @@
         },
         {
           "id": "mf_L",
-          "name": "Подбород. отв. L",
+          "name": {
+            "ru": "Подбород. отв. L",
+            "en": "Mental foramen L"
+          },
           "color": "#ff44ff",
           "type": "closed",
-          "hint": "Тёмное отверстие — выход канала (под premolar 3.4-3.5)",
+          "hint": {
+            "ru": "Тёмное отверстие — выход канала (под premolar 3.4-3.5)",
+            "en": "Left mental foramen (typically near apex of 3.4–3.5)"
+          },
           "points": [
             [
               0.36,
@@ -338,10 +383,16 @@
         },
         {
           "id": "mf_R",
-          "name": "Подбород. отв. R",
+          "name": {
+            "ru": "Подбород. отв. R",
+            "en": "Mental foramen R"
+          },
           "color": "#cc44ff",
           "type": "closed",
-          "hint": "Тёмное отверстие — выход канала (под premolar 4.4-4.5)",
+          "hint": {
+            "ru": "Тёмное отверстие — выход канала (под premolar 4.4-4.5)",
+            "en": "Right mental foramen (typically near apex of 4.4–4.5)"
+          },
           "points": [
             [
               0.62,
@@ -364,15 +415,24 @@
       ]
     },
     {
-      "name": "Верхняя челюсть",
+      "name": {
+        "ru": "Верхняя челюсть",
+        "en": "Maxilla"
+      },
       "icon": "🏔️",
       "structures": [
         {
           "id": "maxilla",
-          "name": "Максилла (целиком)",
+          "name": {
+            "ru": "Максилла (целиком)",
+            "en": "Maxilla (whole)"
+          },
           "color": "#ffaa44",
           "type": "closed",
-          "hint": "Верхняя челюсть (2 сращённые кости): скуловые отр. → переносица → альвеолярный гребень",
+          "hint": {
+            "ru": "Верхняя челюсть (2 сращённые кости): скуловые отр. → переносица → альвеолярный гребень",
+            "en": "Maxilla: alveolar process → palate → tuberosities"
+          },
           "points": [
             [
               0.075,
@@ -458,26 +518,44 @@
         },
         {
           "id": "occlusal_plane_upper",
-          "name": "Окклюз. плоск. (верх)",
+          "name": {
+            "ru": "Окклюз. плоск. (верх)",
+            "en": "Occlusal plane (upper)"
+          },
           "color": "#00dd44",
           "type": "open",
-          "hint": "Линия по окклюзионным поверхностям верхних зубов",
+          "hint": {
+            "ru": "Линия по окклюзионным поверхностям верхних зубов",
+            "en": "Upper occlusal plane: line through cusp tips of upper posterior teeth"
+          },
           "points": []
         },
         {
           "id": "basal_line_upper",
-          "name": "Базальная линия (верх)",
+          "name": {
+            "ru": "Базальная линия (верх)",
+            "en": "Basal line (upper)"
+          },
           "color": "#dd6644",
           "type": "open",
-          "hint": "Линия по апексам корней верхних зубов",
+          "hint": {
+            "ru": "Линия по апексам корней верхних зубов",
+            "en": "Upper basal line: above the apices of upper teeth"
+          },
           "points": []
         },
         {
           "id": "alveolar_crest_upper",
-          "name": "Альвеол. гребень (верх)",
+          "name": {
+            "ru": "Альвеол. гребень (верх)",
+            "en": "Alveolar crest (upper)"
+          },
           "color": "#aaff88",
           "type": "open",
-          "hint": "Линия по вершине альвеолярного гребня верхней челюсти",
+          "hint": {
+            "ru": "Линия по вершине альвеолярного гребня верхней челюсти",
+            "en": "Upper alveolar crest"
+          },
           "points": [
             [
               0.212,
@@ -503,10 +581,16 @@
         },
         {
           "id": "suture",
-          "name": "Межчелюстной шов",
+          "name": {
+            "ru": "Межчелюстной шов",
+            "en": "Median palatal suture"
+          },
           "color": "#ffffff",
           "type": "open",
-          "hint": "Sutura intermaxillaris — вертикальная линия сращения двух максилл",
+          "hint": {
+            "ru": "Sutura intermaxillaris — вертикальная линия сращения двух максилл",
+            "en": "Median palatal (intermaxillary) suture"
+          },
           "points": [
             [
               0.5,
@@ -532,10 +616,16 @@
         },
         {
           "id": "hard_palate",
-          "name": "Твёрдое нёбо",
+          "name": {
+            "ru": "Твёрдое нёбо",
+            "en": "Hard palate"
+          },
           "color": "#ff88ff",
           "type": "open",
-          "hint": "Светлая горизонтальная полоса ВЫШЕ корней верхних зубов — дно носовой полости. Часто двойная линия (артефакт ОПТГ). Переходит в spina nasalis anterior по центру.",
+          "hint": {
+            "ru": "Светлая горизонтальная полоса ВЫШЕ корней верхних зубов — дно носовой полости. Часто двойная линия (артефакт ОПТГ). Переходит в spina nasalis anterior по центру.",
+            "en": "Hard palate (radiographic outline)"
+          },
           "points": [
             [
               0.15,
@@ -570,15 +660,24 @@
       ]
     },
     {
-      "name": "Полости и пазухи",
+      "name": {
+        "ru": "Полости и пазухи",
+        "en": "Cavities & sinuses"
+      },
       "icon": "🫁",
       "structures": [
         {
           "id": "sinus_L",
-          "name": "В/ч пазуха L",
+          "name": {
+            "ru": "В/ч пазуха L",
+            "en": "Maxillary sinus L"
+          },
           "color": "#ff4466",
           "type": "closed",
-          "hint": "Большая тёмная воздушная полость — верхний левый угол",
+          "hint": {
+            "ru": "Большая тёмная воздушная полость — верхний левый угол",
+            "en": "Left maxillary sinus"
+          },
           "points": [
             [
               0.105,
@@ -620,10 +719,16 @@
         },
         {
           "id": "sinus_R",
-          "name": "В/ч пазуха R",
+          "name": {
+            "ru": "В/ч пазуха R",
+            "en": "Maxillary sinus R"
+          },
           "color": "#ff6644",
           "type": "closed",
-          "hint": "Большая тёмная воздушная полость — верхний правый угол",
+          "hint": {
+            "ru": "Большая тёмная воздушная полость — верхний правый угол",
+            "en": "Right maxillary sinus"
+          },
           "points": [
             [
               0.605,
@@ -665,10 +770,16 @@
         },
         {
           "id": "nasal_L",
-          "name": "Нос. полость L",
+          "name": {
+            "ru": "Нос. полость L",
+            "en": "Nasal cavity L"
+          },
           "color": "#bb44ff",
           "type": "closed",
-          "hint": "Левая ноздря — тёмная область слева от носовой перегородки (на снимке — левая половина)",
+          "hint": {
+            "ru": "Левая ноздря — тёмная область слева от носовой перегородки (на снимке — левая половина)",
+            "en": "Left nasal cavity"
+          },
           "points": [
             [
               0.425,
@@ -706,10 +817,16 @@
         },
         {
           "id": "nasal_R",
-          "name": "Нос. полость R",
+          "name": {
+            "ru": "Нос. полость R",
+            "en": "Nasal cavity R"
+          },
           "color": "#dd55ff",
           "type": "closed",
-          "hint": "Правая ноздря — тёмная область справа от носовой перегородки (на снимке — правая половина)",
+          "hint": {
+            "ru": "Правая ноздря — тёмная область справа от носовой перегородки (на снимке — правая половина)",
+            "en": "Right nasal cavity"
+          },
           "points": [
             [
               0.503,
@@ -748,15 +865,24 @@
       ]
     },
     {
-      "name": "Суставы и дуги",
+      "name": {
+        "ru": "Суставы и дуги",
+        "en": "Joints & arches"
+      },
       "icon": "🔗",
       "structures": [
         {
           "id": "zyg_L",
-          "name": "Скуловая дуга L",
+          "name": {
+            "ru": "Скуловая дуга L",
+            "en": "Zygomatic arch L"
+          },
           "color": "#dddd44",
           "type": "open",
-          "hint": "Костная дуга — от височной кости до скулового отростка",
+          "hint": {
+            "ru": "Костная дуга — от височной кости до скулового отростка",
+            "en": "Left zygomatic arch"
+          },
           "points": [
             [
               0.04,
@@ -782,10 +908,16 @@
         },
         {
           "id": "zyg_R",
-          "name": "Скуловая дуга R",
+          "name": {
+            "ru": "Скуловая дуга R",
+            "en": "Zygomatic arch R"
+          },
           "color": "#cccc44",
           "type": "open",
-          "hint": "Костная дуга — от височной кости до скулового отростка",
+          "hint": {
+            "ru": "Костная дуга — от височной кости до скулового отростка",
+            "en": "Right zygomatic arch"
+          },
           "points": [
             [
               0.87,
@@ -811,10 +943,16 @@
         },
         {
           "id": "hyoid",
-          "name": "Подъяз. (центр. проекция)",
+          "name": {
+            "ru": "Подъяз. (центр. проекция)",
+            "en": "Hyoid (central projection)"
+          },
           "color": "#aaffaa",
           "type": "open",
-          "hint": "Подъязычная кость — центральная проекция тени внизу снимка",
+          "hint": {
+            "ru": "Подъязычная кость — центральная проекция тени внизу снимка",
+            "en": "Hyoid bone (central projection)"
+          },
           "points": [
             [
               0.44,
@@ -840,10 +978,16 @@
         },
         {
           "id": "hyoid_L",
-          "name": "Подъяз. (левая проекция)",
+          "name": {
+            "ru": "Подъяз. (левая проекция)",
+            "en": "Hyoid (left projection)"
+          },
           "color": "#88dd88",
           "type": "open",
-          "hint": "Подъязычная кость — левая проекция тени (на снимке слева, ниже угла мандибулы)",
+          "hint": {
+            "ru": "Подъязычная кость — левая проекция тени (на снимке слева, ниже угла мандибулы)",
+            "en": "Hyoid (left projection)"
+          },
           "points": [
             [
               0.26,
@@ -869,10 +1013,16 @@
         },
         {
           "id": "hyoid_R",
-          "name": "Подъяз. (правая проекция)",
+          "name": {
+            "ru": "Подъяз. (правая проекция)",
+            "en": "Hyoid (right projection)"
+          },
           "color": "#88dd88",
           "type": "open",
-          "hint": "Подъязычная кость — правая проекция тени (на снимке справа, ниже угла мандибулы)",
+          "hint": {
+            "ru": "Подъязычная кость — правая проекция тени (на снимке справа, ниже угла мандибулы)",
+            "en": "Hyoid (right projection)"
+          },
           "points": [
             [
               0.58,
@@ -899,12 +1049,18 @@
       ]
     },
     {
-      "name": "Патология / Находки",
+      "name": {
+        "ru": "Патология / Находки",
+        "en": "Pathology / Findings"
+      },
       "icon": "⚠️",
       "structures": []
     },
     {
-      "name": "Имплантаты",
+      "name": {
+        "ru": "Имплантаты",
+        "en": "Implants"
+      },
       "icon": "🔩",
       "structures": []
     }

@@ -935,11 +935,28 @@ def api_anatomy_templates_get(file_id: int):
     # Reviewer-added custom structures (Pathology / Implants / etc.) carry
     # `_custom: True` + `_group: <group name>` in their override entry; we
     # append them to the matching group at compose time.
+    #
+    # Group names in the JSON are bilingual: {"ru": "...", "en": "..."} since
+    # the EN/RU language toggle was added. Custom-structure overrides written
+    # by the editor store `_group` as the *Russian* canonical name (see
+    # data-add-group attribute in renderSidebar) so that flipping the editor
+    # language at any later moment doesn't break group attribution. The
+    # helpers below keep matching robust whether the JSON group name is a
+    # plain string (legacy) or the new {ru, en} object.
+    def _name_str(n) -> str:
+        if isinstance(n, dict): return n.get("ru") or n.get("en") or ""
+        return n or ""
+    def _name_variants(n) -> list[str]:
+        if isinstance(n, dict):
+            return [v for v in (n.get("ru"), n.get("en")) if v]
+        return [n] if n else []
+
     BBOX_DEFAULT_IDS = {"mf_L", "mf_R"}
     composed_groups = []
     seen_custom_ids: set[str] = set()
     for g in base.get("groups", []):
         composed_structures = []
+        group_name_variants = _name_variants(g.get("name"))
         # 1) base structures with their overrides applied
         for s in g.get("structures", []):
             sid = s.get("id")
@@ -952,11 +969,13 @@ def api_anatomy_templates_get(file_id: int):
                     if k in ov:
                         merged[k] = ov[k]
             composed_structures.append(merged)
-        # 2) custom structures explicitly assigned to this group
+        # 2) custom structures explicitly assigned to this group — match
+        # against ANY of the group's bilingual names so that an override
+        # written in EN still lands in the right slot.
         for sid, ov in overrides.items():
             if not ov.get("_custom"):
                 continue
-            if ov.get("_group") != g.get("name"):
+            if ov.get("_group") not in group_name_variants:
                 continue
             seen_custom_ids.add(sid)
             composed_structures.append({
@@ -969,7 +988,7 @@ def api_anatomy_templates_get(file_id: int):
                 "bbox":   ov.get("bbox"),
                 "hint":   ov.get("hint", ""),
                 "_custom": True,
-                "_group":  g.get("name"),
+                "_group":  _name_str(g.get("name")),
             })
         composed_groups.append({**g, "structures": composed_structures})
 
@@ -977,7 +996,8 @@ def api_anatomy_templates_get(file_id: int):
     # (legacy / typo-protection): drop them into the first empty-by-default
     # group "Патология / Находки" so they remain visible.
     orphan_target = next((g for g in composed_groups
-                          if "Патол" in g.get("name", "") or "athol" in g.get("name", "")), None)
+                          if "Патол" in _name_str(g.get("name", ""))
+                          or "athol" in _name_str(g.get("name", "")).lower()), None)
     if orphan_target is not None:
         for sid, ov in overrides.items():
             if not ov.get("_custom") or sid in seen_custom_ids:
@@ -989,7 +1009,7 @@ def api_anatomy_templates_get(file_id: int):
                 "annotation_type": ov.get("annotation_type", "polyline"),
                 "points": ov.get("points", []), "bbox": ov.get("bbox"),
                 "hint": "(orphan custom — fell back to Pathology)",
-                "_custom": True, "_group": orphan_target.get("name"),
+                "_custom": True, "_group": _name_str(orphan_target.get("name")),
             })
 
     seq_row = get_db().execute(

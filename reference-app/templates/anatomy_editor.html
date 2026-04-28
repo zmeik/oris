@@ -107,6 +107,29 @@ body {
   color: var(--accent); font-weight: 600;
   box-shadow: 0 0 0 1px rgba(91,141,239,0.6);
 }
+/* EN / RU language toggle — flips every UI string and every
+   bilingual {ru, en} structure / group / hint label that ships in
+   anatomy_templates.json. Custom reviewer-added labels stay as
+   typed (we have nothing to translate them to). */
+.lang-toggle {
+  display: inline-flex; gap: 1px; background: var(--hairline);
+  border-radius: 4px; padding: 2px;
+}
+.lang-toggle button {
+  background: transparent; border: 0;
+  padding: 4px 8px; font: inherit; font-size: 11px; font-weight: 600;
+  color: var(--text-muted); border-radius: 3px;
+  cursor: pointer; letter-spacing: 0.04em;
+}
+.lang-toggle button.active {
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+/* Disclaimer paragraphs are tagged with data-lang and shown only
+   when the matching language is active. */
+#disclaimer p[data-lang] { display: none; }
+#disclaimer p[data-lang].show { display: block; }
 /* In viewer mode, hide every chrome that mutates state. The canvas
    keeps pan + zoom + hover-highlight; drag-to-reshape is suppressed
    in JS (mousedown guard) so structures cannot be edited accidentally. */
@@ -371,23 +394,25 @@ body.viewer-mode .delete-custom {
     <span class="sep">·</span>
     <span class="mode" id="brand-mode">Anatomy viewer</span>
   </div>
-  <a href="/play" class="tb-btn back">← /play</a>
-  <span class="tb-meta">file_id <b id="meta-file-id">{{ file_id }}</b></span>
+  <a href="/play" class="tb-btn back" id="back-link">← /play</a>
+  <span class="tb-meta"><span id="lbl-file-id">file_id</span> <b id="meta-file-id">{{ file_id }}</b></span>
   <div class="page-toggle" role="tablist" aria-label="Page mode">
-    <button id="page-viewer" class="active" data-page="viewer"
-            title="Read-only — pan + zoom + highlight (no editing)">👁 Viewer</button>
-    <button id="page-editor" data-page="editor"
-            title="Unlock drag-to-reshape, +Add, Save">✏ Edit</button>
+    <button id="page-viewer" class="active" data-page="viewer">👁 Viewer</button>
+    <button id="page-editor" data-page="editor">✏ Edit</button>
   </div>
   <div class="tb-spacer"></div>
+  <div class="lang-toggle" role="tablist" aria-label="Language">
+    <button id="lang-ru" data-lang="ru">RU</button>
+    <button id="lang-en" data-lang="en">EN</button>
+  </div>
   <div class="mode-toggle" role="tablist" aria-label="Annotation mode">
     <button id="mode-polyline" class="active" data-mode="polyline">⌒ Polyline</button>
     <button id="mode-bbox" data-mode="bbox">▭ Bbox</button>
   </div>
-  <span class="tb-meta">zoom <b id="meta-zoom">100%</b></span>
-  <button class="tb-btn" id="btn-fit" title="Fit image to viewport (F)">Fit</button>
-  <button class="tb-btn" id="btn-reset" title="Discard reviewer overrides on this file">Reset</button>
-  <button class="tb-btn primary" id="btn-save" title="Save reviewer overrides (Ctrl+S)">✓ Save anatomy</button>
+  <span class="tb-meta"><span id="lbl-zoom">zoom</span> <b id="meta-zoom">100%</b></span>
+  <button class="tb-btn" id="btn-fit">Fit</button>
+  <button class="tb-btn" id="btn-reset">Reset</button>
+  <button class="tb-btn primary" id="btn-save">✓ Save</button>
 </header>
 
 <!-- ============================================================
@@ -410,10 +435,10 @@ body.viewer-mode .delete-custom {
      STATUS BAR
      ============================================================ -->
 <div id="statusbar">
-  <span>active <b id="sb-active">—</b></span>
-  <span>mode <b id="sb-mode">polyline</b></span>
-  <span>vertices <b id="sb-vertices">0</b></span>
-  <span>last save <b id="sb-saved">—</b></span>
+  <span><span id="sbl-active">active</span> <b id="sb-active">—</b></span>
+  <span><span id="sbl-mode">mode</span> <b id="sb-mode">polyline</b></span>
+  <span><span id="sbl-vertices">vertices</span> <b id="sb-vertices">0</b></span>
+  <span><span id="sbl-saved">last save</span> <b id="sb-saved">—</b></span>
   <span style="margin-left:auto" id="sb-hint">drag points · click segment to insert · right-click point to delete · B / P toggle mode</span>
 </div>
 
@@ -421,8 +446,8 @@ body.viewer-mode .delete-custom {
      DISCLAIMER (mandatory per plan §"Disclaimer footer")
      ============================================================ -->
 <footer id="disclaimer">
-  <p><strong>Disclaimer.</strong> Drag-to-reshape and vertex add/delete affect only the in-browser preview state shown in this editor; they do not modify any clinical record, do not constitute a diagnosis, and have no clinical or legal effect. The panoramic radiographs displayed here are anonymised synthetic reference cases shown with the appropriate patient consent (RUDN K08.1 cohort, ethical approval FAS-РУДН-2024-K08-1, see <a href="/PRIVACY.md">PRIVACY.md</a>). All processing — EXIF strip, 5 % all-side crop, watermark — was performed in accordance with Russian Federal Law 152-FZ on personal data, GDPR-equivalent practice and HIPAA Safe-Harbor de-identification.</p>
-  <p><strong>Дисклеймер.</strong> Перетаскивание точек и добавление/удаление вершин изменяют только просмотровое состояние редактора в браузере; они не влияют на клиническую запись, не являются диагнозом и не имеют клинических или юридических последствий. Показанные снимки — это анонимизированные синтетические референсные кейсы, представленные с надлежащего согласия пациента (когорта РУДН К08.1, этическое одобрение FAS-РУДН-2024-К08-1, см. <a href="/PRIVACY.md">PRIVACY.md</a>). Вся обработка (удаление EXIF, обрезка по 5 % с каждой стороны, водяной знак) проведена в соответствии с № 152-ФЗ РФ о персональных данных, практикой GDPR и принципом Safe-Harbor де-идентификации HIPAA.</p>
+  <p data-lang="en"><strong>Disclaimer.</strong> Drag-to-reshape and vertex add/delete affect only the in-browser preview state shown in this editor; they do not modify any clinical record, do not constitute a diagnosis, and have no clinical or legal effect. The panoramic radiographs displayed here are anonymised synthetic reference cases shown with the appropriate patient consent (RUDN K08.1 cohort, ethical approval FAS-РУДН-2024-K08-1, see <a href="/PRIVACY.md">PRIVACY.md</a>). All processing — EXIF strip, 5 % all-side crop, watermark — was performed in accordance with Russian Federal Law 152-FZ on personal data, GDPR-equivalent practice and HIPAA Safe-Harbor de-identification.</p>
+  <p data-lang="ru"><strong>Дисклеймер.</strong> Перетаскивание точек и добавление/удаление вершин изменяют только просмотровое состояние редактора в браузере; они не влияют на клиническую запись, не являются диагнозом и не имеют клинических или юридических последствий. Показанные снимки — это анонимизированные синтетические референсные кейсы, представленные с надлежащего согласия пациента (когорта РУДН К08.1, этическое одобрение FAS-РУДН-2024-К08-1, см. <a href="/PRIVACY.md">PRIVACY.md</a>). Вся обработка (удаление EXIF, обрезка по 5 % с каждой стороны, водяной знак) проведена в соответствии с № 152-ФЗ РФ о персональных данных, практикой GDPR и принципом Safe-Harbor де-идентификации HIPAA.</p>
 </footer>
 
 <script>
@@ -456,6 +481,12 @@ const S = {
   // toggle), and the mousedown/keydown handlers below short-circuit
   // every editing path when pageMode === 'viewer'.
   pageMode: 'viewer',    // 'viewer' | 'editor'
+  // UI language: 'ru' = Russian (default — matches the original
+  // anatomy nomenclature shipped in anatomy_templates.json), 'en' =
+  // English. Persisted in localStorage as 'oris-anatomy-lang' so a
+  // reviewer's choice survives page reload.
+  lang: (typeof localStorage !== 'undefined'
+         && localStorage.getItem('oris-anatomy-lang') === 'en') ? 'en' : 'ru',
   zoom: 1, panX: 0, panY: 0,
   drag: null,            // { type: 'point'|'corner'|'pan'|'translate'|'new', ... }
   hoverPoint: null,      // index of hovered vertex on activeId
@@ -479,6 +510,142 @@ const CUSTOM_PALETTE = [
 let _customCounter = 0;
 function nextCustomColour() {
   return CUSTOM_PALETTE[(_customCounter++) % CUSTOM_PALETTE.length];
+}
+
+// ─────────────────────────────────────────────────────────────
+// i18n — bilingual EN / RU. The user opens the editor in their
+// preferred language; the toggle in the topbar flips both UI
+// chrome (button labels, tooltips, prompts, status hints) AND
+// every structure / group / hint label that ships with bilingual
+// {ru, en} strings in data/anatomy_templates.json. Custom
+// structures added by reviewers carry a single string label they
+// typed themselves — those don't change with the toggle (we have
+// nothing to translate them to).
+// Persisted in localStorage so reloading the page keeps the
+// reviewer's choice. Default = ru because the OPGs and the
+// anatomical names are originally Russian; the EN translations
+// are reviewer-friendly approximations, not authoritative
+// terminology.
+// ─────────────────────────────────────────────────────────────
+const I18N = {
+  ru: {
+    appViewer: 'Анатомия — просмотр',
+    appEditor: 'Анатомия — правка',
+    backToPlay: '← /play',
+    fileIdLabel: 'file_id',
+    pageViewer: '👁 Просмотр',
+    pageEditor: '✏ Правка',
+    pageViewerTitle: 'Только просмотр — пан + zoom + подсветка (без правки)',
+    pageEditorTitle: 'Включить drag-to-reshape, +Add, Save',
+    polyline: '⌒ Полилиния',
+    bbox: '▭ Bbox',
+    zoomLabel: 'zoom',
+    fit: 'В размер',
+    fitTitle: 'Вписать снимок в окно (F)',
+    reset: 'Сброс',
+    resetTitle: 'Откатить все правки на этом файле',
+    save: '✓ Сохранить',
+    saveTitle: 'Сохранить правки (Ctrl+S)',
+    addBtn: '+ Доб.',
+    addTitle: 'Добавить полигон или bbox в группу «{group}»',
+    structHide: 'Скрыть с холста (H)',
+    structShow: 'Показать на холсте (H)',
+    structModeTitle: 'Переключить bbox / полилиния (B / P)',
+    deleteCustomTitle: 'Удалить эту пользовательскую структуру',
+    groupHideAll: 'Скрыть всю группу',
+    groupShowAll: 'Показать всю группу',
+    sbActive: 'активна',
+    sbMode: 'режим',
+    sbVertices: 'точек',
+    sbSaved: 'сохранение',
+    sbHintViewer: 'просмотр · drag = пан · scroll = zoom · клик слева — подсветить структуру',
+    sbHintEditor: 'тащите точки · клик по сегменту = новая точка · правый клик = удалить · B / P переключают режим',
+    drawingPolyline: 'Рисуем <b>{name}</b> · клик добавляет точку · двойной клик / Enter — завершить',
+    drawingBbox: 'Рисуем <b>{name}</b> · клик + перетаскивание задают прямоугольник',
+    commit: 'Завершить (Enter)',
+    cancel: 'Отмена (Esc)',
+    promptCustomName: 'Новая пользовательская структура в группе «{group}»\nИмя:',
+    promptCustomNameDefault: 'Новая находка',
+    promptKind: 'Режим? Введите "polyline" (по умолч.) или "bbox":',
+    confirmDeleteCustom: 'Удалить структуру «{name}»? Действие можно откатить, пока не нажмёте Сохранить.',
+    confirmReset: 'Сбросить все правки на этом файле? К истории добавится пустое сохранение.',
+    saveNoEdits: 'нет правок',
+    saveFailed: 'ошибка сохранения: ',
+    saveOk: '#{seq} · {n} структур',
+    loadedSeq: '#{seq} (загружено)',
+    structuresCountSuffix: 'pts',
+    countDash: '—',
+  },
+  en: {
+    appViewer: 'Anatomy viewer',
+    appEditor: 'Anatomy editor',
+    backToPlay: '← /play',
+    fileIdLabel: 'file_id',
+    pageViewer: '👁 Viewer',
+    pageEditor: '✏ Edit',
+    pageViewerTitle: 'Read-only — pan + zoom + highlight (no editing)',
+    pageEditorTitle: 'Unlock drag-to-reshape, + Add, Save',
+    polyline: '⌒ Polyline',
+    bbox: '▭ Bbox',
+    zoomLabel: 'zoom',
+    fit: 'Fit',
+    fitTitle: 'Fit image to viewport (F)',
+    reset: 'Reset',
+    resetTitle: 'Discard reviewer overrides on this file',
+    save: '✓ Save',
+    saveTitle: 'Save reviewer overrides (Ctrl+S)',
+    addBtn: '+ Add',
+    addTitle: 'Add a new polygon or bbox into "{group}"',
+    structHide: 'Hide from canvas (H)',
+    structShow: 'Show on canvas (H)',
+    structModeTitle: 'Toggle bbox / polyline (B / P)',
+    deleteCustomTitle: 'Delete this custom structure',
+    groupHideAll: 'Hide all in this group',
+    groupShowAll: 'Show all in this group',
+    sbActive: 'active',
+    sbMode: 'mode',
+    sbVertices: 'vertices',
+    sbSaved: 'last save',
+    sbHintViewer: 'view-only · drag = pan · scroll = zoom · click structure on the left to highlight',
+    sbHintEditor: 'drag points · click segment to insert · right-click point to delete · B / P toggle mode',
+    drawingPolyline: 'Drawing <b>{name}</b> · click to add points · double-click / Enter to commit',
+    drawingBbox: 'Drawing <b>{name}</b> · click + drag a rectangle on the OPG',
+    commit: 'Commit (Enter)',
+    cancel: 'Cancel (Esc)',
+    promptCustomName: 'New custom structure in "{group}"\nName:',
+    promptCustomNameDefault: 'New finding',
+    promptKind: 'Mode? Type "polyline" (default) or "bbox":',
+    confirmDeleteCustom: 'Delete custom structure "{name}"? This is undoable until you press Save.',
+    confirmReset: 'Discard all reviewer overrides on this file? This appends an empty save to the change history.',
+    saveNoEdits: 'no edits',
+    saveFailed: 'save failed: ',
+    saveOk: '#{seq} · {n} structures',
+    loadedSeq: '#{seq} (loaded)',
+    structuresCountSuffix: 'pts',
+    countDash: '—',
+  },
+};
+function t(key, params) {
+  let s = (I18N[S.lang] || I18N.en)[key];
+  if (s == null) s = I18N.en[key] || key;
+  if (params) for (const [k, v] of Object.entries(params)) {
+    s = s.replaceAll('{' + k + '}', v);
+  }
+  return s;
+}
+// Display the localised name from a {ru, en} object — falls back through
+// the chain and tolerates plain strings (custom structures the reviewer
+// typed in one language carry a string, not an object).
+function tName(n) {
+  if (n == null) return '';
+  if (typeof n === 'string') return n;
+  return n[S.lang] || n.ru || n.en || '';
+}
+// Canonical RU group name for `_group` payloads, so a custom structure
+// added in EN still lands in the correct group on the backend.
+function groupKey(g) {
+  if (typeof g.name === 'string') return g.name;
+  return g.name?.ru || g.name?.en || '';
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -540,15 +707,15 @@ function render() {
   if (S.activeId) {
     const s = S.byId[S.activeId];
     if (s) {
-      sbActive.textContent   = s.name;
+      sbActive.textContent   = tName(s.name);
       sbMode.textContent     = s.annotation_type;
       sbVertices.textContent = (s.annotation_type === 'bbox')
-        ? (s.bbox ? '4 corners' : 'no bbox')
+        ? (s.bbox ? '4' : '0')
         : ((s.points || []).length);
     }
   } else {
-    sbActive.textContent   = '—';
-    sbMode.textContent     = '—';
+    sbActive.textContent   = t('countDash');
+    sbMode.textContent     = t('countDash');
     sbVertices.textContent = '0';
   }
 }
@@ -590,7 +757,7 @@ function drawStructure(s) {
         ctx.lineWidth = isActive ? 3 : 2;
       });
     }
-    drawLabel(x1, y1 - 6, s.name, colour);
+    drawLabel(x1, y1 - 6, tName(s.name), colour);
     return;
   }
 
@@ -630,7 +797,7 @@ function drawStructure(s) {
   // it's the only cue saying "this is the one I clicked in the list".
   if (isActive && pts.length > 0) {
     const [lx, ly] = imgToScreen(pts[0][0], pts[0][1]);
-    drawLabel(lx + 6, ly - 6, s.name, colour);
+    drawLabel(lx + 6, ly - 6, tName(s.name), colour);
   }
 }
 
@@ -880,7 +1047,7 @@ canvas.addEventListener('mousemove', e => {
       render();
     }
     if (idx >= 0) {
-      tip.textContent = `${s.name} · point ${idx + 1}/${(s.points || []).length}`;
+      tip.textContent = `${tName(s.name)} · point ${idx + 1}/${(s.points || []).length}`;
       tip.style.left = (sx + 12) + 'px';
       tip.style.top  = (sy + 12) + 'px';
       tip.style.display = 'block';
@@ -943,21 +1110,23 @@ window.addEventListener('keydown', e => {
 function renderSidebar() {
   let html = '';
   for (const g of S.groups) {
-    html += `<div class="group" data-group="${escAttr(g.name)}">`;
+    const gKey = groupKey(g);          // canonical RU name — stable backend key
+    const gDisplay = tName(g.name);    // localised label shown in UI
+    html += `<div class="group" data-group="${escAttr(gKey)}">`;
     const allHidden = isGroupAllHidden(g);
     html += `<div class="group-head"><span class="icon">${g.icon || '·'}</span>`
-          + `<span>${esc(g.name)}</span>`
+          + `<span>${esc(gDisplay)}</span>`
           + `<span class="count">${g.structures.length}</span>`
-          + `<button class="add-btn" data-add-group="${escAttr(g.name)}" `
-          + `title="Add a new custom polygon or bbox into '${escAttr(g.name)}'">+ Add</button>`
+          + `<button class="add-btn" data-add-group="${escAttr(gKey)}" `
+          + `title="${escAttr(t('addTitle', {group: gDisplay}))}">${esc(t('addBtn'))}</button>`
           // Group eye: only render when the group has at least one
           // structure (empty groups have nothing to hide). Class flips
           // to .is-hidden when EVERY structure in the group is hidden.
           + (g.structures.length
               ? `<button class="group-vis${allHidden ? ' is-hidden' : ''}" `
-              + `data-vis-group="${escAttr(g.name)}" `
+              + `data-vis-group="${escAttr(gKey)}" `
               + `aria-pressed="${allHidden ? 'true' : 'false'}" `
-              + `title="${allHidden ? 'Show all in this group' : 'Hide all in this group'}">👁</button>`
+              + `title="${escAttr(allHidden ? t('groupShowAll') : t('groupHideAll'))}">👁</button>`
               : '')
           + `</div>`;
     html += '<div class="group-rows">';
@@ -965,20 +1134,22 @@ function renderSidebar() {
       const active = (s.id === S.activeId) ? ' active' : '';
       const isCustom = !!s._custom;
       const isHidden = !!s._hidden;
+      const sDisplay = tName(s.name);
+      const sHint    = tName(s.hint) || sDisplay;
       const pts = (s.annotation_type === 'bbox')
         ? (s.bbox ? '▭' : '∅')
-        : `${(s.points || []).length} pts`;
+        : `${(s.points || []).length} ${t('structuresCountSuffix')}`;
       html += `<div class="struct${active}${isCustom ? ' is-custom' : ''}${isHidden ? ' is-row-hidden' : ''}" data-id="${escAttr(s.id)}">`
             + `<span class="swatch" style="background:${escAttr(s.color || '#5b8def')}"></span>`
-            + `<span class="label" title="${escAttr(s.hint || s.name)}">${esc(s.name)}</span>`
+            + `<span class="label" title="${escAttr(sHint)}">${esc(sDisplay)}</span>`
             + `<span class="pts">${pts}</span>`
             + `<button class="struct-vis${isHidden ? ' is-hidden' : ''}" data-vis-id="${escAttr(s.id)}" `
-            + `title="${isHidden ? 'Show on canvas' : 'Hide from canvas'} (H)" aria-pressed="${isHidden ? 'true' : 'false'}">👁</button>`
-            + `<button class="struct-mode ${escAttr(s.annotation_type)}" data-mode-id="${escAttr(s.id)}" title="Toggle bbox / polyline (B / P)">`
+            + `title="${escAttr(isHidden ? t('structShow') : t('structHide'))}" aria-pressed="${isHidden ? 'true' : 'false'}">👁</button>`
+            + `<button class="struct-mode ${escAttr(s.annotation_type)}" data-mode-id="${escAttr(s.id)}" title="${escAttr(t('structModeTitle'))}">`
             + (s.annotation_type === 'bbox' ? '▭' : '⌒')
             + '</button>'
             + (isCustom
-                ? `<button class="delete-custom" data-delete-id="${escAttr(s.id)}" title="Delete this custom structure">×</button>`
+                ? `<button class="delete-custom" data-delete-id="${escAttr(s.id)}" title="${escAttr(t('deleteCustomTitle'))}">×</button>`
                 : '')
             + '</div>';
     }
@@ -1057,7 +1228,9 @@ function isGroupAllHidden(g) {
   return g.structures.length > 0 && g.structures.every(s => s._hidden);
 }
 function toggleGroupVisibility(groupName) {
-  const g = S.groups.find(x => x.name === groupName);
+  // groupName comes from data-vis-group, which we wrote as the canonical
+  // RU name (groupKey(g)) — match by groupKey, not the bilingual object.
+  const g = S.groups.find(x => groupKey(x) === groupName);
   if (!g || !g.structures.length) return;
   const newHidden = g.structures.some(s => !s._hidden); // any visible → hide all
   for (const s of g.structures) {
@@ -1074,13 +1247,17 @@ function toggleGroupVisibility(groupName) {
 function addCustomStructure(groupName) {
   // Cancel any in-progress drawing first
   if (S.drawMode) cancelDrawing();
+  // groupName is the canonical RU key (data-add-group). For the prompt,
+  // show the user-facing localised version.
+  const g = S.groups.find(x => groupKey(x) === groupName);
+  const groupDisplay = g ? tName(g.name) : groupName;
   const name = (window.prompt(
-    `New custom structure in "${groupName}"\nName:`,
-    'New finding') || '').trim();
+    t('promptCustomName', {group: groupDisplay}),
+    t('promptCustomNameDefault')) || '').trim();
   if (!name) return;
   // Ask annotation kind
   const kind = (window.prompt(
-    `Mode? Type "polyline" (default) or "bbox":`,
+    t('promptKind'),
     S.globalMode) || S.globalMode).trim().toLowerCase();
   const annotation_type = (kind === 'bbox') ? 'bbox' : 'polyline';
   const sid = `custom_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
@@ -1094,9 +1271,9 @@ function addCustomStructure(groupName) {
     _custom: true, _group: groupName,
     hint: `Custom ${annotation_type} added by reviewer`,
   };
-  // Inject into local state and the matching group
+  // Inject into local state and the matching group (`g` was resolved
+  // earlier in this function via groupKey).
   S.byId[sid] = newStruct;
-  const g = S.groups.find(x => x.name === groupName);
   if (g) g.structures.push(newStruct);
   S.activeId = sid;
   markDirty(newStruct);
@@ -1141,7 +1318,7 @@ function cancelDrawing() {
 function deleteCustomStructure(sid, silent) {
   const s = S.byId[sid];
   if (!s || !s._custom) return;
-  if (!silent && !confirm(`Delete custom structure "${s.name}"? This is undoable until you press Save.`)) return;
+  if (!silent && !confirm(t('confirmDeleteCustom', {name: tName(s.name)}))) return;
   delete S.byId[sid];
   for (const g of S.groups) {
     g.structures = g.structures.filter(x => x.id !== sid);
@@ -1159,12 +1336,16 @@ function deleteCustomStructure(sid, silent) {
 function showDrawBanner(s) {
   const el = document.getElementById('draw-banner');
   const text = document.getElementById('draw-banner-text');
+  const name = esc(tName(s.name));
   el.className = (s.annotation_type === 'bbox') ? 'bbox-hint' : 'poly-hint';
-  if (s.annotation_type === 'polyline') {
-    text.innerHTML = `Drawing <b>${esc(s.name)}</b> · click to add points · double-click / Enter to commit`;
-  } else {
-    text.innerHTML = `Drawing <b>${esc(s.name)}</b> · click + drag a rectangle on the OPG`;
-  }
+  text.innerHTML = (s.annotation_type === 'polyline')
+    ? t('drawingPolyline', {name})
+    : t('drawingBbox',     {name});
+  // Update commit/cancel button labels each time (lang may have flipped)
+  const cb = document.getElementById('draw-banner-commit');
+  if (cb) cb.textContent = t('commit');
+  const cnb = document.getElementById('draw-banner-cancel');
+  if (cnb) cnb.textContent = t('cancel');
   el.style.display = 'block';
 }
 function hideDrawBanner() { document.getElementById('draw-banner').style.display = 'none'; }
@@ -1236,7 +1417,7 @@ function buildOverridesPayload() {
 async function save() {
   const overrides = buildOverridesPayload();
   if (Object.keys(overrides).length === 0) {
-    sbSaved.textContent = 'no edits';
+    sbSaved.textContent = t('saveNoEdits');
     return;
   }
   const r = await fetch(`/api/anatomy/${FILE_ID}/templates`, {
@@ -1246,19 +1427,19 @@ async function save() {
   });
   if (!r.ok) {
     const err = await r.json().catch(() => ({}));
-    sbSaved.textContent = 'save failed: ' + (err.error || r.status);
+    sbSaved.textContent = t('saveFailed') + (err.error || r.status);
     return;
   }
   const d = await r.json();
   S.savedSeq = d.sequence_num;
-  sbSaved.innerHTML = `<b class="sb-ok">#${d.sequence_num}</b> · ${d.structures_saved} structures`;
+  sbSaved.innerHTML = t('saveOk', {seq: d.sequence_num, n: d.structures_saved});
   _dirty.clear();
 }
 
 document.getElementById('btn-save').addEventListener('click', save);
 document.getElementById('btn-fit').addEventListener('click', fit);
 document.getElementById('btn-reset').addEventListener('click', async () => {
-  if (!confirm('Discard all reviewer overrides on this file? This appends an empty save to the change history.')) return;
+  if (!confirm(t('confirmReset'))) return;
   await fetch(`/api/anatomy/${FILE_ID}/templates`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1290,18 +1471,69 @@ function setPageMode(mode) {
     b.classList.toggle('active', b.dataset.page === mode);
   });
   const brand = document.getElementById('brand-mode');
-  if (brand) brand.textContent = (mode === 'viewer') ? 'Anatomy viewer' : 'Anatomy editor';
+  if (brand) brand.textContent = (mode === 'viewer') ? t('appViewer') : t('appEditor');
   const hint = document.getElementById('sb-hint');
-  if (hint) {
-    hint.textContent = (mode === 'viewer')
-      ? 'view-only · drag = pan · scroll = zoom · click structure on the left to highlight'
-      : 'drag points · click segment to insert · right-click point to delete · B / P toggle mode';
-  }
+  if (hint) hint.textContent = (mode === 'viewer') ? t('sbHintViewer') : t('sbHintEditor');
   renderSidebar();
   render();
 }
 document.querySelectorAll('.page-toggle button').forEach(btn => {
   btn.addEventListener('click', () => setPageMode(btn.dataset.page));
+});
+
+// ─────────────────────────────────────────────────────────────
+// Language switch (EN ↔ RU)
+// ─────────────────────────────────────────────────────────────
+function setLang(lang) {
+  if (lang !== 'ru' && lang !== 'en') return;
+  S.lang = lang;
+  try { localStorage.setItem('oris-anatomy-lang', lang); } catch(e) {}
+  applyLang();
+}
+function applyLang() {
+  document.documentElement.lang = S.lang;
+  document.title = `ORIS · ${(S.pageMode === 'viewer') ? t('appViewer') : t('appEditor')} · file_id ${FILE_ID}`;
+  document.getElementById('brand-mode').textContent =
+    (S.pageMode === 'viewer') ? t('appViewer') : t('appEditor');
+  document.getElementById('back-link').textContent = t('backToPlay');
+  document.getElementById('lbl-file-id').textContent = t('fileIdLabel');
+  document.getElementById('lbl-zoom').textContent = t('zoomLabel');
+  // Page-mode toggle
+  const pv = document.getElementById('page-viewer');
+  pv.textContent = t('pageViewer'); pv.title = t('pageViewerTitle');
+  const pe = document.getElementById('page-editor');
+  pe.textContent = t('pageEditor'); pe.title = t('pageEditorTitle');
+  // Annotation-mode toggle
+  document.getElementById('mode-polyline').textContent = t('polyline');
+  document.getElementById('mode-bbox').textContent     = t('bbox');
+  // Header buttons
+  const fitBtn = document.getElementById('btn-fit');
+  fitBtn.textContent = t('fit'); fitBtn.title = t('fitTitle');
+  const resetBtn = document.getElementById('btn-reset');
+  resetBtn.textContent = t('reset'); resetBtn.title = t('resetTitle');
+  const saveBtn = document.getElementById('btn-save');
+  saveBtn.textContent = t('save'); saveBtn.title = t('saveTitle');
+  // Status-bar labels
+  document.getElementById('sbl-active').textContent   = t('sbActive');
+  document.getElementById('sbl-mode').textContent     = t('sbMode');
+  document.getElementById('sbl-vertices').textContent = t('sbVertices');
+  document.getElementById('sbl-saved').textContent    = t('sbSaved');
+  document.getElementById('sb-hint').textContent =
+    (S.pageMode === 'viewer') ? t('sbHintViewer') : t('sbHintEditor');
+  // Lang button active state
+  document.querySelectorAll('.lang-toggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === S.lang);
+  });
+  // Disclaimer paragraphs (only the matching language is shown)
+  document.querySelectorAll('#disclaimer p[data-lang]').forEach(p => {
+    p.classList.toggle('show', p.dataset.lang === S.lang);
+  });
+  // Sidebar uses tName(g.name) / tName(s.name) — re-render flips them
+  renderSidebar();
+  render();
+}
+document.querySelectorAll('.lang-toggle button').forEach(btn => {
+  btn.addEventListener('click', () => setLang(btn.dataset.lang));
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -1343,7 +1575,7 @@ async function load() {
     }
   }
   S.savedSeq = d.saved_seq || 0;
-  if (S.savedSeq) sbSaved.innerHTML = `<b>#${S.savedSeq}</b> (loaded)`;
+  if (S.savedSeq) sbSaved.innerHTML = t('loadedSeq', {seq: S.savedSeq});
   // Default-active first structure of first non-empty group for instant feedback
   const firstNonEmpty = S.groups.find(g => g.structures.length);
   if (firstNonEmpty) S.activeId = firstNonEmpty.structures[0].id;
@@ -1353,12 +1585,12 @@ async function load() {
 }
 
 // Boot
-// Page boots in Viewer mode: apply CSS class + brand label + sb-hint text
-// before the first render so the user never sees Editor chrome flash.
+// Page boots in Viewer mode: apply CSS class so editor-only chrome
+// is hidden before the first render. applyLang() then sets every
+// localised label (incl. brand, hints, button text, disclaimer
+// paragraphs) according to S.lang from localStorage.
 document.body.classList.add('viewer-mode');
-document.getElementById('brand-mode').textContent = 'Anatomy viewer';
-document.getElementById('sb-hint').textContent =
-  'view-only · drag = pan · scroll = zoom · click structure on the left to highlight';
+applyLang();
 fitCanvasSize();
 loadImage();
 load();
