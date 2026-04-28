@@ -1111,9 +1111,42 @@ def api_validate(file_id: int):
 # ============================================================================
 
 
+_FILE_TO_LETTER = {1001: "A", 1002: "B", 1003: "C"}
+
+
 @app.route("/api/darwin/tooth-bboxes/<int:file_id>")
 def api_tooth_bboxes(file_id: int):
-    # Synthetic bboxes spread across an arch
+    """Tooth bboxes for the production Arena overlay.
+
+    For the three anonymised demo cases (file_id 1001/1002/1003) we serve
+    REAL SemiT-SAM detections that were extracted once via
+    `tools/extract_case_bboxes.py` and committed to
+    `data/cases/case_X_bboxes.json`. That keeps the public reference app
+    visually faithful to clinical reality (crops sit on actual teeth, not
+    on math-row positions) without shipping model weights or requiring
+    the reviewer to run inference.
+
+    For any other file_id (e.g. user-uploaded sandbox OPG without a
+    pre-baked detection), we fall back to a simple synthetic spread
+    across the arch — best-effort, clearly labelled `formula_source:
+    'demo_synthetic'` so callers can distinguish."""
+    letter = _FILE_TO_LETTER.get(file_id)
+    if letter:
+        baked_path = HERE / "data" / "cases" / f"case_{letter}_bboxes.json"
+        if baked_path.exists():
+            data = json.loads(baked_path.read_text(encoding="utf-8"))
+            # Production frontend expects each detection to carry a
+            # "cls" key — SemiT-SAM JSON omits it, so we add it on read.
+            for det in data.get("detections", []):
+                det.setdefault("cls", "Tooth")
+            return jsonify({
+                "detections": data.get("detections", []),
+                "image_size": data.get("image_size", {}),
+                "fdi_map": data.get("fdi_map", {}),
+                "formula_source": data.get("model", "SemiT-SAM"),
+            })
+
+    # Fallback: math-row spread for unknown file_ids
     formula = json.loads((get_db().execute(
         "SELECT formula_json FROM ground_truth WHERE file_id = ?", (file_id,)
     ).fetchone() or {"formula_json": "{}"})["formula_json"])
