@@ -3,9 +3,16 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![JSON Schema Draft 2020-12](https://img.shields.io/badge/JSON%20Schema-Draft%202020--12-blue.svg)](https://json-schema.org/draft/2020-12/release-notes.html)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
+[![Live demo](https://img.shields.io/badge/🦷%20Live%20demo-zmeik.github.io%2Foris-6dc4d8)](https://zmeik.github.io/oris/)
 [![Status: v0.1 — Public Draft](https://img.shields.io/badge/status-v0.1%20public%20draft-orange.svg)]()
 
 > 🇬🇧 **English** · [🇷🇺 На русском (README.ru.md)](README.ru.md)
+
+> ### 🦷 [Open the live dental-formula demo →](https://zmeik.github.io/oris/)
+>
+> One-click static preview at **[zmeik.github.io/oris](https://zmeik.github.io/oris/)** — paper-quality 32-cell formula, three synthetic cases, layered statuses, anatomy panel, change history, EN ↔ RU and light/dark toggles, no install needed. Runs entirely in your browser.
+>
+> For the **fully interactive** version with click-to-edit tooth picker, dual-mode anatomy editor, magnetic snap, time-machine ground truth, and live FHIR / DICOM-SR / MIS / MMOral exports, run the Flask reference application locally (3 commands, see [Try it](#try-it--interactive-reference-application) below).
 
 A structured digital format for the **imaging findings** section of dental panoramic radiograph (OPG) reports. Open, MIT-licensed, machine-readable, and community-targeted — the dental-panoramic analogue of the OSIPI LL-XML lexicon for perfusion MRI ([Dickie et al., *Magn Reson Med* 2023](https://doi.org/10.1002/mrm.29840)).
 

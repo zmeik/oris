@@ -3,9 +3,16 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![JSON Schema Draft 2020-12](https://img.shields.io/badge/JSON%20Schema-Draft%202020--12-blue.svg)](https://json-schema.org/draft/2020-12/release-notes.html)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
+[![Live demo](https://img.shields.io/badge/🦷%20Живое%20демо-zmeik.github.io%2Foris-6dc4d8)](https://zmeik.github.io/oris/)
 [![Status: v0.1 — Public Draft](https://img.shields.io/badge/status-v0.1%20публичный%20draft-orange.svg)]()
 
 > 🇷🇺 **На русском** · [🇬🇧 English (README.md)](README.md)
+
+> ### 🦷 [Открыть живое демо зубной формулы →](https://zmeik.github.io/oris/)
+>
+> Один клик до статичного превью на **[zmeik.github.io/oris](https://zmeik.github.io/oris/)** — paper-quality 32-клеточная формула, три синтетических кейса, слоистые статусы, панель анатомии, история изменений, EN ↔ RU и light/dark тогглы, без установки. Работает полностью в браузере.
+>
+> Для **полностью интерактивной** версии с click-to-edit tooth picker, dual-mode anatomy editor, магнитом, машиной времени GT и живыми экспортами FHIR / DICOM-SR / MIS / MMOral — подними Flask reference application локально (3 команды, см. [Попробовать](#попробовать--интерактивный-reference-application) ниже).
 
 Структурированный цифровой формат для раздела **«imaging findings»** заключения по дентальной панорамной рентгенограмме (OPG). Открытая схема, MIT-лицензия, machine-readable, ориентированная на дентальное сообщество — дентально-панорамный аналог OSIPI LL-XML lexicon для perfusion MRI ([Dickie et al., *Magn Reson Med* 2023](https://doi.org/10.1002/mrm.29840)).
 
