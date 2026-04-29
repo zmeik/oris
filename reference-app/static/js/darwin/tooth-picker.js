@@ -429,7 +429,7 @@ const PRESET_LAYER_OPTIONS = [
     { value: 'crowned',  icon: 'К', label: 'Коронка',  color: 'rgba(245,158,11,0.4)'  },
     { value: 'caries',   icon: 'С', label: 'Кариес',   color: 'rgba(251,146,60,0.4)'  },
     { value: 'root',     icon: 'R', label: 'Корень',   color: 'rgba(239,68,68,0.35)'  },
-    { value: 'bridge',      icon: 'М',  label: 'Мост',     color: 'rgba(34,211,238,0.35)' },
+    { value: 'bridge',      icon: 'М',  label: ((typeof OrisI18n!=='undefined' && OrisI18n.getLang()==='en') ? 'Bridge' : 'Мост'),     color: 'rgba(34,211,238,0.35)' },
     { value: 'cantilever',  icon: 'Кн', label: 'Консоль',  color: 'rgba(34,211,238,0.45)' },
 ];
 
@@ -678,7 +678,7 @@ function _showLayerContextMenu(e, fileId, fdi) {
         caries:'Кариес',present:'Интактный',missing:'Отсутствует',implant:'Имплантат',
         impl_fixture:'Фикстура',impl_cover:'Заглушка',impl_healing:'Формирователь',
         impl_abutment:'Абатмент',impl_restored:'Имп.+коронка',attrition:'Стираемость',
-        root:'Корень',bridge:'Мост',bar:'Балка',impacted:'Ретенция',cantilever:'Консоль'};
+        root:'Корень',bridge:((typeof OrisI18n!=='undefined' && OrisI18n.getLang()==='en') ? 'Bridge' : 'Мост'),bar:'Балка',impacted:'Ретенция',cantilever:'Консоль'};
 
     layers.forEach((l, idx) => {
         const item = document.createElement('div');
@@ -808,54 +808,50 @@ function _ensurePicker() {
         <div id="tp-dilac-controls" style="margin-bottom:6px;display:none;"></div>
         <div id="tp-vertucci-selectors" style="margin-bottom:6px;"></div>
         <div id="tp-root-preview" style="background:rgba(15,17,23,0.6);border-radius:6px;padding:8px;text-align:center;min-height:80px;"></div>
-        <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-top:4px;text-align:center;">Клик на канал = цикл заполнения</div>
-        <div style="font-size:9px;color:var(--text-dim);margin-top:6px;text-align:center;">
-          Клик на апекс = периапикальная находка (PAI, Ørstavik 1986)
-        </div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-top:4px;text-align:center;">${_t('pickerHintCanal')}</div>
+        <div style="font-size:9px;color:var(--text-dim);margin-top:6px;text-align:center;">${_t('pickerHintApex')}</div>
         <div style="display:flex;gap:4px;justify-content:center;margin-top:3px;font-size:9px;flex-wrap:wrap;">
-          <span style="cursor:pointer;padding:1px 4px;border-radius:3px;background:rgba(255,255,255,0.05);" onclick="_cyclePeriapical()" title="Клик = следующее состояние">
-            <span id="tp-periap-label" style="color:var(--text-dim)">● Норма</span>
+          <span style="cursor:pointer;padding:1px 4px;border-radius:3px;background:rgba(255,255,255,0.05);" onclick="_cyclePeriapical()" title="${_t('pickerCycleNext')}">
+            <span id="tp-periap-label" style="color:var(--text-dim)">${_t('paiState_norm')}</span>
           </span>
         </div>
         <details style="font-size:8px;color:var(--text-dim);margin-top:4px;cursor:pointer;">
-          <summary style="color:var(--text-dim);opacity:0.7;">📖 Справка PAI + литература</summary>
+          <summary style="color:var(--text-dim);opacity:0.7;">${_t('pickerPaiHelpSummary')}</summary>
           <div style="padding:4px;background:rgba(0,0,0,0.2);border-radius:4px;margin-top:3px;line-height:1.5;">
-            <b>PAI 1</b> — Норма: интактная lamina dura<br>
-            <b>PAI 2</b> — Расш. периодонт. щель: ранний признак воспаления<br>
-            <b>PAI 3</b> — Периапик. поражение <5мм: очаг разрежения<br>
-            <b>PAI 4</b> — Периапик. поражение ≥5мм: выраженный очаг<br>
-            <b>PAI 5</b> — Обширное поражение >10мм: показана КЛКТ<br>
+            ${_t('pickerPai1')}<br>
+            ${_t('pickerPai2')}<br>
+            ${_t('pickerPai3')}<br>
+            ${_t('pickerPai4')}<br>
+            ${_t('pickerPai5')}<br>
             <hr style="border-color:var(--border);margin:4px 0;">
-            <i>На рентгенограмме невозможно отличить гранулёму от кисты — дифференциация только гистологически.</i><br>
+            ${_t('pickerPaiHistDisclaimer')}<br>
             <span style="opacity:0.6;">Ørstavik D. J Endod. 1986;12(4):167-71. PMID:3457698<br>
             Bender IB, Seltzer S. Oral Surg. 1961;14(12):1485-97<br>
             Natkin E et al. Oral Surg. 1984;57(1):82-94</span>
           </div>
         </details>
-        <div style="font-size:9px;color:var(--text-dim);margin-top:4px;text-align:center;">
-          Клик на бифуркацию = Glickman I-IV · Клик на бок корня = лат. дефект
-        </div>
+        <div style="font-size:9px;color:var(--text-dim);margin-top:4px;text-align:center;">${_t('pickerHintFurc')}</div>
         <div style="display:flex;gap:4px;justify-content:center;margin-top:2px;font-size:8px;color:var(--text-dim);flex-wrap:wrap;">
-          <span style="color:var(--yel)">◼ Ф1</span>
-          <span style="color:var(--gold)">◼ Ф2</span>
-          <span style="color:var(--red)">◼ Ф3-4</span>
+          <span style="color:var(--yel)">${_t('pickerFurcChipF1')}</span>
+          <span style="color:var(--gold)">${_t('pickerFurcChipF2')}</span>
+          <span style="color:var(--red)">${_t('pickerFurcChipF34')}</span>
           <span>|</span>
-          <span style="color:rgba(168,85,247,0.8)">│V↓</span>
-          <span style="color:rgba(59,130,246,0.8)">│H—</span>
-          <span style="color:rgba(234,179,8,0.8)">│U</span>
+          <span style="color:rgba(168,85,247,0.8)">${_t('pickerLatChipV')}</span>
+          <span style="color:rgba(59,130,246,0.8)">${_t('pickerLatChipH')}</span>
+          <span style="color:rgba(234,179,8,0.8)">${_t('pickerLatChipU')}</span>
         </div>
         <details style="font-size:8px;color:var(--text-dim);margin-top:3px;cursor:pointer;">
-          <summary style="opacity:0.7;">📖 Справка: фуркация + пародонт</summary>
+          <summary style="opacity:0.7;">${_t('pickerFurcHelpSummary')}</summary>
           <div style="padding:4px;background:rgba(0,0,0,0.2);border-radius:4px;margin-top:3px;line-height:1.5;">
-            <b>Фуркация (Glickman 1955)</b><br>
-            I — начальная (на OPG не видна)<br>
-            II — неполная потеря кости между корнями<br>
-            III — сквозной дефект (видно разрежение)<br>
-            IV — обнажённая фуркация<br>
-            <b>Латеральные дефекты</b><br>
-            V↓ — вертикальный (angular) · H— — горизонтальный · U — кратер<br>
-            <b>Эндо-перио</b><br>
-            J — J-образное (от апекса к краю) · ◯ — Halo · ⊕ — комбинированное<br>
+            ${_t('pickerFurcGlickmanTitle')}<br>
+            ${_t('pickerFurcGlickman1')}<br>
+            ${_t('pickerFurcGlickman2')}<br>
+            ${_t('pickerFurcGlickman3')}<br>
+            ${_t('pickerFurcGlickman4')}<br>
+            ${_t('pickerLatDefectsTitle')}<br>
+            ${_t('pickerLatDefectsLine')}<br>
+            ${_t('pickerEndoPerioTitle')}<br>
+            ${_t('pickerEndoPerioLine')}<br>
             <hr style="border-color:var(--border);margin:4px 0;">
             <span style="opacity:0.6;">Glickman I. J Periodontol. 1958;29:5-15<br>
             Hamp SE et al. J Clin Periodontol. 1975;2:126-35<br>
@@ -1096,19 +1092,19 @@ function _bridgeContextMenu(e, cellEl, fileId, fdi) {
     }).join('');
 
     if (isImplant) {
-        implantBtns = `<div style="font-size:9px;color:rgba(239,68,68,0.7);padding:2px 10px;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid var(--border);padding-top:6px">🦴 Осложнения имплантата</div>${implComps}`;
+        implantBtns = `<div style="font-size:9px;color:rgba(239,68,68,0.7);padding:2px 10px;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid var(--border);padding-top:6px">🦴 ${(typeof OrisI18n!=='undefined' && OrisI18n.getLang()==='en') ? 'Implant complications' : 'Осложнения имплантата'}</div>${implComps}`;
     } else {
         implantBtns = `<details style="margin-top:4px;border-top:1px solid var(--border);padding-top:4px">
-            <summary style="font-size:9px;color:var(--text-dim);padding:2px 10px;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px">🦴 Осложнения имплантата</summary>${implComps}</details>`;
+            <summary style="font-size:9px;color:var(--text-dim);padding:2px 10px;cursor:pointer;text-transform:uppercase;letter-spacing:0.5px">🦴 ${(typeof OrisI18n!=='undefined' && OrisI18n.getLang()==='en') ? 'Implant complications' : 'Осложнения имплантата'}</summary>${implComps}</details>`;
     }
 
     const noteInputHtml = `<div class="note-input-row">
-        <input type="text" id="_noteCustomInput" placeholder="+ свой тег..." maxlength="40">
+        <input type="text" id="_noteCustomInput" placeholder="${(typeof OrisI18n!=='undefined' && OrisI18n.getLang()==='en') ? '+ custom tag…' : '+ свой тег...'}" maxlength="40">
         <button onclick="_noteAddCustom('${fileId}','${fdi}')">＋</button>
     </div>`;
 
     const clearBtn = currentNote
-        ? `<button onclick="setToothNote('${fileId}','${fdi}','');this.closest('.note-ctx-menu').remove()" style="color:var(--red)">✕ Убрать все</button>`
+        ? `<button onclick="setToothNote('${fileId}','${fdi}','');this.closest('.note-ctx-menu').remove()" style="color:var(--red)">✕ ${(typeof OrisI18n!=='undefined' && OrisI18n.getLang()==='en') ? 'Clear all' : 'Убрать все'}</button>`
         : '';
 
     const notesSummary = activeTags.length > 0 ? ` (${activeTags.length}): ${activeTags.join(', ')}` : '';
@@ -1122,17 +1118,25 @@ function _bridgeContextMenu(e, cellEl, fileId, fdi) {
     const rawGT = (arenaGroundTruth[fileId] || {})[fdi] || '';
     const hasEndo = rawGT.split('+').some(p => p.split(':')[0] === 'endo');
 
-    // Current states for display
+    // Current states for display.
+    // Locale-aware name picker: state objects ship .nameRU + .nameEN
+    // (defined in tooth-svg.js); pull whichever matches OrisI18n's
+    // current language, falling back through nameRU → label → '—'.
+    const _stN = (s) => {
+        if (!s) return '—';
+        const lang = (typeof OrisI18n !== 'undefined') ? OrisI18n.getLang() : 'ru';
+        return (lang === 'en' && s.nameEN) || s.nameRU || s.label || '—';
+    };
     const pa0 = rd.periapical?.[0];
-    const paLabel = pa0 ? (PERIAPICAL_STATES.find(s => s.key === _periapKey(pa0.type))?.nameRU || '—') : '—';
+    const paLabel = pa0 ? _stN(PERIAPICAL_STATES.find(s => s.key === _periapKey(pa0.type))) : '—';
     const furc0 = rd.furcation?.[0];
-    const furcLabel = furc0 ? FURCATION_STATES[furc0.grade]?.nameRU || '—' : '—';
+    const furcLabel = furc0 ? _stN(FURCATION_STATES[furc0.grade]) : '—';
     const lat0m = rd.lateral?.['0_m'];
-    const lat0mLabel = lat0m ? (LATERAL_STATES.find(s => s.key === lat0m.type)?.nameRU || '—') : '—';
+    const lat0mLabel = lat0m ? _stN(LATERAL_STATES.find(s => s.key === lat0m.type)) : '—';
     const lat0d = rd.lateral?.['0_d'];
-    const lat0dLabel = lat0d ? (LATERAL_STATES.find(s => s.key === lat0d.type)?.nameRU || '—') : '—';
+    const lat0dLabel = lat0d ? _stN(LATERAL_STATES.find(s => s.key === lat0d.type)) : '—';
     const ep0 = rd.endoPerio?.[0];
-    const epLabel = ep0 ? (ENDOPERIO_STATES.find(s => s.key === ep0.type)?.nameRU || '—') : '—';
+    const epLabel = ep0 ? _stN(ENDOPERIO_STATES.find(s => s.key === ep0.type)) : '—';
     const twiVal = rd.wear?.twi || 0;
     const fs00 = rd.fillStates?.['0_0'];
     const canalLabel = hasEndo ? (fs00 !== undefined ? FILL_STATES[fs00]?.label || '?' : '?') : '—';
@@ -1165,9 +1169,9 @@ function _bridgeContextMenu(e, cellEl, fileId, fdi) {
     menu.innerHTML = `
         <div style="font-size:10px;color:var(--text-dim);padding:2px 10px;margin-bottom:2px;font-weight:600">${(typeof OrisI18n !== 'undefined') ? OrisI18n.t('pickerTitleTooth', {fdi}) : 'Зуб ' + fdi}</div>
         ${bridgeBtns ? `<div style="font-size:9px;color:var(--text-dim);padding:2px 10px;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px">Мост</div>${bridgeBtns}` : ''}
-        <div style="font-size:9px;color:var(--text-dim);padding:2px 10px;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid var(--border);padding-top:6px">🦷 Патология корня</div>
+        <div style="font-size:9px;color:var(--text-dim);padding:2px 10px;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid var(--border);padding-top:6px">🦷 ${(typeof OrisI18n!=='undefined' && OrisI18n.getLang()==='en') ? 'Root pathology' : 'Патология корня'}</div>
         ${rootPathBtns}
-        <div style="font-size:9px;color:var(--text-dim);padding:2px 10px;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid var(--border);padding-top:6px">📝 Заметки${notesSummary}</div>
+        <div style="font-size:9px;color:var(--text-dim);padding:2px 10px;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid var(--border);padding-top:6px">📝 ${(typeof OrisI18n!=='undefined' && OrisI18n.getLang()==='en') ? 'Notes' : 'Заметки'}${notesSummary}</div>
         ${notePresetBtns}
         ${implantBtns}
         ${noteInputHtml}
@@ -1650,7 +1654,7 @@ function pickToothStatus(value) {
         // Update picker title
         const tw = TWI_STATES[targets[0] ? ((arenaRootData[fileId]?.[targets[0].fdi]?.wear?.twi) || 0) : 0];
         const titleEl = _pickerEl?.querySelector('.tp-title span');
-        if (titleEl) titleEl.textContent = `Зуб ${fdi} — TWI ${tw?.twi || 0}: ${tw?.nameRU || ''}`;
+        if (titleEl) titleEl.textContent = `${OrisI18n.t('pickerTitleTooth',{fdi})} — TWI ${tw?.twi || 0}: ${(OrisI18n.getLang()==='en'&&tw?.nameEN)?tw.nameEN:(tw?.nameRU||'')}`;
         return;
     }
 
@@ -1960,7 +1964,16 @@ function _renderRootSection(fileId, fdi) {
     if (wearSec) {
         const wearData = rd.wear || {};
         const curTwi = wearData.twi || 0;
-        let wearHtml = '<div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.5);margin-top:8px;margin-bottom:3px;">СТИРАЕМОСТЬ / WEAR</div>';
+        const _ti = (k, p) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k, p) : k;
+        // Locale-aware "name" picker for TWI/PAI/Furcation/Fracture state objects
+        // that ship .nameRU + .nameEN. If only nameRU exists (legacy data),
+        // fall back to it.
+        const _stateName = (s) => {
+            if (!s) return '';
+            const lang = (typeof OrisI18n !== 'undefined') ? OrisI18n.getLang() : 'ru';
+            return (lang === 'en' && s.nameEN) || s.nameRU || s.label || '';
+        };
+        let wearHtml = `<div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.5);margin-top:8px;margin-bottom:3px;">${_ti('pickerWearTitle')}</div>`;
         wearHtml += '<div style="display:flex;gap:3px;margin-bottom:4px;">';
         for (let t = 0; t <= 4; t++) {
             const tw = TWI_STATES[t];
@@ -1969,11 +1982,11 @@ function _renderRootSection(fileId, fdi) {
             wearHtml += `<div class="tp-roots-variant-btn${active?' active':''}" style="padding:2px 6px;font-size:9px;min-width:28px;text-align:center;${bg}" onclick="_setTWI('${fileId}','${fdi}',${t})">TWI ${t}</div>`;
         }
         wearHtml += '</div>';
-        wearHtml += `<span id="tp-twi-cycle" style="cursor:pointer;padding:1px 6px;border-radius:3px;background:rgba(255,255,255,0.05);font-size:9px;margin-left:4px;" onclick="_cycleTWI()" title="Клик = следующий TWI">`;
+        wearHtml += `<span id="tp-twi-cycle" style="cursor:pointer;padding:1px 6px;border-radius:3px;background:rgba(255,255,255,0.05);font-size:9px;margin-left:4px;" onclick="_cycleTWI()" title="${_ti('pickerTWITitle')}">`;
         if (curTwi > 0) {
-            wearHtml += `<span style="color:${TWI_STATES[curTwi].color}">TWI${curTwi}: ${TWI_STATES[curTwi].nameRU}</span>`;
+            wearHtml += `<span style="color:${TWI_STATES[curTwi].color}">TWI${curTwi}: ${_stateName(TWI_STATES[curTwi])}</span>`;
         } else {
-            wearHtml += `<span style="color:var(--text-dim)">TWI0: Нет потери</span>`;
+            wearHtml += `<span style="color:var(--text-dim)">${_ti('pickerTWINone')}</span>`;
         }
         wearHtml += '</span>';
         wearSec.innerHTML = wearHtml;
@@ -1982,43 +1995,41 @@ function _renderRootSection(fileId, fdi) {
     // ── Fracture section ──
     const fracSec = document.getElementById('tp-fracture-section');
     if (fracSec) {
+        const _ti = (k, p) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k, p) : k;
+        const _stateName = (s) => {
+            if (!s) return '';
+            const lang = (typeof OrisI18n !== 'undefined') ? OrisI18n.getLang() : 'ru';
+            return (lang === 'en' && s.nameEN) || s.nameRU || s.label || '';
+        };
         const frac0 = rd.fracture?.[0];
         const curFracState = frac0 ? FRACTURE_STATES.find(s => s.key === frac0.type) : FRACTURE_STATES[0];
         const cfState = rd.crownFracture ? CROWN_FRACTURE_STATES.find(s => s.key === rd.crownFracture.type) : CROWN_FRACTURE_STATES[0];
-        const fracTips = {
-            none: 'Нет признаков перелома',
-            vrf: 'Вертикальный перелом корня — зигзаг вдоль оси. Признаки: halo, J-резорбция, расш. PDL. Прогноз — экстракция.',
-            hrz_cervical: 'Горизонтальный перелом в шеечной ⅓. Плохой прогноз (55-73% неудач).',
-            hrz_middle: 'Горизонтальный перелом в средней ⅓. Умеренный прогноз, шинирование 4 нед.',
-            hrz_apical: 'Горизонтальный перелом в апикальной ⅓. Благоприятный прогноз (~77% заживление).'
-        };
-        let fracHtml = '<div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.5);margin-top:8px;margin-bottom:3px;">⚡ ПЕРЕЛОМЫ / FRACTURES</div>';
-        fracHtml += '<div style="font-size:8px;color:rgba(255,255,255,0.3);margin-bottom:4px;">Корень — выберите тип перелома (AAE + Andreasen):</div>';
+        // Localized tooltip / button-state names — keys come from oris-i18n.js
+        const _fracRootTip = (key) => _ti('fracRoot_' + key) || '';
+        const _fracCrownTip = (key) => _ti('fracCrown_' + key + 'Desc') || '';
+        const _fracCrownLabel = (key) => key === 'none' ? '—' : _ti('fracCrown_' + key);
+        let fracHtml = `<div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.5);margin-top:8px;margin-bottom:3px;">${_ti('pickerFracTitle')}</div>`;
+        fracHtml += `<div style="font-size:8px;color:rgba(255,255,255,0.3);margin-bottom:4px;">${_ti('pickerFracRootDesc')}</div>`;
         // Root fracture buttons
         fracHtml += '<div style="display:flex;gap:3px;margin-bottom:4px;flex-wrap:wrap;">';
         for (const fs of FRACTURE_STATES) {
             const active = (curFracState?.key || 'none') === fs.key;
             const bg = active && fs.key !== 'none' ? `background:${fs.color};color:#fff;` : '';
-            fracHtml += `<div class="tp-roots-variant-btn${active?' active':''}" style="padding:2px 6px;font-size:9px;min-width:28px;text-align:center;${bg}" title="${fracTips[fs.key] || ''}" onclick="_ctxCycleFractureToState('${fileId}','${fdi}','${fs.key}')">${fs.label}</div>`;
+            fracHtml += `<div class="tp-roots-variant-btn${active?' active':''}" style="padding:2px 6px;font-size:9px;min-width:28px;text-align:center;${bg}" title="${_fracRootTip(fs.key)}" onclick="_ctxCycleFractureToState('${fileId}','${fdi}','${fs.key}')">${fs.label}</div>`;
         }
         fracHtml += '</div>';
         if (curFracState && curFracState.key !== 'none') {
-            fracHtml += `<div style="font-size:8px;color:rgba(255,255,255,0.5);line-height:1.3;margin-bottom:2px;padding:3px 6px;background:rgba(220,38,38,0.08);border-radius:3px;">⚡ ${curFracState.nameRU}</div>`;
+            fracHtml += `<div style="font-size:8px;color:rgba(255,255,255,0.5);line-height:1.3;margin-bottom:2px;padding:3px 6px;background:rgba(220,38,38,0.08);border-radius:3px;">⚡ ${_stateName(curFracState)}</div>`;
             if (curFracState.desc) fracHtml += `<div style="font-size:8px;color:rgba(255,255,255,0.35);line-height:1.3;margin-bottom:2px;padding:0 6px;">${curFracState.desc}</div>`;
             if (curFracState.ref) fracHtml += `<div style="font-size:7px;color:rgba(255,255,255,0.2);padding:0 6px;margin-bottom:4px;">📖 ${curFracState.ref}</div>`;
         }
         // Crown fracture buttons
-        fracHtml += '<div style="font-size:8px;color:rgba(255,255,255,0.3);margin-bottom:2px;margin-top:4px;">Коронка — раскол или трещина (если видно на OPG):</div>';
+        fracHtml += `<div style="font-size:8px;color:rgba(255,255,255,0.3);margin-bottom:2px;margin-top:4px;">${_ti('pickerFracCrownDesc')}</div>`;
         fracHtml += '<div style="display:flex;gap:3px;margin-bottom:4px;">';
-        const cfTips = {
-            none: 'Нет перелома коронки',
-            split: 'Раскол зуба — полное разделение на два фрагмента через пульповую камеру. На OPG видна щель.',
-            cracked: 'Подозрение на трещину — на OPG косвенные признаки: расш. PDL, нарушение lamina dura с одной стороны.'
-        };
         for (const cs of CROWN_FRACTURE_STATES) {
             const active = (cfState?.key || 'none') === cs.key;
             const bg = active && cs.key !== 'none' ? `background:${cs.color};color:#fff;` : '';
-            fracHtml += `<div class="tp-roots-variant-btn${active?' active':''}" style="padding:2px 6px;font-size:9px;${bg}" title="${cfTips[cs.key] || ''}" onclick="_ctxCycleCrownFractureToState('${fileId}','${fdi}','${cs.key}')">${cs.key === 'none' ? '—' : cs.nameRU}</div>`;
+            fracHtml += `<div class="tp-roots-variant-btn${active?' active':''}" style="padding:2px 6px;font-size:9px;${bg}" title="${_fracCrownTip(cs.key)}" onclick="_ctxCycleCrownFractureToState('${fileId}','${fdi}','${cs.key}')">${_fracCrownLabel(cs.key)}</div>`;
         }
         fracHtml += '</div>';
         if (cfState && cfState.key !== 'none' && cfState.desc) {
@@ -2728,11 +2739,19 @@ function _updateToothDetailPanel(fileId, fdi) {
     const btnsDiv = document.getElementById('td-pathology-btns-' + fileId);
     if (!btnsDiv) return;
 
+    // Locale-aware helpers shared by every section.
+    const _ti = (k, p) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k, p) : k;
+    const _stateN = (s, fb) => {
+        if (!s) return fb || '—';
+        const lang = (typeof OrisI18n !== 'undefined') ? OrisI18n.getLang() : 'ru';
+        return (lang === 'en' && s.nameEN) || s.nameRU || s.label || fb || '—';
+    };
+
     let html = '';
 
-    // ── КАНАЛЫ section (only if endo) ──
+    // ── КАНАЛЫ / CANALS section (only if endo) ──
     if (hasEndo) {
-        html += '<div class="td-section-header">КАНАЛЫ</div>';
+        html += '<div class="td-section-header">' + _ti('tdSecCanals') + '</div>';
         if (variantObj) {
             const names = CANAL_NAMES[typeId] || [];
             variantObj.roots.forEach((root, ri) => {
@@ -2753,27 +2772,28 @@ function _updateToothDetailPanel(fileId, fdi) {
         }
     }
 
-    // ── ПЕРИАПИКАЛЬНО section ──
-    html += '<div class="td-section-header">ПЕРИАПИКАЛЬНО</div>';
+    // ── ПЕРИАПИКАЛЬНО / PERIAPICAL section ──
+    html += '<div class="td-section-header">' + _ti('tdSecPeriapical') + '</div>';
     const pa0 = rd.periapical?.[0];
     const paState = pa0 ? PERIAPICAL_STATES.find(s => s.key === _periapKey(pa0.type)) : PERIAPICAL_STATES[0];
     html += '<button class="td-btn' + (pa0 ? ' active' : '') + '" style="' + (pa0 ? 'border-left-color:' + (paState?.color || 'var(--red)') : '') + '" ' +
         'title="Клик: следующая стадия периапикального поражения (PAI 1→5 по Ørstavik). Кликайте на кружки у апексов корней в превью SVG." ' +
         'onclick="_ctxCyclePeriapical(\'' + fileId + '\',\'' + fdi + '\');_updateToothDetailPanel(\'' + fileId + '\',\'' + fdi + '\')">' +
-        (paState?.nameRU || 'Норма') + '</button>';
+        _stateN(paState) + '</button>';
     if (pa0 && paState?.desc) {
         html += `<div style="font-size:8px;color:var(--text-dim);padding:2px 8px;line-height:1.4;margin-bottom:2px;">${paState.desc}</div>`;
     }
 
-    // ── ПАРОДОНТ section ──
-    html += '<div class="td-section-header">ПАРОДОНТ</div>';
+    // ── ПАРОДОНТ / PERIODONTAL section ──
+    const _isEN = () => (typeof OrisI18n !== 'undefined') && OrisI18n.getLang() === 'en';
+    html += '<div class="td-section-header">' + _ti('tdSecPerio') + '</div>';
     if (nRoots > 1) {
         const furc0 = rd.furcation?.[0];
         const fState = furc0 ? FURCATION_STATES[furc0.grade] : FURCATION_STATES[0];
         html += '<button class="td-btn' + (furc0 ? ' active' : '') + '" style="' + (furc0 ? 'border-left-color:' + fState.color : '') + '" ' +
             'title="Клик: следующая степень поражения фуркации (Glickman I→IV). Кликайте между корнями в превью SVG." ' +
             'onclick="_ctxCycleFurcation(\'' + fileId + '\',\'' + fdi + '\');_updateToothDetailPanel(\'' + fileId + '\',\'' + fdi + '\')">' +
-            'Фуркация: ' + fState.nameRU + '</button>';
+            (_isEN() ? 'Furcation: ' : 'Фуркация: ') + _stateN(fState) + '</button>';
     }
 
     // Lateral defects per side
@@ -2781,12 +2801,14 @@ function _updateToothDetailPanel(fileId, fdi) {
         const key = '0_' + side;
         const ld = rd.lateral?.[key];
         const ls = ld ? LATERAL_STATES.find(s => s.key === ld.type) : LATERAL_STATES[0];
-        const label = side === 'm' ? 'Лат. мез.' : 'Лат. дист.';
+        const label = side === 'm'
+            ? (_isEN() ? 'Lat. mesial' : 'Лат. мез.')
+            : (_isEN() ? 'Lat. distal' : 'Лат. дист.');
         const isActive = ld?.type && ld.type !== 'none';
         html += '<button class="td-btn' + (isActive ? ' active' : '') + '" style="' + (isActive ? 'border-left-color:' + ls.color : '') + '" ' +
             'title="Клик: тип костного дефекта (вертикальный/горизонтальный/кратер). Кликайте по бокам корня в превью SVG." ' +
             'onclick="_ctxCycleLateral(\'' + fileId + '\',\'' + fdi + '\',\'0\',\'' + side + '\');_updateToothDetailPanel(\'' + fileId + '\',\'' + fdi + '\')">' +
-            label + ': ' + (ls?.nameRU || '\u2014') + '</button>';
+            label + ': ' + (ls ? ((typeof OrisI18n!=='undefined' && OrisI18n.getLang()==='en' && ls.nameEN) ? ls.nameEN : (ls.nameRU || '\u2014')) : '\u2014') + '</button>';
     }
 
     // Endo-perio
@@ -2796,7 +2818,7 @@ function _updateToothDetailPanel(fileId, fdi) {
     html += '<button class="td-btn' + (epActive ? ' active' : '') + '" style="' + (epActive ? 'border-left-color:' + eps.color : '') + '" ' +
         'title="Клик: тип эндо-перио поражения (J-образное/Halo/Комбинированное). Видны как разрежение от апекса к шейке." ' +
         'onclick="_ctxCycleEndoPerio(\'' + fileId + '\',\'' + fdi + '\');_updateToothDetailPanel(\'' + fileId + '\',\'' + fdi + '\')">' +
-        'Эндо-перио: ' + (eps?.nameRU || '\u2014') + '</button>';
+        (_isEN() ? 'Endo-perio: ' : 'Эндо-перио: ') + _stateN(eps) + '</button>';
     // Hint for endo-perio
     if (epActive) {
         const epHints = {
@@ -2808,23 +2830,23 @@ function _updateToothDetailPanel(fileId, fdi) {
     }
 
     // ── СТИРАЕМОСТЬ section ──
-    html += '<div class="td-section-header">СТИРАЕМОСТЬ</div>';
+    html += '<div class="td-section-header">' + _ti('tdSecWear') + '</div>';
     const twiVal = rd.wear?.twi || 0;
     const tw = TWI_STATES[twiVal];
     html += '<button class="td-btn' + (twiVal > 0 ? ' active' : '') + '" style="' + (twiVal > 0 ? 'border-left-color:' + tw.color : '') + '" ' +
         'title="Клик: следующая степень стираемости (TWI 0→4). Индекс износа по Lussi 2017."' +
         'onclick="_ctxCycleTWI(\'' + fileId + '\',\'' + fdi + '\');_updateToothDetailPanel(\'' + fileId + '\',\'' + fdi + '\')">' +
-        'TWI ' + twiVal + ': ' + tw.nameRU + '</button>';
+        'TWI ' + twiVal + ': ' + _stateN(tw) + '</button>';
 
     // ── ПЕРЕЛОМЫ section ──
-    html += '<div class="td-section-header">ПЕРЕЛОМЫ</div>';
+    html += '<div class="td-section-header">' + _ti('tdSecFractures') + '</div>';
     const frac0 = rd.fracture?.[0];
     const fracState = frac0 ? FRACTURE_STATES.find(s => s.key === frac0.type) : FRACTURE_STATES[0];
     const fracActive = frac0?.type && frac0.type !== 'none';
     html += '<button class="td-btn' + (fracActive ? ' active' : '') + '" style="' + (fracActive ? 'border-left-color:' + (fracState?.color || 'var(--red)') : '') + '" ' +
         'title="Клик: циклировать тип перелома корня (— → VRF → H⅓↑ → H⅓M → H⅓A → —). Классификация AAE + Andreasen." ' +
         'onclick="_ctxCycleFracture(\'' + fileId + '\',\'' + fdi + '\');_updateToothDetailPanel(\'' + fileId + '\',\'' + fdi + '\')">' +
-        'Корень: ' + (fracState?.nameRU || 'Нет перелома') + '</button>';
+        (_isEN() ? 'Root: ' : 'Корень: ') + _stateN(fracState, _isEN() ? 'No fracture' : 'Нет перелома') + '</button>';
     if (fracActive && fracState?.desc) {
         html += `<div style="font-size:8px;color:var(--text-dim);padding:2px 8px;line-height:1.4;margin-bottom:2px;">${fracState.desc}</div>`;
         if (fracState.ref) html += `<div style="font-size:7px;color:rgba(255,255,255,0.25);padding:0 8px;margin-bottom:4px;">📖 ${fracState.ref}</div>`;
@@ -2834,7 +2856,7 @@ function _updateToothDetailPanel(fileId, fdi) {
     html += '<button class="td-btn' + (cfActive ? ' active' : '') + '" style="' + (cfActive ? 'border-left-color:' + (cfState2?.color || 'var(--orange)') : '') + '" ' +
         'title="Клик: циклировать перелом коронки (— → Раскол → Трещина → —). Видно на OPG: щель между фрагментами (split) или расш. PDL (cracked)." ' +
         'onclick="_ctxCycleCrownFracture(\'' + fileId + '\',\'' + fdi + '\');_updateToothDetailPanel(\'' + fileId + '\',\'' + fdi + '\')">' +
-        'Коронка: ' + (cfState2?.nameRU || 'Нет') + '</button>';
+        (_isEN() ? 'Crown: ' : 'Коронка: ') + _stateN(cfState2, _isEN() ? 'None' : 'Нет') + '</button>';
     if (cfActive && cfState2?.desc) {
         html += `<div style="font-size:8px;color:var(--text-dim);padding:2px 8px;line-height:1.4;margin-bottom:2px;">${cfState2.desc}</div>`;
     }
@@ -2847,13 +2869,16 @@ function _updatePeriapLabel(fileId, fdi) {
     if (!label) return;
     const rd = (arenaRootData[fileId] || {})[fdi] || {};
     const pa = (rd.periapical || {})[0];
+    const lang = (typeof OrisI18n !== 'undefined') ? OrisI18n.getLang() : 'ru';
     if (!pa || pa.type === 'none') {
-        label.textContent = '\u25cf \u041d\u043e\u0440\u043c\u0430';
+        // Localized "\u25cf Norma / \u25cf Normal" via OrisI18n.paiState_norm.
+        label.textContent = (typeof OrisI18n !== 'undefined') ? OrisI18n.t('paiState_norm') : '\u25cf \u041d\u043e\u0440\u043c\u0430';
         label.style.color = 'var(--text-dim)';
     } else {
         const pS = PERIAPICAL_STATES.find(s => s.key === _periapKey(pa.type));
         if (pS) {
-            label.textContent = '\u25cf ' + pS.nameRU;
+            const stateLabel = (lang === 'en' && pS.nameEN) ? pS.nameEN : (pS.nameRU || pS.label || '');
+            label.textContent = '\u25cf ' + stateLabel;
             label.style.color = pS.color;
         }
     }
