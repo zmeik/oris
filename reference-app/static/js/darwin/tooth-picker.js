@@ -179,34 +179,28 @@ function renderArenaFormulaRow(type, label, sublabel, formula, groundTruth, file
     </div>`;
 }
 
+// Bilingual dental abbreviation lookup. Pulls the localised 1-3 char
+// status code from OrisI18n (iconAbbr_<status>). Falls back through
+// the Russian convention table (kept intact for offline / pre-i18n
+// callers) and finally to '' so empty layers render blank instead of
+// leaking the raw status string into the SVG.
+const _RU_FALLBACK_ICON = {
+    present: '·', missing: 'О',
+    implant: 'И', impl_fixture: 'И', impl_cover: 'ИЗ', impl_healing: 'ИФ',
+    impl_abutment: 'И', impl_temp_abut: 'И', impl_provisional: 'И',
+    impl_restored: 'ИК',
+    crowned: 'К', restored: 'П', caries: 'С', endo: 'Э', post: 'Ш',
+    attrition: 'Ст', root: 'R', impacted: 'Rt',
+    bridge: 'М', bridge_pontic: 'М', bar: 'Б', cantilever: 'Кн',
+    uncertain: '?',
+    natural: '·', crown: 'К', filling: 'П',
+};
 function arenaStatusIcon(s) {
-    // Русская стоматологическая конвенция + OPG-специфика
-    if (s === 'present')       return '·';   // интактный зуб
-    if (s === 'missing')       return 'О';   // отсутствует
-    if (s === 'implant' || s === 'impl_fixture') return 'И';
-    if (s === 'impl_cover')    return 'ИЗ';  // фикстура + заглушка
-    if (s === 'impl_healing')  return 'ИФ';  // + формирователь десны
-    if (s === 'impl_abutment') return 'И';   // + абатмент
-    if (s === 'impl_temp_abut') return 'И';  // + временный абатмент
-    if (s === 'impl_provisional') return 'И'; // + провизорная коронка
-    if (s === 'impl_restored') return 'ИК';  // + постоянная коронка
-    if (s === 'crowned')       return 'К';   // коронка
-    if (s === 'restored')      return 'П';   // пломба/вкладка
-    if (s === 'caries')        return 'С';   // кариес
-    if (s === 'endo')          return 'Э';   // эндо (каналы запломбированы)
-    if (s === 'post')          return 'Ш';   // штифт
-    if (s === 'attrition')     return 'Ст';  // стираемость
-    if (s === 'root')          return 'R';   // корень
-    if (s === 'impacted')      return 'Rt';  // ретинированный
-    if (s === 'bridge' || s === 'bridge_pontic') return 'М'; // мост промежуточная часть
-    if (s === 'bar')           return 'Б';   // балка
-    if (s === 'cantilever')    return 'Кн';  // консоль
-    if (s === 'uncertain')     return '?';
-    // Legacy fallback
-    if (s === 'natural')       return '·';
-    if (s === 'crown')         return 'К';
-    if (s === 'filling')       return 'П';
-    return '';
+    if (typeof OrisI18n !== 'undefined') {
+        const v = OrisI18n.t('iconAbbr_' + s);
+        if (v && v !== 'iconAbbr_' + s) return v;
+    }
+    return _RU_FALLBACK_ICON[s] || '';
 }
 
 // ── Tooth Status Picker — categorised menu ──
@@ -727,17 +721,13 @@ function layersAbbreviation(layers) {
         for (const l of impl) { if ((_IR[l.status]||0) > (_IR[best.status]||0)) best = l; }
         deduped = layers.filter(l => _IR[l.status] === undefined || l === best);
     }
-    // Composite: Э+Ш+К etc.
-    const LAYER_ABBR = {
-        endo: 'Э', post: 'Ш', crowned: 'К', restored: 'П', caries: 'С',
-        present: '·', missing: 'О', implant: 'И', impl_fixture: 'И',
-        impl_cover: 'ИЗ', impl_healing: 'ИФ', impl_abutment: 'И',
-        impl_temp_abut: 'И', impl_provisional: 'И',
-        impl_restored: 'ИК', attrition: 'Ст', root: 'R', bridge: 'М', bar: 'Б',
-        impacted: 'Rt', cantilever: 'Кн', uncertain: '?'
-    };
+    // Composite: per-layer 1-3 char code via arenaStatusIcon (which
+    // pulls from OrisI18n iconAbbr_<status>) so the cell text re-renders
+    // bilingually. Surface markers (m/d/o/v/l) use uppercase Latin —
+    // identical letters in EN and the RU SURFACE_NAMES.short, so
+    // joining them is language-neutral.
     return deduped.map(l => {
-        let a = LAYER_ABBR[l.status] || l.status[0]?.toUpperCase() || '?';
+        let a = arenaStatusIcon(l.status) || l.status[0]?.toUpperCase() || '?';
         if (l.surfaces) a += l.surfaces.toUpperCase();
         return a;
     }).join('');

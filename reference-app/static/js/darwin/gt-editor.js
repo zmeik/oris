@@ -373,6 +373,23 @@ if (typeof OrisI18n !== 'undefined') {
             const fid = parseInt(b.dataset.file, 10);
             if (fid && !_gtLastSavedAt[fid]) _renderSaveBanner(fid);
         });
+        // Re-paint per-cell .cell-abbr text on the GT row of every loaded
+        // file_id so status icons (К/П/С/И/IC/F/Ca/...) flip too.
+        // _refreshArenaGTRow walks all 32 cells of one row and rebuilds
+        // their innerHTML via _rebuildCell* → arenaStatusIcon →
+        // OrisI18n.t('iconAbbr_<status>'). The algorithm rows below GT
+        // are static once rendered; a full loadArena() reload re-paints
+        // them so legend + algo cells stay consistent.
+        document.querySelectorAll('.arena-case[id^="arena-case-"]').forEach(c => {
+            const fid = parseInt(c.id.replace('arena-case-', ''), 10);
+            if (fid && typeof _refreshArenaGTRow === 'function') _refreshArenaGTRow(fid);
+        });
+        if (typeof loadArena === 'function') {
+            // Defer to next tick so the static i18n applier runs first
+            // (legend + filter buttons get translated before the heavy
+            // re-fetch hits the DOM).
+            setTimeout(() => { try { loadArena(); } catch (e) { console.warn(e); } }, 50);
+        }
     });
 }
 

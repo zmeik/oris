@@ -283,6 +283,62 @@
       clickAlgoToSeeDetails:'Кликните по названию алгоритма, чтобы увидеть детали',
       clickToothToSeeDetails:'Кликните по ячейке зуба, чтобы увидеть детали',
 
+      // ─────────────────────────────────────────────────────────
+      // Dental status abbreviations — single / 2-char codes painted
+      // on the tooth cells of the dental formula, in the per-cell
+      // .cell-abbr SVG label, and in the formula legend dots.
+      // RU side preserves the canonical Russian dental school
+      // shorthand (К/П/С/Э/Ш/И/Кн/Ст/Rt) used in the source data.
+      // EN side follows established dental-software charting
+      // conventions (Dentrix, Open Dental, Curve, ANSI/ADA D-codes
+      // shorthand) where: C=Crown, F=Filling, Ca=Caries, E=Endo,
+      // P=Post-and-core, I=Implant, M=Missing, Br=Bridge pontic,
+      // Ba=Bar, Cn=Cantilever, W=Wear, R=Root remnant, Im=Impacted.
+      // Combos (e.g. ИК→IC, ЭПК→EFC, ПСК→FCaC) compose by
+      // concatenating per-layer codes via layersAbbreviation().
+      // ─────────────────────────────────────────────────────────
+      iconAbbr_present:        '·',
+      iconAbbr_missing:        'О',
+      iconAbbr_implant:        'И',
+      iconAbbr_impl_fixture:   'И',
+      iconAbbr_impl_cover:     'ИЗ',
+      iconAbbr_impl_healing:   'ИФ',
+      iconAbbr_impl_abutment:  'И',
+      iconAbbr_impl_temp_abut: 'И',
+      iconAbbr_impl_provisional:'И',
+      iconAbbr_impl_restored:  'ИК',
+      iconAbbr_crowned:        'К',
+      iconAbbr_restored:       'П',
+      iconAbbr_caries:         'С',
+      iconAbbr_endo:           'Э',
+      iconAbbr_post:           'Ш',
+      iconAbbr_attrition:      'Ст',
+      iconAbbr_root:           'R',
+      iconAbbr_impacted:       'Rt',
+      iconAbbr_bridge:         'М',
+      iconAbbr_bridge_pontic:  'М',
+      iconAbbr_bar:            'Б',
+      iconAbbr_cantilever:     'Кн',
+      iconAbbr_uncertain:      '?',
+      iconAbbr_natural:        '·',
+      iconAbbr_crown:          'К',
+      iconAbbr_filling:        'П',
+      // Legend column 2: short Russian/English label after the dot.
+      legAbbr_present:         'Инт.',
+      legAbbr_missing:         'Нет',
+      legAbbr_impl_fixture:    'Фикс.',
+      legAbbr_impl_cover:      '+ Загл.',
+      legAbbr_impl_healing:    '+ Форм.',
+      legAbbr_impl_restored:   '+ Кор.',
+      legAbbr_crowned:         'Кор.',
+      legAbbr_restored:        'Пл.',
+      legAbbr_caries:          'Кар.',
+      legAbbr_endo:            'Эн.',
+      legAbbr_root:            'Кор.',
+      legAbbr_bridge:          'Мост',
+      legAbbr_cantilever:      'Конс.',
+      legAbbr_error:           'Ошибка',
+
       // ── Tooth picker title + status descriptions (full sentence
       // shown as button tooltip and in the rich tooltip layer list) ──
       pickerTitleTooth:     'Зуб {fdi}',
@@ -612,6 +668,78 @@
       // ── Algo row hint ──
       clickAlgoToSeeDetails:'Click an algorithm name to see details',
       clickToothToSeeDetails:'Click a tooth cell to see details',
+
+      // ─────────────────────────────────────────────────────────
+      // Dental status abbreviations — paired EN translations of the
+      // RU shorthand. Convention chosen for unambiguous chartability
+      // even when several layers stack on a single cell:
+      //   present     · (universal intact dot)
+      //   missing     M  (M for "missing" — universal in EN charting)
+      //   implant     I  (I = implant; +stage suffix for compounds)
+      //   impl_cover  ICs  ( I + Cs cover screw )
+      //   impl_healing IH  ( I + H healing abutment )
+      //   impl_abutment IA ( I + A abutment )
+      //   impl_temp_abut IT ( I + T temporary )
+      //   impl_provisional IP ( I + P provisional crown )
+      //   impl_restored IC ( I + C crown — most common implant outcome )
+      //   crowned    C  (C = Crown; same convention as Dentrix /
+      //                   Open Dental / Curve charting)
+      //   restored   F  (F = Filling)
+      //   caries     Ca (Ca, not C, to avoid clash with Crown)
+      //   endo       E  (E = endodontic treatment, RCT)
+      //   post       P  (P = post-and-core; pontic uses Br instead)
+      //   attrition  W  (W = wear)
+      //   root       R  (R = root remnant — universal)
+      //   impacted   Im (Im = impacted; "Rt" RU does not translate cleanly)
+      //   bridge     Br (Br = bridge body / pontic)
+      //   bar        Ba (Ba = bar — between implants)
+      //   cantilever Cn (Cn = cantilever)
+      //   uncertain  ?  (universal)
+      // Layered combos auto-derive by concatenation:
+      //   ИК → IC, ИЗ → ICs, ИФ → IH, ЭПК → EFC, ПСК → FCaC,
+      //   ПСЭ → FCaE, ПШЭ → FPE, ЭКШ → ECP.
+      // ─────────────────────────────────────────────────────────
+      iconAbbr_present:        '·',
+      iconAbbr_missing:        'M',
+      iconAbbr_implant:        'I',
+      iconAbbr_impl_fixture:   'I',
+      iconAbbr_impl_cover:     'ICs',
+      iconAbbr_impl_healing:   'IH',
+      iconAbbr_impl_abutment:  'IA',
+      iconAbbr_impl_temp_abut: 'IT',
+      iconAbbr_impl_provisional:'IP',
+      iconAbbr_impl_restored:  'IC',
+      iconAbbr_crowned:        'C',
+      iconAbbr_restored:       'F',
+      iconAbbr_caries:         'Ca',
+      iconAbbr_endo:           'E',
+      iconAbbr_post:           'P',
+      iconAbbr_attrition:      'W',
+      iconAbbr_root:           'R',
+      iconAbbr_impacted:       'Im',
+      iconAbbr_bridge:         'Br',
+      iconAbbr_bridge_pontic:  'Br',
+      iconAbbr_bar:            'Ba',
+      iconAbbr_cantilever:     'Cn',
+      iconAbbr_uncertain:      '?',
+      iconAbbr_natural:        '·',
+      iconAbbr_crown:          'C',
+      iconAbbr_filling:        'F',
+      // Legend column 2: short EN label after the dot.
+      legAbbr_present:         'Intact',
+      legAbbr_missing:         'Missing',
+      legAbbr_impl_fixture:    'Fixture',
+      legAbbr_impl_cover:      '+ Cover',
+      legAbbr_impl_healing:    '+ Healing',
+      legAbbr_impl_restored:   '+ Crown',
+      legAbbr_crowned:         'Crown',
+      legAbbr_restored:        'Filling',
+      legAbbr_caries:          'Caries',
+      legAbbr_endo:            'Endo',
+      legAbbr_root:            'Root',
+      legAbbr_bridge:          'Bridge',
+      legAbbr_cantilever:      'Cantil.',
+      legAbbr_error:           'Mismatch',
 
       pickerTitleTooth:     'Tooth {fdi}',
       pickerAddLayer:       '+ layer',

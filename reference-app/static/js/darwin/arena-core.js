@@ -535,20 +535,20 @@ async function loadArena() {
                             <button class="opg-filter-btn" data-i18n="filterExpert" data-i18n-title="filterExpertTitle" onclick="_toggleExpertOverlay(${tc.file_id},this)" title="${_tt('filterExpertTitle')}">${_tt('filterExpert')}</button>
                         </div>
                         <div class="arena-legend">
-                            <div class="leg-item"><div class="leg-dot" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1)">·</div>Инт.</div>
-                            <div class="leg-item"><div class="leg-dot" style="background:rgba(75,85,99,0.3)">О</div>Нет</div>
-                            <div class="leg-item"><div class="leg-dot" style="background:rgba(16,185,129,0.25)">И</div>Фикс.</div>
-                            <div class="leg-item"><div class="leg-dot" style="background:rgba(16,185,129,0.3)">ИЗ</div>+Загл.</div>
-                            <div class="leg-item"><div class="leg-dot" style="background:rgba(16,185,129,0.4)">ИФ</div>+Форм.</div>
-                            <div class="leg-item"><div class="leg-dot" style="background:rgba(16,185,129,0.5)">ИК</div>+Кор.</div>
-                            <div class="leg-item"><div class="leg-dot" style="background:rgba(245,158,11,0.4)">К</div>Кор.</div>
-                            <div class="leg-item"><div class="leg-dot" style="background:rgba(59,130,246,0.3)">П</div>Пл.</div>
-                            <div class="leg-item"><div class="leg-dot" style="background:rgba(251,146,60,0.4)">С</div>Кар.</div>
-                            <div class="leg-item"><div class="leg-dot" style="background:rgba(168,85,247,0.4)">Э</div>Эн.</div>
-                            <div class="leg-item"><div class="leg-dot" style="background:rgba(239,68,68,0.3)">R</div>Кор.</div>
-                            <div class="leg-item"><div class="leg-dot" style="background:rgba(34,211,238,0.35)">М</div>Мост</div>
-                            <div class="leg-item"><div class="leg-dot" style="background:rgba(34,211,238,0.45)">Кн</div>Конс.</div>
-                            <div class="leg-item"><div class="leg-dot" style="box-shadow:inset 0 0 0 1.5px var(--red)"></div>Ошибка</div>
+                            <div class="leg-item"><div class="leg-dot" data-i18n="iconAbbr_present" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1)">${_tt('iconAbbr_present')}</div><span data-i18n="legAbbr_present">${_tt('legAbbr_present')}</span></div>
+                            <div class="leg-item"><div class="leg-dot" data-i18n="iconAbbr_missing" style="background:rgba(75,85,99,0.3)">${_tt('iconAbbr_missing')}</div><span data-i18n="legAbbr_missing">${_tt('legAbbr_missing')}</span></div>
+                            <div class="leg-item"><div class="leg-dot" data-i18n="iconAbbr_impl_fixture" style="background:rgba(16,185,129,0.25)">${_tt('iconAbbr_impl_fixture')}</div><span data-i18n="legAbbr_impl_fixture">${_tt('legAbbr_impl_fixture')}</span></div>
+                            <div class="leg-item"><div class="leg-dot" data-i18n="iconAbbr_impl_cover" style="background:rgba(16,185,129,0.3)">${_tt('iconAbbr_impl_cover')}</div><span data-i18n="legAbbr_impl_cover">${_tt('legAbbr_impl_cover')}</span></div>
+                            <div class="leg-item"><div class="leg-dot" data-i18n="iconAbbr_impl_healing" style="background:rgba(16,185,129,0.4)">${_tt('iconAbbr_impl_healing')}</div><span data-i18n="legAbbr_impl_healing">${_tt('legAbbr_impl_healing')}</span></div>
+                            <div class="leg-item"><div class="leg-dot" data-i18n="iconAbbr_impl_restored" style="background:rgba(16,185,129,0.5)">${_tt('iconAbbr_impl_restored')}</div><span data-i18n="legAbbr_impl_restored">${_tt('legAbbr_impl_restored')}</span></div>
+                            <div class="leg-item"><div class="leg-dot" data-i18n="iconAbbr_crowned" style="background:rgba(245,158,11,0.4)">${_tt('iconAbbr_crowned')}</div><span data-i18n="legAbbr_crowned">${_tt('legAbbr_crowned')}</span></div>
+                            <div class="leg-item"><div class="leg-dot" data-i18n="iconAbbr_restored" style="background:rgba(59,130,246,0.3)">${_tt('iconAbbr_restored')}</div><span data-i18n="legAbbr_restored">${_tt('legAbbr_restored')}</span></div>
+                            <div class="leg-item"><div class="leg-dot" data-i18n="iconAbbr_caries" style="background:rgba(251,146,60,0.4)">${_tt('iconAbbr_caries')}</div><span data-i18n="legAbbr_caries">${_tt('legAbbr_caries')}</span></div>
+                            <div class="leg-item"><div class="leg-dot" data-i18n="iconAbbr_endo" style="background:rgba(168,85,247,0.4)">${_tt('iconAbbr_endo')}</div><span data-i18n="legAbbr_endo">${_tt('legAbbr_endo')}</span></div>
+                            <div class="leg-item"><div class="leg-dot" data-i18n="iconAbbr_root" style="background:rgba(239,68,68,0.3)">${_tt('iconAbbr_root')}</div><span data-i18n="legAbbr_root">${_tt('legAbbr_root')}</span></div>
+                            <div class="leg-item"><div class="leg-dot" data-i18n="iconAbbr_bridge" style="background:rgba(34,211,238,0.35)">${_tt('iconAbbr_bridge')}</div><span data-i18n="legAbbr_bridge">${_tt('legAbbr_bridge')}</span></div>
+                            <div class="leg-item"><div class="leg-dot" data-i18n="iconAbbr_cantilever" style="background:rgba(34,211,238,0.45)">${_tt('iconAbbr_cantilever')}</div><span data-i18n="legAbbr_cantilever">${_tt('legAbbr_cantilever')}</span></div>
+                            <div class="leg-item"><div class="leg-dot" style="box-shadow:inset 0 0 0 1.5px var(--red)"></div><span data-i18n="legAbbr_error">${_tt('legAbbr_error')}</span></div>
                         </div>
                         <div class="gt-text-formula" id="gt-text-formula-${tc.file_id}"
                              style="font-family:'SF Mono',Monaco,Consolas,monospace;font-size:11px;color:#94a3b8;
