@@ -1168,7 +1168,7 @@ init();
   if (anatomyBtn) {
     anatomyBtn.addEventListener('click', () => {
       const id = (typeof window.ARENA_FILE_ID === 'number') ? window.ARENA_FILE_ID : 1001;
-      window.location.href = `/play/anatomy/${id}`;
+      window.location.href = `${window.__ORIS_BASE||''}/play/anatomy/${id}/`;
     });
   }
 

@@ -184,10 +184,34 @@ def wait_for_server() -> None:
 
 def rewrite_html(html: str) -> str:
     """Inject fetch shim and prefix absolute URLs."""
-    # Static asset paths
+    # (1) Static asset paths — these are loaded by the browser before the
+    # fetch shim runs, so they must be baked at build time.
     html = html.replace('src="/static/', f'src="{PAGES_PREFIX}/static/')
     html = html.replace('href="/static/', f'href="{PAGES_PREFIX}/static/')
-    # Inject shim as first child of <head>
+
+    # (2) Cross-page navigation. The Flask routes /play and
+    # /play/anatomy/<id> are absolute URLs in the source HTML/JS:
+    #   - anatomy_editor.html  : <a href="/play" class="tb-btn back">
+    #   - darwin_lab.html JS    : window.location.href = `/play/anatomy/${id}`
+    # On GitHub Pages those resolve to host-root, not the /oris subdir,
+    # and 404. Patch them to embed window.__ORIS_BASE (set by the shim).
+    html = html.replace(
+        'href="/play"',
+        'href="javascript:void(0)" onclick="window.location.href=(window.__ORIS_BASE||\'\')+\'/play/\'"',
+    )
+    html = html.replace(
+        "window.location.href = `/play/anatomy/${id}`",
+        "window.location.href = `${window.__ORIS_BASE||''}/play/anatomy/${id}/`",
+    )
+    # Anatomy editor: meta-refresh / canonical URLs containing /play/.
+    # Future-proof: any remaining `href="/play/` (with leading slash but
+    # no static-asset path) in static HTML.
+    # We don't blindly s|/play/|...| because /play/ also appears inside
+    # plain text in the disclaimer, which we leave alone.
+
+    # (3) Inject shim as first child of <head> so PATH_PREFIX is set
+    # before any other script — including the inline darwin_lab.html
+    # bootstrap that may read window.__ORIS_BASE.
     if "<head>" in html:
         html = html.replace("<head>", "<head>\n" + FETCH_SHIM, 1)
     return html
