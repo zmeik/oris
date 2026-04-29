@@ -16,8 +16,20 @@ const SURFACE_NAMES = {
 };
 const SURFACE_ORDER = ['m','o','d','v','l'];
 
-// Тултипы для всех статусов — используется в richTooltip и пикере
-const STATUS_TOOLTIPS = {
+// Status tooltips — read live from OrisI18n so they re-translate on
+// every picker render. The legacy STATUS_TOOLTIPS object is kept as a
+// fallback (a few callers index it directly with bracket notation; they
+// fall back through the chain RU → EN → empty).
+function statusTooltip(status) {
+    const key = (status === '') ? 'tipStatus__empty' : 'tipStatus_' + status;
+    if (typeof OrisI18n !== 'undefined') {
+        const v = OrisI18n.t(key);
+        if (v && v !== key) return v;
+    }
+    return STATUS_TOOLTIPS[status] || status;
+}
+// Proxy keeps the historical `STATUS_TOOLTIPS[status]` syntax working.
+const STATUS_TOOLTIPS = new Proxy({
     'present':    'Интактный зуб без патологии и лечения [1]',
     'missing':    'Зуб отсутствует (удалён / не прорезался) [0]',
     'impacted':   'Ретинированный зуб (не прорезавшийся, виден в кости) [8]',
@@ -42,26 +54,36 @@ const STATUS_TOOLTIPS = {
     'cantilever': 'Консоль — часть протеза, нависающая за последнюю опору [u]',
     'uncertain':  'Не ясно — не удаётся определить статус на снимке [9]',
     '':           'Сброс — очистить статус зуба [Backspace]',
-};
+}, {
+    get(target, key) {
+        if (typeof OrisI18n !== 'undefined') {
+            const k = (key === '') ? 'tipStatus__empty' : 'tipStatus_' + key;
+            const v = OrisI18n.t(k);
+            if (v && v !== k) return v;
+        }
+        return target[key];
+    }
+});
 
 // Rich tooltip — shows all layers, surfaces, notes, bridges
 function richTooltip(fdi, rawStatus, fileId) {
+    const _t = (k, p) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k, p) : k;
     const layers = parseToothLayers(rawStatus);
-    let lines = [`Зуб ${fdi}`];
+    let lines = [_t('pickerTitleTooth', {fdi})];
 
     if (layers.length === 0 || (layers.length === 1 && !layers[0].status)) {
-        lines.push('Статус: не задан');
+        lines.push(_t('pickerStatusNotSet'));
     } else if (layers.length === 1) {
         const l = layers[0];
         const name = STATUS_TOOLTIPS[l.status] || l.status;
-        lines.push(`Статус: ${name}`);
+        lines.push(_t('pickerStatusLine', {tip: name}));
         if (l.surfaces) {
             const surfNames = SURFACE_ORDER.filter(s => l.surfaces.includes(s))
                 .map(s => SURFACE_NAMES[s].full);
-            lines.push(`Поверхности: ${surfNames.join(', ')}`);
+            lines.push(_t('pickerSurfacesLine', {list: surfNames.join(', ')}));
         }
     } else {
-        lines.push('Слои:');
+        lines.push(_t('pickerLayersHeader'));
         layers.forEach((l, i) => {
             const name = STATUS_TOOLTIPS[l.status] || l.status;
             let surfStr = '';
@@ -83,13 +105,13 @@ function richTooltip(fdi, rawStatus, fileId) {
             if (a === fdi) linkedTo.push(b);
             if (b === fdi) linkedTo.push(a);
         }
-        if (linkedTo.length > 0) lines.push(`Мост: связан с ${linkedTo.join(', ')}`);
+        if (linkedTo.length > 0) lines.push(_t('pickerBridgeLinkedTo', {list: linkedTo.join(', ')}));
     }
 
     // Notes
     if (fileId) {
         const note = (arenaToothNotes[fileId] || {})[fdi];
-        if (note) lines.push(`Заметки: ${note}`);
+        if (note) lines.push(_t('pickerNotesLine', {note}));
     }
 
     // Root data
@@ -1102,5 +1124,5 @@ function surfaceTooltip(fdi, status, surfaces) {
         if (parts.length === 5) return `${fdi}: тотальный ${type}`;
         return `${fdi}: ${parts.join('-')} ${type}`;
     }
-    return `${fdi}: ${STATUS_TOOLTIPS[status] || status || 'не задано'}`;
+    return `${fdi}: ${STATUS_TOOLTIPS[status] || status || (typeof OrisI18n !== 'undefined' ? OrisI18n.t('pickerStatusNotSet').replace(/^Статус: |^Status: /, '') : 'не задано')}`;
 }

@@ -1173,7 +1173,7 @@ function _bridgeContextMenu(e, cellEl, fileId, fdi) {
     const menu = document.createElement('div');
     menu.className = 'note-ctx-menu';
     menu.innerHTML = `
-        <div style="font-size:10px;color:var(--text-dim);padding:2px 10px;margin-bottom:2px;font-weight:600">Зуб ${fdi}</div>
+        <div style="font-size:10px;color:var(--text-dim);padding:2px 10px;margin-bottom:2px;font-weight:600">${(typeof OrisI18n !== 'undefined') ? OrisI18n.t('pickerTitleTooth', {fdi}) : 'Зуб ' + fdi}</div>
         ${bridgeBtns ? `<div style="font-size:9px;color:var(--text-dim);padding:2px 10px;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px">Мост</div>${bridgeBtns}` : ''}
         <div style="font-size:9px;color:var(--text-dim);padding:2px 10px;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid var(--border);padding-top:6px">🦷 Патология корня</div>
         ${rootPathBtns}
@@ -1326,7 +1326,8 @@ function openToothPicker(fileId, fdi, cellEl, event) {
     const primary = layersPrimaryStatus(layers);
 
     // Show title with current layers info
-    let titleText = `Зуб ${fdi}`;
+    const _ttp = (k, p) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k, p) : k;
+    let titleText = _ttp('pickerTitleTooth', {fdi});
     if (layers.length > 1) {
         titleText += ` [${layersAbbreviation(layers)}]`;
     }
@@ -1346,7 +1347,7 @@ function openToothPicker(fileId, fdi, cellEl, event) {
         }).join('');
         layerInfoEl.innerHTML = `<div style="display:flex;gap:3px;align-items:center;flex-wrap:wrap;margin-bottom:4px">
             ${chips}
-            <button class="tp-add-layer-btn" onclick="_layerAddMode=true;_pickerEl.querySelector('.tp-title span').textContent='Зуб ${fdi} — добавить слой';_pickerEl.classList.add('layer-add-mode')" title="Добавить слой (Э+Ш+К)">＋слой</button>
+            <button class="tp-add-layer-btn" onclick="_layerAddMode=true;_pickerEl.querySelector('.tp-title span').textContent='${(typeof OrisI18n !== 'undefined') ? OrisI18n.t('pickerTitleTooth', {fdi}) : 'Зуб ' + fdi} — ' + ((typeof OrisI18n !== 'undefined') ? OrisI18n.t('pickerAddLayer') : '＋слой');_pickerEl.classList.add('layer-add-mode')" title="${(typeof OrisI18n !== 'undefined') ? OrisI18n.t('pickerAddLayerTitle') : 'Добавить слой (Э+Ш+К)'}">${(typeof OrisI18n !== 'undefined') ? OrisI18n.t('pickerAddLayer') : '＋слой'}</button>
         </div>`;
     } else {
         layerInfoEl.innerHTML = '';

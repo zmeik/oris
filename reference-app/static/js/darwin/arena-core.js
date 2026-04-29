@@ -425,11 +425,12 @@ async function loadArena() {
         // Create patient group wrapper (or single case wrapper)
         const groupDiv = document.createElement('div');
         if (isGroup) {
+            const _t = (k, p) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k, p) : k;
             groupDiv.className = 'arena-patient-group';
             groupDiv.innerHTML = `<div class="arena-patient-group-header">
                 <h2>${surname} ${firstName}</h2>
-                <span class="group-badge">${groupCases.length} снимков</span>
-                <a href="/patient/${patientId}/verify" target="_blank" style="color:#60a5fa;font-size:11px;text-decoration:none;margin-left:8px;padding:3px 10px;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.35);border-radius:4px;font-weight:500" title="Open patient card in new tab">📋 Card →</a>
+                <span class="group-badge" data-i18n="groupBadge" data-i18n-params='${JSON.stringify({n: groupCases.length})}'>${_t('groupBadge', {n: groupCases.length})}</span>
+                <a href="/patient/${patientId}/verify" target="_blank" style="color:#60a5fa;font-size:11px;text-decoration:none;margin-left:8px;padding:3px 10px;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.35);border-radius:4px;font-weight:500" title="${_t('cardOpenInTab')}">${_t('cardLink')}</a>
             </div>`;
         }
 
@@ -487,14 +488,16 @@ async function loadArena() {
                     return { file_id: c.file_id, filled: otherFilled };
                 }).filter(s => s.filled > 0);
                 if (snapOptions.length > 0) {
-                    gtCopyBtn = `<button class="gt-copy-btn" onclick="showGTCopyMenu(event, ${tc.file_id}, ${patientId})" title="Copy ground truth from another image of this patient">📋 Copy GT from…</button>`;
+                    const _t2 = (k) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k) : k;
+                    gtCopyBtn = `<button class="gt-copy-btn" onclick="showGTCopyMenu(event, ${tc.file_id}, ${patientId})" title="${_t2('copyGtTitle')}">${_t2('copyGtBtn')}</button>`;
                 }
             }
 
             // Title: full name for solo cases, snapshot index for groups
-            const cardLinkHtml = `<a href="/patient/${tc.patient_id}/verify" target="_blank" style="color:#60a5fa;font-size:11px;text-decoration:none;margin-left:8px;padding:2px 8px;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.35);border-radius:4px;font-weight:500" title="Open patient card in new tab">📋 Card →</a>`;
+            const _tt = (k, p) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k, p) : k;
+            const cardLinkHtml = `<a href="/patient/${tc.patient_id}/verify" target="_blank" style="color:#60a5fa;font-size:11px;text-decoration:none;margin-left:8px;padding:2px 8px;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.35);border-radius:4px;font-weight:500" title="${_tt('cardOpenInTab')}">${_tt('cardLink')}</a>`;
             const titleHtml = isGroup
-                ? `<h3 class="snap-title"><span class="snap-idx">Image ${si+1}</span> <span style="color:var(--text-dim);font-size:11px">file_id=${tc.file_id}</span> ${gtCopyBtn}</h3>`
+                ? `<h3 class="snap-title"><span class="snap-idx" data-i18n="snapshotIndex" data-i18n-params='${JSON.stringify({n: si+1}).replace(/'/g, "&#39;")}'>${_tt('snapshotIndex', {n: si+1})}</span> <span style="color:var(--text-dim);font-size:11px">file_id=${tc.file_id}</span> ${gtCopyBtn}</h3>`
                 : `<h2 style="font-size:16px;margin-bottom:2px;font-weight:600">${surname} ${firstName} <span style="color:var(--text-dim);font-size:12px;font-weight:400">file_id=${tc.file_id}</span>${cardLinkHtml}</h2>`;
 
             caseDiv.innerHTML = `
@@ -504,11 +507,11 @@ async function loadArena() {
                 <details class="card-hint-collapsible" id="card-hint-wrap-${tc.file_id}" style="margin:6px 0 10px" ontoggle="localStorage.setItem('cardHintOpen_${tc.file_id}', this.open ? '1' : '0')">
                     <summary id="card-hint-summary-${tc.file_id}" style="cursor:pointer;list-style:none;padding:7px 12px;border-radius:6px;background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.25);font-size:12px;color:#fbbf24;display:flex;align-items:center;gap:8px;user-select:none">
                         <span style="font-size:11px;transition:transform 0.15s">▸</span>
-                        <b>📋 From patient card</b>
-                        <span id="card-hint-summary-text-${tc.file_id}" style="color:#cbd5e1;font-weight:500;opacity:0.9;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">loading…</span>
+                        <b data-i18n="cardHintBold">${_tt('cardHintBold')}</b>
+                        <span id="card-hint-summary-text-${tc.file_id}" style="color:#cbd5e1;font-weight:500;opacity:0.9;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" data-i18n="cardHintLoading">${_tt('cardHintLoading')}</span>
                     </summary>
                     <div class="card-hint-bar" id="card-hint-${tc.file_id}" style="padding:10px 12px;margin-top:4px;border-radius:6px;background:linear-gradient(180deg,rgba(251,191,36,0.04),rgba(251,191,36,0.01));border:1px solid rgba(251,191,36,0.18);font-size:12px;color:#e2e8f0;line-height:1.55">
-                        <span style="opacity:0.65;color:#fbbf24">⏳ Checking patient card…</span>
+                        <span style="opacity:0.65;color:#fbbf24" data-i18n="cardHintChecking">${_tt('cardHintChecking')}</span>
                     </div>
                 </details>
 
@@ -520,16 +523,16 @@ async function loadArena() {
                             <canvas class="arena-opg-highlight-canvas" id="arena-opg-canvas-${tc.file_id}"></canvas>
                         </div>
                         <div class="arena-opg-toolbar" id="arena-opg-toolbar-${tc.file_id}">
-                            <button class="opg-filter-btn active" onclick="arenaOPGFilter(${tc.file_id},'original',this)">Original</button>
-                            <button class="opg-filter-btn" onclick="arenaOPGFilter(${tc.file_id},'clahe',this)">CLAHE</button>
-                            <button class="opg-filter-btn" onclick="arenaOPGFilter(${tc.file_id},'contrast',this)">Contrast</button>
-                            <button class="opg-filter-btn" onclick="arenaOPGFilter(${tc.file_id},'bone_window',this)">Bone</button>
-                            <button class="opg-filter-btn" onclick="arenaOPGFilter(${tc.file_id},'inverted',this)">Invert</button>
+                            <button class="opg-filter-btn active" data-i18n="filterOriginal" onclick="arenaOPGFilter(${tc.file_id},'original',this)">${_tt('filterOriginal')}</button>
+                            <button class="opg-filter-btn" data-i18n="filterClahe" onclick="arenaOPGFilter(${tc.file_id},'clahe',this)">${_tt('filterClahe')}</button>
+                            <button class="opg-filter-btn" data-i18n="filterContrast" onclick="arenaOPGFilter(${tc.file_id},'contrast',this)">${_tt('filterContrast')}</button>
+                            <button class="opg-filter-btn" data-i18n="filterBone" onclick="arenaOPGFilter(${tc.file_id},'bone_window',this)">${_tt('filterBone')}</button>
+                            <button class="opg-filter-btn" data-i18n="filterInvert" onclick="arenaOPGFilter(${tc.file_id},'inverted',this)">${_tt('filterInvert')}</button>
                             <span style="flex:1"></span>
-                            <button class="opg-filter-btn" onclick="_toggleOPGChildrenView(${tc.file_id},this)" title="Toggle object overlays on the panorama (OFF / Crops / All)">🦷 Objects</button>
-                            <button class="opg-filter-btn" onclick="_toggleFDIGridOverlay(${tc.file_id},this)" title="Show FDI grid of 32 positions (OFF / Occupied only / All 32)">🔲 FDI</button>
-                            <button class="opg-filter-btn" onclick="arenaOPGToggleSeg(${tc.file_id},this)">Segments</button>
-                            <button class="opg-filter-btn" onclick="_toggleExpertOverlay(${tc.file_id},this)" title="Show expert bbox edits on the panorama">✎ Expert</button>
+                            <button class="opg-filter-btn" data-i18n="filterObjectsOff" data-i18n-title="filterObjectsTitle" onclick="_toggleOPGChildrenView(${tc.file_id},this)" title="${_tt('filterObjectsTitle')}">${_tt('filterObjectsOff')}</button>
+                            <button class="opg-filter-btn" data-i18n="filterFdi" data-i18n-title="filterFdiTitle" onclick="_toggleFDIGridOverlay(${tc.file_id},this)" title="${_tt('filterFdiTitle')}">${_tt('filterFdi')}</button>
+                            <button class="opg-filter-btn" data-i18n="filterSegments" onclick="arenaOPGToggleSeg(${tc.file_id},this)">${_tt('filterSegments')}</button>
+                            <button class="opg-filter-btn" data-i18n="filterExpert" data-i18n-title="filterExpertTitle" onclick="_toggleExpertOverlay(${tc.file_id},this)" title="${_tt('filterExpertTitle')}">${_tt('filterExpert')}</button>
                         </div>
                         <div class="arena-legend">
                             <div class="leg-item"><div class="leg-dot" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1)">·</div>Инт.</div>
@@ -588,9 +591,9 @@ async function loadArena() {
                                 <div id="td-pathology-btns-${tc.file_id}"></div>
                             </div>
                         </div>
-                        <div class="td-placeholder" id="td-placeholder-${tc.file_id}">Click a tooth cell to see details</div>
+                        <div class="td-placeholder" id="td-placeholder-${tc.file_id}" data-i18n="clickToothToSeeDetails">${_tt('clickToothToSeeDetails')}</div>
                         <div class="arena-detail-panel" id="arena-detail-${tc.file_id}">
-                            <div class="arena-detail-empty">Click an algorithm name to see details</div>
+                            <div class="arena-detail-empty" data-i18n="clickAlgoToSeeDetails">${_tt('clickAlgoToSeeDetails')}</div>
                         </div>
                     </div>
                 </div>
@@ -1097,18 +1100,19 @@ async function _loadCardHints(fileId) {
         const saved = localStorage.getItem(`cardHintOpen_${fileId}`);
         detailsEl.open = saved === '1';
     }
+    const _t = (k, p) => (typeof OrisI18n !== 'undefined') ? OrisI18n.t(k, p) : k;
     try {
         const resp = await fetch(`/api/darwin/card-hints/${fileId}`);
         if (!resp.ok) {
-            el.innerHTML = `<span style="opacity:0.5;color:#94a3b8">📋 Карта не найдена</span>`;
-            setSummary('карта не найдена');
+            el.innerHTML = `<span style="opacity:0.5;color:#94a3b8">${_t('cardHintNoCard')}</span>`;
+            setSummary(_t('cardHintNoCard'));
             return;
         }
         const data = await resp.json();
         const cardFdis = data.fdi_list || [];
         if (cardFdis.length === 0) {
-            el.innerHTML = `<span style="opacity:0.5;color:#94a3b8">📋 В карте нет задокументированных имплантатов</span>`;
-            setSummary('0 implants in patient card');
+            el.innerHTML = `<span style="opacity:0.5;color:#94a3b8">${_t('cardHintNoImplants')}</span>`;
+            setSummary(_t('cardHintNImplants', {n: 0}));
             return;
         }
         const gt = arenaGroundTruth[fileId] || {};
@@ -1194,8 +1198,19 @@ async function _loadCardHints(fileId) {
         `;
     } catch(e) {
         console.warn('card-hints fetch failed', fileId, e);
-        el.innerHTML = `<span style="opacity:0.5;color:#94a3b8">📋 Ошибка загрузки подсказки</span>`;
+        el.innerHTML = `<span style="opacity:0.5;color:#94a3b8">${_t('cardHintError')}</span>`;
     }
 }
 window._loadCardHints = _loadCardHints;
+// Re-render every visible card-hints panel when the language flips so
+// "Карта не найдена" / "0 implants in patient card" / pluralised totals
+// move with the rest of the UI.
+if (typeof OrisI18n !== 'undefined') {
+    OrisI18n.onLangChange(() => {
+        document.querySelectorAll('[id^="card-hint-"]').forEach(el => {
+            const m = el.id.match(/^card-hint-(\d+)$/);
+            if (m) _loadCardHints(parseInt(m[1], 10));
+        });
+    });
+}
 
