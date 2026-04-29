@@ -597,10 +597,10 @@ function _setupCropCanvasTooltip(canvas, card, fileId) {
 
         const hit = _hitTestChildBbox(card, imgX, imgY);
         if (hit) {
-            const ruName = CHILD_LABELS_RU[hit.cls] || hit.cls;
-            const confStr = hit._manual ? ' (ручная)' : ` ${Math.round((hit.conf || 0) * 100)}%`;
-            const parentHint = hit._isParent ? '\n(родительский объект)' : '';
-            canvas.title = `${ruName}${confStr}${parentHint}\nКлик: исправить / информация`;
+            const ruName = _objName(hit.cls);
+            const confStr = hit._manual ? (_isEN_crop() ? ' (manual)' : ' (ручная)') : ` ${Math.round((hit.conf || 0) * 100)}%`;
+            const parentHint = hit._isParent ? (_isEN_crop() ? '\n(parent object)' : '\n(родительский объект)') : '';
+            canvas.title = `${ruName}${confStr}${parentHint}\n${_isEN_crop() ? 'Click: correct / info' : 'Клик: исправить / информация'}`;
             canvas.style.cursor = 'pointer';
         } else {
             const edgeSize = 16;
@@ -640,12 +640,61 @@ const _OBJ_NAMES = {
     'Implant':'Тело имплантата','Cover screw':'Винт-заглушка',
     'Abutment':'Абатмент','Fixation screw':'Винт абатмента',
     'Missing teeth':'Отсутствует','Root Piece':'Корень','Tooth':'Зуб'};
+const _OBJ_NAMES_EN = {
+    'Crown':'Crown','Crown framework':'Crown framework','Crown veneer':'Veneer',
+    'Filling':'Filling','Caries':'Carious lesion',
+    'Root canal obturation':'Canal obturation','Periapical lesion':'Periapical lesion',
+    'Implant':'Implant body','Cover screw':'Cover screw',
+    'Abutment':'Abutment','Fixation screw':'Abutment screw',
+    'Missing teeth':'Missing','Root Piece':'Root remnant','Tooth':'Tooth'};
 const _GT_LAYER_NAMES = {endo:'Эндо (каналы)',post:'Штифт',crowned:'Коронка',restored:'Пломба',
     caries:'Кариес',present:'Интактный',missing:'Отсутствует',implant:'Имплантат',
     impl_fixture:'Фикстура',impl_cover:'Заглушка',impl_healing:'Формирователь',
     impl_abutment:'Абатмент',impl_temp_abut:'Вр.абатмент',impl_provisional:'Вр.коронка',
     impl_restored:'Имп.+коронка',attrition:'Стираемость',root:'Корень',bridge:'Мост',
     bar:'Балка',impacted:'Ретенция',cantilever:'Консоль',uncertain:'?'};
+const _GT_LAYER_NAMES_EN = {endo:'Endo (canals)',post:'Post',crowned:'Crown',restored:'Filling',
+    caries:'Caries',present:'Intact',missing:'Missing',implant:'Implant',
+    impl_fixture:'Fixture',impl_cover:'Cover screw',impl_healing:'Healing abut.',
+    impl_abutment:'Abutment',impl_temp_abut:'Temp. abut.',impl_provisional:'Temp. crown',
+    impl_restored:'Imp. + crown',attrition:'Wear',root:'Root',bridge:'Bridge',
+    bar:'Bar',impacted:'Impacted',cantilever:'Cantilever',uncertain:'?'};
+// Group / item label translation maps (used by _GT_EXPECTED_CHILDREN
+// renderer and crop annotation toolbar). Keys are the canonical
+// Russian strings shipped in the data; values are the EN equivalent.
+const _GT_GROUP_NAMES_EN = {
+    'Имплантат':'Implant', 'Коронка':'Crown', 'Эндодонтия':'Endodontics',
+    'Штифт':'Post', 'Реставрация':'Restoration', 'Кариес':'Caries',
+};
+const _GT_ITEM_LABEL_EN = {
+    'Тело имплантата':'Implant body', 'Винт-заглушка':'Cover screw',
+    'Формирователь десны':'Healing abutment', 'Абатмент':'Abutment',
+    'Винт абатмента':'Abutment screw', 'Временный абатмент':'Temporary abutment',
+    'Временная коронка':'Temporary crown', 'Коронка':'Crown',
+    'Каркас':'Crown framework', 'Облицовка':'Veneer',
+    'Обтурация каналов':'Canal obturation', 'Штифтовая конструкция':'Post & core',
+    'Пломба':'Filling', 'Кариозная полость':'Carious lesion',
+};
+// Helpers — pick RU or EN based on OrisI18n's current language. Falling
+// back to the RU string when no EN translation is registered keeps the
+// safety net intact for any new label that gets added later.
+function _isEN_crop() {
+    return (typeof OrisI18n !== 'undefined') && OrisI18n.getLang() === 'en';
+}
+function _objName(cls) {
+    return _isEN_crop() ? (_OBJ_NAMES_EN[cls] || _OBJ_NAMES[cls] || cls)
+                        : (_OBJ_NAMES[cls] || cls);
+}
+function _layerName(status) {
+    return _isEN_crop() ? (_GT_LAYER_NAMES_EN[status] || _GT_LAYER_NAMES[status] || status)
+                        : (_GT_LAYER_NAMES[status] || status);
+}
+function _groupNameEN(ru) {
+    return _isEN_crop() ? (_GT_GROUP_NAMES_EN[ru] || ru) : ru;
+}
+function _itemLabelEN(ru) {
+    return _isEN_crop() ? (_GT_ITEM_LABEL_EN[ru] || ru) : ru;
+}
 const _GT_LAYER_COLORS = {endo:'#a855f7',post:'#f59e0b',crowned:'#06b6d4',restored:'#3b82f6',
     caries:'#ef4444',present:'#475569',missing:'#64748b',implant:'#22c55e',
     impl_fixture:'#22c55e',impl_restored:'#06b6d4',impl_cover:'#84cc16',
@@ -761,7 +810,7 @@ function _buildObjPanel(cardEl, card, fileId, fdi) {
                 for (const grp of groups) {
                     const grpSurf = grpIdx === 0 ? surf : '';
                     const sepCls = grpIdx > 0 ? ' gt-group-sep' : '';
-                    layerHtml += `<div class="gt-sub-hdr${sepCls}"><span class="gt-layer-dot" style="background:${grp.color}"></span>${grp.group}${grpSurf}</div>`;
+                    layerHtml += `<div class="gt-sub-hdr${sepCls}"><span class="gt-layer-dot" style="background:${grp.color}"></span>${_groupNameEN(grp.group)}${grpSurf}</div>`;
                     for (const ch of grp.items) {
                         _groupedCls.add(ch.cls);
                         const hasMatch = _detectedYolo.has(ch.cls);
@@ -770,9 +819,11 @@ function _buildObjPanel(cardEl, card, fileId, fdi) {
                         if (hasMatch) nFound++;
                         const statusIcon = hasMatch ? '✓' : (isOptMissing ? '–' : '✗');
                         const statusCss = hasMatch ? 'gt-matched' : (isOptMissing ? 'gt-optional-missing' : 'gt-missing');
-                        const optBadge = !ch.req ? ' <span class="gt-opt-badge">опц.</span>' : '';
-                        const chName = ch.label || _OBJ_NAMES[ch.cls] || ch.cls;
-                        layerHtml += `<div class="gt-layer-item gt-child-item gt-has-det ${statusCss}" data-hl-type="gt" data-gt-yolo="${ch.cls}" data-gt-status="${l.status}" data-gt-file="${fileId}" data-gt-fdi="${fdi}" data-draw-cls="${ch.cls}" title="${hasMatch ? 'YOLO нашёл — наведите для подсветки' : 'Не найден — клик чтобы нарисовать'}">` +
+                        const optBadge = !ch.req ? ` <span class="gt-opt-badge">${_isEN_crop() ? 'opt.' : 'опц.'}</span>` : '';
+                        const chName = (ch.label ? _itemLabelEN(ch.label) : _objName(ch.cls)) || ch.cls;
+                        const tipMatch  = _isEN_crop() ? 'YOLO matched — hover to highlight'      : 'YOLO нашёл — наведите для подсветки';
+                        const tipNoMatch= _isEN_crop() ? 'Not detected — click to draw manually'  : 'Не найден — клик чтобы нарисовать';
+                        layerHtml += `<div class="gt-layer-item gt-child-item gt-has-det ${statusCss}" data-hl-type="gt" data-gt-yolo="${ch.cls}" data-gt-status="${l.status}" data-gt-file="${fileId}" data-gt-fdi="${fdi}" data-draw-cls="${ch.cls}" title="${hasMatch ? tipMatch : tipNoMatch}">` +
                             `<span class="gt-layer-dot" style="background:${YOLO_COLORS[ch.cls]||grp.color||'#888'}"></span>` +
                             `${chName}${optBadge}` +
                             `<span class="gt-match-icon">${statusIcon}</span></div>`;
@@ -788,13 +839,16 @@ function _buildObjPanel(cardEl, card, fileId, fdi) {
                 if (hasMatch) nFound++;
                 const statusIcon = hasMatch ? '✓' : '✗';
                 const statusCss = hasMatch ? 'gt-matched' : 'gt-missing';
-                layerHtml += `<div class="gt-layer-item gt-has-det ${statusCss}" data-hl-type="gt" data-gt-yolo="${yoloCls}" data-gt-status="${l.status}" data-gt-file="${fileId}" data-gt-fdi="${fdi}" data-draw-cls="${yoloCls}" title="${hasMatch ? 'YOLO нашёл — наведите для подсветки' : 'Не найден — клик чтобы нарисовать'}">` +
+                const tipMatch  = _isEN_crop() ? 'YOLO matched — hover to highlight'     : 'YOLO нашёл — наведите для подсветки';
+                const tipNoMatch= _isEN_crop() ? 'Not detected — click to draw manually' : 'Не найден — клик чтобы нарисовать';
+                layerHtml += `<div class="gt-layer-item gt-has-det ${statusCss}" data-hl-type="gt" data-gt-yolo="${yoloCls}" data-gt-status="${l.status}" data-gt-file="${fileId}" data-gt-fdi="${fdi}" data-draw-cls="${yoloCls}" title="${hasMatch ? tipMatch : tipNoMatch}">` +
                     `<span class="gt-layer-dot" style="background:${_GT_LAYER_COLORS[l.status]||'#888'}"></span>` +
-                    `${_GT_LAYER_NAMES[l.status]||l.status}${surf}` +
+                    `${_layerName(l.status)}${surf}` +
                     `<span class="gt-match-icon">${statusIcon}</span></div>`;
             }
         }
-        objHtml += `<div class="gt-hdr">GT формула <span style="float:right;font-size:7px;opacity:0.6">${nFound}/${nTotal}</span></div>`;
+        const _gtFormulaLabel = _isEN_crop() ? 'GT formula' : 'GT формула';
+        objHtml += `<div class="gt-hdr">${_gtFormulaLabel} <span style="float:right;font-size:7px;opacity:0.6">${nFound}/${nTotal}</span></div>`;
         objHtml += layerHtml;
 
         // "+" button: add objects not in expected children
@@ -813,7 +867,7 @@ function _buildObjPanel(cardEl, card, fileId, fdi) {
                 _extras.map(ac =>
                     `<div class="gt-add-option" data-cls="${ac.cls}" data-gt-file="${fileId}" data-gt-fdi="${fdi}">` +
                     `<span class="gt-layer-dot" style="background:${ac.color}"></span>` +
-                    `${_OBJ_NAMES[ac.cls] || ac.cls}</div>`
+                    `${_objName(ac.cls)}</div>`
                 ).join('') +
                 `</div></div>`;
         }
@@ -833,7 +887,7 @@ function _buildObjPanel(cardEl, card, fileId, fdi) {
         objHtml += `<div class="gt-hdr" style="color:#60a5fa;border-color:rgba(96,165,250,0.15);margin-top:${card.gtLayers?.length ? '4px' : '0'}">YOLO ${yoloItems.length}</div>`;
         for (const yi of yoloItems) {
             const color = YOLO_COLORS[yi.cls] || '#888';
-            const name = _OBJ_NAMES[yi.cls] || yi.cls;
+            const name = _objName(yi.cls);
             const conf = yi.conf ? ` ${Math.round(yi.conf*100)}%` : '';
             objHtml += `<div class="gt-layer-item gt-has-det" data-hl-type="yolo" data-hl-idx="${yi.idx}" data-gt-file="${fileId}" data-gt-fdi="${fdi}">` +
                 `<span class="gt-layer-dot" style="background:${color}"></span>` +
@@ -1245,7 +1299,7 @@ function _renderCropCarousel(fileId, jaw) {
         for (const ac of ANNOT_CLASSES) {
             const btn = document.createElement('button');
             btn.className = 'cc-annot-btn';
-            btn.textContent = ac.abbr;
+            btn.textContent = (_isEN_crop() && ac.abbrEN) ? ac.abbrEN : ac.abbr;
             const CLS_RU = {'Crown':'коронку','Filling':'пломбу','Caries':'кариес',
                 'Root canal obturation':'обтурацию каналов','Periapical lesion':'периапикальное поражение',
                 'Implant':'имплантат','Cover screw':'заглушку','Abutment':'абатмент','Fixation screw':'фикс. винт'};
@@ -1274,7 +1328,7 @@ function _renderCropCarousel(fileId, jaw) {
         for (const qs of QUICK_STATUSES) {
             const qb = document.createElement('button');
             qb.className = 'cc-annot-btn';
-            qb.textContent = qs.abbr;
+            qb.textContent = (_isEN_crop() && qs.abbrEN) ? qs.abbrEN : qs.abbr;
             qb.title = qs.title;
             qb.style.setProperty('--dot-color', qs.color);
             qb.addEventListener('click', (e) => {
@@ -2560,7 +2614,7 @@ function _quickSetToothStatus(fileId, fdi, status, btn) {
     const drawCls = wasAdded ? QUICK_TO_ANNOT[status] : null;
     if (drawCls && cardEl) {
         if (sb) {
-            sb.textContent = `✓ ${status} добавлен — нарисуйте ${ANNOT_CLASSES.find(a=>a.cls===drawCls)?.abbr || drawCls} | Esc — пропустить`;
+            sb.textContent = `✓ ${status} добавлен — нарисуйте ${(function(_a){return _a ? ((_isEN_crop()&&_a.abbrEN)?_a.abbrEN:_a.abbr) : drawCls;})(ANNOT_CLASSES.find(a=>a.cls===drawCls))} | Esc — пропустить`;
             sb.classList.add('success');
             setTimeout(() => sb.classList.remove('success'), 1500);
         }
@@ -2620,17 +2674,17 @@ function _autosaveCropOverrides(fileId) {
 
 /** Annotation class definitions (toolbar buttons). */
 const ANNOT_CLASSES = [
-    {cls:'Crown', abbr:'Кор', color:'#06b6d4'},
-    {cls:'Crown framework', abbr:'Крк', color:'#0e7490'},
-    {cls:'Crown veneer', abbr:'Обл', color:'#7dd3fc'},
-    {cls:'Filling', abbr:'Пл', color:'#3b82f6'},
-    {cls:'Caries', abbr:'Кар', color:'#ef4444'},
-    {cls:'Root canal obturation', abbr:'Обт', color:'#a855f7'},
-    {cls:'Periapical lesion', abbr:'Пер', color:'#f59e0b'},
-    {cls:'Implant', abbr:'Имп', color:'#22c55e'},
-    {cls:'Cover screw', abbr:'Заг', color:'#84cc16'},
-    {cls:'Abutment', abbr:'Аб', color:'#f97316'},
-    {cls:'Fixation screw', abbr:'ФВ', color:'#eab308'}
+    {cls:'Crown', abbr:'Кор', abbrEN:'Cr', color:'#06b6d4'},
+    {cls:'Crown framework', abbr:'Крк', abbrEN:'CrFr', color:'#0e7490'},
+    {cls:'Crown veneer', abbr:'Обл', abbrEN:'Vnr', color:'#7dd3fc'},
+    {cls:'Filling', abbr:'Пл', abbrEN:'Fi', color:'#3b82f6'},
+    {cls:'Caries', abbr:'Кар', abbrEN:'Ca', color:'#ef4444'},
+    {cls:'Root canal obturation', abbr:'Обт', abbrEN:'Obt', color:'#a855f7'},
+    {cls:'Periapical lesion', abbr:'Пер', abbrEN:'PA', color:'#f59e0b'},
+    {cls:'Implant', abbr:'Имп', abbrEN:'Im', color:'#22c55e'},
+    {cls:'Cover screw', abbr:'Заг', abbrEN:'CS', color:'#84cc16'},
+    {cls:'Abutment', abbr:'Аб', abbrEN:'Ab', color:'#f97316'},
+    {cls:'Fixation screw', abbr:'ФВ', abbrEN:'AS', color:'#eab308'}
 ];
 
 /** Map child class → formula layer status. */
@@ -2966,7 +3020,7 @@ function _enterCropDrawMode(fileId, fdi, cls, cardEl) {
 
     // Update status bar
     const sb = cardEl.querySelector('.cc-status-bar');
-    const abbr = ANNOT_CLASSES.find(a => a.cls === cls)?.abbr || cls;
+    const _aClass = ANNOT_CLASSES.find(a => a.cls === cls); const abbr = _aClass ? ((_isEN_crop()&&_aClass.abbrEN)?_aClass.abbrEN:_aClass.abbr) : cls;
     if (sb) sb.textContent = `Рисование ${abbr} — нарисуйте прямоугольник | Esc — отмена`;
 }
 
@@ -3454,7 +3508,7 @@ async function _saveChildAnnotation(fileId, fdi, cls, bbox_pct, bboxNatural, car
 
         // Status feedback
         const sb = cardEl.querySelector('.cc-status-bar');
-        const abbr = ANNOT_CLASSES.find(a => a.cls === cls)?.abbr || cls;
+        const _aClass = ANNOT_CLASSES.find(a => a.cls === cls); const abbr = _aClass ? ((_isEN_crop()&&_aClass.abbrEN)?_aClass.abbrEN:_aClass.abbr) : cls;
         if (sb) {
             sb.textContent = `✓ ${abbr} сохранён`;
             sb.classList.add('success');
