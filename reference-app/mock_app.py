@@ -36,7 +36,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
 
-from flask import Flask, Response, abort, g, jsonify, render_template, request, send_file
+from flask import Flask, Response, abort, g, jsonify, redirect, render_template, request, send_file
 
 # ---------------------------------------------------------------------------
 # Paths and imports from the rest of the repo (parser + bridges)
@@ -410,19 +410,25 @@ def bootstrap_demo_data() -> None:
 
 @app.route("/")
 def landing_page():
-    """Landing page = polished IJOS-quality static demo (paper Figure 2 source).
+    """Landing page → /play (interactive playground).
 
-    The standalone HTML at /static/demo.html is fully self-contained — no API
-    calls, all SVG generated procedurally — so it works on any browser without
-    backend setup. Reviewers see Q1-quality design first, then click into
-    /darwin-lab for the full interactive Flask version (3 anonymised cases,
-    layer editor, bridge exports, time-machine ground-truth history)."""
-    return send_file(str(HERE / "static" / "demo.html"), mimetype="text/html")
+    Reviewer feedback: the static IJOS-quality demo (kept at /demo for paper
+    Figure 2 source) was being mistaken for the whole reference app, so most
+    reviewers never reached the polished interactive UI we shipped. The root
+    path now redirects to /play so the headline experience is a fully
+    interactive 32-cell formula + tooth picker + bilingual UI + anatomy
+    viewer/editor + bridges. /demo still serves the static HTML for the
+    Figure-2 reproducibility path."""
+    return redirect("/play", code=302)
 
 
 @app.route("/demo")
 def demo_page():
-    """Static IJOS-quality demo (alias for /)."""
+    """Static IJOS-quality demo (paper Figure 2 source).
+
+    Self-contained HTML/CSS/JS — no API calls, all SVG generated
+    procedurally. Use this URL for reproducible screenshots in the paper;
+    the live polished version lives at /play."""
     return send_file(str(HERE / "static" / "demo.html"), mimetype="text/html")
 
 
