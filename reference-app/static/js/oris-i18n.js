@@ -338,6 +338,33 @@
       legAbbr_bridge:          'Мост',
       legAbbr_cantilever:      'Конс.',
       legAbbr_error:           'Ошибка',
+      // ── Longer status names used by the text-formula tooltip + the
+      //    short legend strip directly under the OPG (per-tooth long
+      //    description "1.6: имп+кор" / "1.6: imp+crown"). Distinct
+      //    from iconAbbr (1-3 chars) and STATUS_TOOLTIPS (full sentence
+      //    explanations). ──
+      longName_present:        'интакт',
+      longName_missing:        'отс.',
+      longName_impacted:       'ретенц.',
+      longName_caries:         'кариес',
+      longName_attrition:      'стираем.',
+      longName_root:           'корень',
+      longName_restored:       'пломба',
+      longName_endo:           'эндо',
+      longName_post:           'штифт',
+      longName_crowned:        'коронка',
+      longName_implant:        'имплантат',
+      longName_impl_fixture:   'имплантат',
+      longName_impl_cover:     'имп+заг',
+      longName_impl_healing:   'имп+форм',
+      longName_impl_abutment:  'имп+абат',
+      longName_impl_temp_abut: 'имп+вр.абат',
+      longName_impl_provisional:'имп+врем',
+      longName_impl_restored:  'имп+кор',
+      longName_bridge:         'мост',
+      longName_bar:            'балка',
+      longName_cantilever:     'консоль',
+      longName_uncertain:      'не ясно',
 
       // ── Tooth picker title + status descriptions (full sentence
       // shown as button tooltip and in the rich tooltip layer list) ──
@@ -740,6 +767,30 @@
       legAbbr_bridge:          'Bridge',
       legAbbr_cantilever:      'Cantil.',
       legAbbr_error:           'Mismatch',
+      // EN long-form names for the per-tooth bottom legend ("1.6:
+      // imp+crown" etc.) and the text-formula cell tooltips.
+      longName_present:        'intact',
+      longName_missing:        'missing',
+      longName_impacted:       'impacted',
+      longName_caries:         'caries',
+      longName_attrition:      'wear',
+      longName_root:           'root remnant',
+      longName_restored:       'filling',
+      longName_endo:           'endo',
+      longName_post:           'post',
+      longName_crowned:        'crown',
+      longName_implant:        'implant',
+      longName_impl_fixture:   'implant',
+      longName_impl_cover:     'imp+cover',
+      longName_impl_healing:   'imp+healing',
+      longName_impl_abutment:  'imp+abut.',
+      longName_impl_temp_abut: 'imp+temp.abut.',
+      longName_impl_provisional:'imp+provis.',
+      longName_impl_restored:  'imp+crown',
+      longName_bridge:         'bridge',
+      longName_bar:            'bar',
+      longName_cantilever:     'cantilever',
+      longName_uncertain:      'uncertain',
 
       pickerTitleTooth:     'Tooth {fdi}',
       pickerAddLayer:       '+ layer',

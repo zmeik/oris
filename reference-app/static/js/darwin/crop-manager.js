@@ -2186,6 +2186,25 @@ function _refreshOPGForActiveCrop(fileId) {
  * Render text dental formula under OPG — Russian convention + human-readable legend.
  * Called after GT load, GT change, rollback.
  */
+// Helper — pull a localised long-form status name ("эндо" / "endo",
+// "имп+кор" / "imp+crown") from OrisI18n. Falls back to the legacy
+// Russian table so callers without OrisI18n loaded still get strings.
+const _LEGACY_LONG_NAMES = {
+    endo:'эндо', post:'штифт', crowned:'коронка', restored:'пломба',
+    caries:'кариес', present:'интакт', missing:'отс.', implant:'имплантат',
+    impl_fixture:'имплантат', impl_restored:'имп+кор', impl_cover:'имп+заг',
+    impl_healing:'имп+форм', impl_abutment:'имп+абат', impl_provisional:'имп+врем',
+    impl_temp_abut:'имп+вр.абат', attrition:'стираем.', root:'корень',
+    bridge:'мост', bar:'балка', impacted:'ретенц.', cantilever:'консоль',
+};
+function _statusLongName(s) {
+    if (typeof OrisI18n !== 'undefined') {
+        const v = OrisI18n.t('longName_' + s);
+        if (v && v !== 'longName_' + s) return v;
+    }
+    return _LEGACY_LONG_NAMES[s] || s;
+}
+
 function _renderTextFormula(fileId) {
     const el = document.getElementById(`gt-text-formula-${fileId}`);
     if (!el) return;
@@ -2195,15 +2214,6 @@ function _renderTextFormula(fileId) {
     const UPPER_L = ['2.1','2.2','2.3','2.4','2.5','2.6','2.7','2.8'];
     const LOWER_R = ['4.8','4.7','4.6','4.5','4.4','4.3','4.2','4.1'];
     const LOWER_L = ['3.1','3.2','3.3','3.4','3.5','3.6','3.7','3.8'];
-
-    const LONG_NAMES = {
-        endo:'эндо', post:'штифт', crowned:'коронка', restored:'пломба',
-        caries:'кариес', present:'интакт', missing:'отс.', implant:'имплантат',
-        impl_fixture:'имплантат', impl_restored:'имп+кор', impl_cover:'имп+заг',
-        impl_healing:'имп+форм', impl_abutment:'имп+абат', impl_provisional:'имп+врем',
-        impl_temp_abut:'имп+вр.абат', attrition:'стираем.', root:'корень',
-        bridge:'мост', bar:'балка', impacted:'ретенц.', cantilever:'консоль',
-    };
 
     const _SC = {endo:'#a855f7', post:'#f59e0b', crowned:'#06b6d4', restored:'#3b82f6',
         caries:'#ef4444', present:'#475569', missing:'#64748b', implant:'#22c55e',
@@ -2227,14 +2237,13 @@ function _renderTextFormula(fileId) {
         const raw = gt[fdi];
         if (!raw) return '<td style="min-width:34px;text-align:center;color:#475569;padding:1px 2px">·</td>';
         const layers = _dedupeImplLayers(parseToothLayers(raw));
-        // Short abbreviation without surfaces (Russian dental standard: ПС = пломба+кариес)
-        const _CELL_ABBR = {endo:'Э',post:'Ш',crowned:'К',restored:'П',caries:'С',present:'·',missing:'О',
-            implant:'И',impl_fixture:'И',impl_cover:'ИЗ',impl_healing:'ИФ',impl_restored:'ИК',
-            attrition:'Ст',root:'R',bridge:'М',bar:'Б',impacted:'Rt',cantilever:'Кн'};
-        const abbr = layers.map(l => _CELL_ABBR[l.status] || l.status[0]?.toUpperCase() || '?').join('') || '·';
+        // Per-layer 1-3 char code via the bilingual arenaStatusIcon
+        // (RU: К/П/С/Э/Ш/И/ИК…  EN: C/F/Ca/E/P/I/IC…) — concat into a
+        // composite (ИК / IC, ЭПК / EFC, ПШЭ / FPE, etc.).
+        const abbr = layers.map(l => arenaStatusIcon(l.status) || l.status[0]?.toUpperCase() || '?').join('') || '·';
         const primary = layers.length > 0 ? layers[layers.length - 1].status : '';
         const color = _SC[primary] || '#94a3b8';
-        const title = layers.map(l => LONG_NAMES[l.status] || l.status).join('+');
+        const title = layers.map(l => _statusLongName(l.status)).join('+');
         return `<td style="min-width:34px;text-align:center;color:${color};font-weight:600;padding:1px 2px" title="${fdi}: ${title}">${abbr}</td>`;
     }
 
@@ -2259,7 +2268,7 @@ function _renderTextFormula(fileId) {
     const allFdi = [...UPPER_R, ...UPPER_L, ...LOWER_R, ...LOWER_L];
     const legendParts = allFdi.filter(fdi => gt[fdi]).map(fdi => {
         const layers = _dedupeImplLayers(parseToothLayers(gt[fdi]));
-        const long = layers.map(l => LONG_NAMES[l.status] || l.status).join('+');
+        const long = layers.map(l => _statusLongName(l.status)).join('+');
         return `<span style="white-space:nowrap">${fdi}: ${long}</span>`;
     });
     let legendEl = el.nextElementSibling;
@@ -2270,6 +2279,17 @@ function _renderTextFormula(fileId) {
         el.after(legendEl);
     }
     legendEl.innerHTML = legendParts.length > 0 ? legendParts.join(' <span style="color:#334155">│</span> ') : '';
+}
+
+// Re-render every visible text-formula (and its bottom legend strip)
+// when the language flips so abbreviations + long-form names follow.
+if (typeof OrisI18n !== 'undefined' && typeof OrisI18n.onLangChange === 'function') {
+    OrisI18n.onLangChange(() => {
+        document.querySelectorAll('[id^="gt-text-formula-"]').forEach(el => {
+            const m = el.id.match(/^gt-text-formula-(\d+)$/);
+            if (m) _renderTextFormula(parseInt(m[1], 10));
+        });
+    });
 }
 
 /** Redraw the expanded crop card after resize. */
