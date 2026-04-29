@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+/* GitHub Pages static-mode shim — re-routes all /api/, /panorama/ and
+   /static/ requests to the static-mirror paths under the repo subdir, and
+   turns POST/PUT/DELETE into 200-ok no-ops so the polished UI runs in
+   browser-only state without a Flask backend. The runtime PATH_PREFIX
+   is computed from location.pathname so the same shim works on
+   zmeik.github.io/oris/ AND on a forked username.github.io/<repo>/. */
+(function () {
+  function detectPrefix() {
+    // /oris/play/, /oris/play/anatomy/1001/, /oris/index.html → '/oris'
+    // /play/, /index.html → ''
+    var m = location.pathname.match(/^\/([^\/]+)\/(?:play|api|panorama|static|index\.html)/);
+    if (m) return '/' + m[1];
+    // root-level /play/ etc.
+    if (/^\/(?:play|index\.html)/.test(location.pathname)) return '';
+    return '';
+  }
+  var PREFIX = detectPrefix();
+  window.__ORIS_BASE = PREFIX;
+
+  var origFetch = window.fetch;
+  window.fetch = function (url, opts) {
+    opts = opts || {};
+    if (typeof url === 'string') {
+      var method = (opts.method || 'GET').toUpperCase();
+      if (method !== 'GET' && method !== 'HEAD') {
+        // POST / PUT / DELETE in static mode → echo a stub success response.
+        // sequence_num=0, structures_saved=0 keep the save banners happy.
+        return Promise.resolve(new Response(
+          JSON.stringify({ ok: true, sequence_num: 0, structures_saved: 0, structures_total: 0 }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        ));
+      }
+      if (url.indexOf('/api/') === 0) {
+        // Strip query string (Pages ignores it anyway) then add .json extension
+        // so the static mirror file at <path>.json is served. This matters for
+        // endpoint pairs where one URL is a prefix of another, e.g.
+        //   /api/darwin/ground-truth/1001        → 1001.json
+        //   /api/darwin/ground-truth/1001/history → 1001/history.json
+        var noQuery = url.split('?')[0];
+        url = PREFIX + noQuery + '.json';
+      }
+      else if (url.indexOf('/panorama/') === 0) url = PREFIX + url + '.png';
+    }
+    return origFetch.call(this, url, opts);
+  };
+
+  // Re-write any `/panorama/...` URL to the static-mirror PNG path.
+  function rewritePanoramaSrc(s) {
+    if (!s) return s;
+    if (s.indexOf(PREFIX + '/panorama/') === 0) return s;          // already prefixed
+    if (s.indexOf('/panorama/') !== 0) return s;                    // not a panorama URL
+    return PREFIX + s + (s.endsWith('.png') ? '' : '.png');
+  }
+  // (1) Override HTMLImageElement.prototype.src — this catches BOTH
+  // programmatic image loads (`new Image(); img.src = '...'`, used by
+  // anatomy_editor.html's loadImage()) AND DOM-inserted IMGs whose
+  // src is set after creation. The set on the prototype intercepts
+  // every Image instance.
+  var imgProto = HTMLImageElement.prototype;
+  var origDescriptor = Object.getOwnPropertyDescriptor(imgProto, 'src')
+                    || Object.getOwnPropertyDescriptor(Element.prototype, 'src');
+  if (origDescriptor && origDescriptor.set) {
+    Object.defineProperty(imgProto, 'src', {
+      configurable: true,
+      enumerable: origDescriptor.enumerable,
+      get: function () { return origDescriptor.get.call(this); },
+      set: function (v) {
+        if (typeof v === 'string') v = rewritePanoramaSrc(v);
+        origDescriptor.set.call(this, v);
+      }
+    });
+  }
+  // (2) Belt-and-braces: an additional MutationObserver pass for IMG
+  // nodes whose src attribute is set via setAttribute() (which doesn't
+  // hit the prototype descriptor on some browsers).
+  function rewriteImgAttr(node) {
+    if (!node || node.nodeType !== 1) return;
+    if (node.tagName === 'IMG' && node.getAttribute('src')) {
+      var s = node.getAttribute('src');
+      var fixed = rewritePanoramaSrc(s);
+      if (fixed !== s) node.setAttribute('src', fixed);
+    }
+    if (node.querySelectorAll) {
+      node.querySelectorAll('img[src^="/panorama/"]').forEach(function (img) {
+        var s = img.getAttribute('src');
+        var fixed = rewritePanoramaSrc(s);
+        if (fixed !== s) img.setAttribute('src', fixed);
+      });
+    }
+  }
+  document.addEventListener('DOMContentLoaded', function () { rewriteImgAttr(document); });
+  new MutationObserver(function (muts) {
+    muts.forEach(function (m) {
+      m.addedNodes.forEach(rewriteImgAttr);
+      if (m.type === 'attributes' && m.target.tagName === 'IMG') rewriteImgAttr(m.target);
+    });
+  }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['src'] });
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ORIS · Anatomy Viewer · file_id 1001</title>
+<meta name="oris-file-id" content="1001">
+<meta name="description" content="Dual-mode (bbox + polyline) anatomy viewer for the ORIS reference application. Boots in read-only Viewer mode with pan + zoom; toggles to Editor for drag-to-reshape + add/delete custom structures. Paper Figure 2 anatomical-landmarks side panel, full-page variant.">
+<!-- Shared EN ↔ RU dictionary used by both /play and /play/anatomy. -->
+<script src="/oris/static/js/oris-i18n.js"></script>
+
+<style>
+:root {
+  --bg:           #0e1014;
+  --surface-1:    #16182040;
+  --surface-2:    #1a1d22;
+  --panel:        #161920;
+  --hairline:     #2a2e36;
+  --border:       #3a3f48;
+  --border-strong:#52596a;
+  --text:         #e6e7eb;
+  --text-muted:   #9aa1ad;
+  --text-dim:     #6a707a;
+  --text-faint:   #4a505a;
+  --accent:       #5b8def;
+  --accent-soft:  rgba(96,165,250,0.18);
+  --emerald:      #10b981;
+  --emerald-soft: rgba(16,185,129,0.18);
+  --rose:         #f87171;
+  --amber:        #fbbf24;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100vh; width: 100%;
+  background: var(--bg); color: var(--text);
+  font-family: -apple-system, "Segoe UI", "Inter", system-ui, sans-serif;
+  font-size: 13px;
+  overflow: hidden;
+  user-select: none;
+}
+body {
+  display: flex; flex-direction: column;
+}
+
+/* ──────────────── Top toolbar ──────────────── */
+#topbar {
+  height: 48px; flex-shrink: 0;
+  background: var(--panel);
+  border-bottom: 1px solid var(--hairline);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 14px;
+  font-size: 12px;
+}
+.brand { display: flex; align-items: baseline; gap: 8px; }
+.brand .logo { font-weight: 700; font-size: 15px; }
+.brand .ver  { font-family: "IBM Plex Mono", monospace; font-size: 11px;
+               color: var(--accent); background: var(--accent-soft);
+               padding: 1px 6px; border-radius: 3px; }
+.brand .mode { color: var(--text-muted); font-size: 12px; }
+.brand .sep  { color: var(--text-faint); margin: 0 4px; }
+.tb-spacer { flex: 1 1 auto; }
+.tb-btn {
+  background: rgba(51,65,85,0.45);
+  border: 1px solid rgba(148,163,184,0.25);
+  border-radius: 4px; padding: 6px 12px;
+  color: var(--text); font: inherit; font-size: 11.5px;
+  cursor: pointer; line-height: 1.2;
+}
+.tb-btn:hover { background: rgba(51,65,85,0.85); border-color: var(--accent); }
+.tb-btn.primary {
+  background: var(--emerald-soft); border-color: rgba(16,185,129,0.55);
+  color: #6ee7b7; font-weight: 600;
+}
+.tb-btn.primary:hover { background: rgba(16,185,129,0.32); color: #fff; }
+.tb-btn.back {
+  background: transparent; border-color: var(--hairline);
+  color: var(--text-muted);
+}
+.tb-btn.back:hover { color: var(--accent); }
+.mode-toggle {
+  display: inline-flex; gap: 1px; background: var(--hairline);
+  border-radius: 4px; padding: 2px;
+}
+.mode-toggle button {
+  background: transparent; border: 0;
+  padding: 4px 10px; font: inherit; font-size: 11.5px;
+  color: var(--text-muted); border-radius: 3px;
+  cursor: pointer;
+}
+.mode-toggle button.active {
+  background: var(--surface-2);
+  color: var(--text); font-weight: 600;
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+/* Page-level Viewer / Editor toggle. The page boots in Viewer
+   (read-only pan + zoom + highlight); Editor unlocks drag-to-reshape. */
+.page-toggle {
+  display: inline-flex; gap: 1px; background: var(--hairline);
+  border-radius: 4px; padding: 2px;
+}
+.page-toggle button {
+  background: transparent; border: 0;
+  padding: 4px 10px; font: inherit; font-size: 11.5px;
+  color: var(--text-muted); border-radius: 3px;
+  cursor: pointer;
+}
+.page-toggle button.active {
+  background: var(--accent-soft);
+  color: var(--accent); font-weight: 600;
+  box-shadow: 0 0 0 1px rgba(91,141,239,0.6);
+}
+/* EN / RU language toggle — flips every UI string and every
+   bilingual {ru, en} structure / group / hint label that ships in
+   anatomy_templates.json. Custom reviewer-added labels stay as
+   typed (we have nothing to translate them to). */
+.lang-toggle {
+  display: inline-flex; gap: 1px; background: var(--hairline);
+  border-radius: 4px; padding: 2px;
+}
+.lang-toggle button {
+  background: transparent; border: 0;
+  padding: 4px 8px; font: inherit; font-size: 11px; font-weight: 600;
+  color: var(--text-muted); border-radius: 3px;
+  cursor: pointer; letter-spacing: 0.04em;
+}
+.lang-toggle button.active {
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+/* Disclaimer paragraphs are tagged with data-lang and shown only
+   when the matching language is active. */
+#disclaimer p[data-lang] { display: none; }
+#disclaimer p[data-lang].show { display: block; }
+/* In viewer mode, hide every chrome that mutates state. The canvas
+   keeps pan + zoom + hover-highlight; drag-to-reshape is suppressed
+   in JS (mousedown guard) so structures cannot be edited accidentally. */
+body.viewer-mode #mode-polyline,
+body.viewer-mode #mode-bbox,
+body.viewer-mode #btn-save,
+body.viewer-mode #btn-reset,
+body.viewer-mode #btn-snap,
+body.viewer-mode .add-btn,
+body.viewer-mode .struct-mode,
+body.viewer-mode .delete-custom {
+  display: none !important;
+}
+/* Snap button: tinted amber when on, neutral when off. */
+.tb-btn#btn-snap.active {
+  color: var(--amber); border-color: rgba(251,191,36,0.55);
+  background: rgba(251,191,36,0.10); font-weight: 600;
+}
+.tb-meta {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px; color: var(--text-dim);
+}
+.tb-meta b { color: var(--text-muted); font-weight: 500; }
+
+/* ──────────────── Layout: sidebar + canvas ──────────────── */
+#workspace {
+  flex: 1 1 auto; display: flex; min-height: 0; min-width: 0;
+}
+#sidebar {
+  width: 280px; flex-shrink: 0;
+  background: var(--panel); border-right: 1px solid var(--hairline);
+  overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+.group {
+  border-bottom: 1px solid var(--hairline);
+}
+.group-head {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 12px;
+  background: rgba(11,15,23,0.6);
+  font-size: 11px; font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  user-select: none;
+}
+.group-head .icon { font-size: 13px; }
+.group-head .count {
+  margin-left: auto;
+  font-family: "IBM Plex Mono", monospace; font-size: 10px;
+  color: var(--text-dim); font-weight: 400;
+}
+.group-head .add-btn {
+  background: rgba(91,141,239,0.10);
+  border: 1px solid rgba(91,141,239,0.45);
+  color: var(--accent);
+  font: inherit; font-size: 10px; font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 99px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-left: 6px;
+}
+.group-head .add-btn:hover {
+  background: rgba(91,141,239,0.30); color: #fff;
+}
+/* Group-level eye toggle: hides/shows every structure in this group at
+   once. Visible in BOTH Viewer and Editor (visibility is a viewing
+   concern, not an edit). The hidden state is derived: "all structures
+   in the group are _hidden". */
+.group-head .group-vis {
+  background: transparent; border: 0;
+  color: var(--text-muted);
+  font: inherit; font-size: 12px;
+  padding: 0 4px; line-height: 1;
+  cursor: pointer;
+  position: relative;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+.group-head .group-vis:hover { color: var(--accent); }
+.group-head .group-vis.is-hidden { opacity: 0.40; color: var(--text-dim); }
+.group-head .group-vis.is-hidden::after {
+  content: "";
+  position: absolute;
+  left: 3px; right: 3px;
+  top: 50%;
+  height: 1px;
+  background: currentColor;
+  transform: rotate(-22deg);
+}
+/* Drawing-mode banner — visible when the user is mid-stroke on a new
+   custom structure. Click on canvas adds points; Enter / double-click
+   commits; Esc cancels. */
+#draw-banner {
+  position: absolute;
+  top: 12px; left: 50%; transform: translateX(-50%);
+  background: rgba(91,141,239,0.18);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 8px 14px;
+  color: var(--text);
+  font-size: 12px;
+  z-index: 10;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.45);
+  display: none;
+}
+#draw-banner.bbox-hint b { color: var(--amber); }
+#draw-banner.poly-hint b { color: var(--accent); }
+#draw-banner button {
+  margin-left: 10px;
+  background: rgba(15,23,42,0.6);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font: inherit; font-size: 11px;
+  padding: 3px 9px; border-radius: 4px;
+  cursor: pointer;
+}
+#draw-banner button:hover { border-color: var(--accent); color: var(--accent); }
+#draw-banner button.danger:hover { border-color: var(--rose); color: var(--rose); }
+.struct.is-custom .label::after {
+  content: " · custom"; color: var(--text-dim); font-size: 9.5px;
+  letter-spacing: 0.04em;
+}
+.struct .delete-custom {
+  background: transparent; border: 0;
+  color: var(--text-dim);
+  cursor: pointer; font-size: 13px; line-height: 1;
+  padding: 0 4px; margin-left: 2px;
+}
+.struct .delete-custom:hover { color: var(--rose); }
+.group-rows { display: flex; flex-direction: column; }
+.struct {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 12px 5px 16px;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.struct:hover { background: rgba(91,141,239,0.06); color: var(--text); }
+.struct.active {
+  background: rgba(91,141,239,0.10);
+  border-left-color: var(--accent);
+  color: var(--text);
+}
+.struct .swatch {
+  width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
+}
+.struct .label  { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.struct .pts   {
+  font-family: "IBM Plex Mono", monospace; font-size: 9.5px;
+  color: var(--text-dim);
+}
+.struct-mode {
+  background: rgba(15,23,42,0.5);
+  border: 1px solid var(--hairline);
+  color: var(--text-dim);
+  font: inherit; font-size: 10px;
+  padding: 1px 5px; border-radius: 3px;
+  cursor: pointer; line-height: 1;
+}
+.struct-mode:hover { color: var(--accent); border-color: var(--accent); }
+.struct-mode.bbox      { color: var(--amber); border-color: rgba(251,191,36,0.4); }
+.struct-mode.polyline  { color: var(--accent); border-color: rgba(91,141,239,0.4); }
+
+/* Per-structure visibility toggle (eye icon).
+   Visible in both Viewer and Editor — purely a viewing preference, not
+   an edit. Session-only state: closing the page restores defaults so the
+   reviewer never opens a file with structures mysteriously missing. */
+.struct-vis {
+  background: transparent; border: 0;
+  color: var(--text-muted);
+  font: inherit; font-size: 12px;
+  padding: 0 4px; line-height: 1;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+.struct-vis:hover { color: var(--accent); }
+.struct-vis.is-hidden { opacity: 0.40; color: var(--text-dim); }
+.struct-vis.is-hidden::after {
+  content: "";
+  position: absolute;
+  left: 3px; right: 3px;
+  top: 50%;
+  height: 1px;
+  background: currentColor;
+  transform: rotate(-22deg);
+}
+/* Dim the whole row when its structure is hidden so the reviewer can
+   spot at-a-glance which entries were toggled off. */
+.struct.is-row-hidden .label,
+.struct.is-row-hidden .swatch,
+.struct.is-row-hidden .pts {
+  opacity: 0.55;
+}
+
+/* ──────────────── Canvas area ──────────────── */
+#canvas-host {
+  flex: 1 1 auto;
+  position: relative;
+  background: #050608;
+  overflow: hidden;
+  cursor: grab;
+}
+#canvas-host.dragging { cursor: grabbing; }
+#opg-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: block;
+}
+#hover-tip {
+  position: absolute; pointer-events: none;
+  background: rgba(15,23,42,0.92);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--text);
+  z-index: 5;
+  display: none;
+}
+
+/* ──────────────── Status bar (bottom) ──────────────── */
+#statusbar {
+  height: 24px; flex-shrink: 0;
+  background: var(--surface-2);
+  border-top: 1px solid var(--hairline);
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 14px;
+  font-family: "IBM Plex Mono", monospace; font-size: 10px;
+  color: var(--text-dim);
+}
+#statusbar b { color: var(--text-muted); font-weight: 500; }
+#statusbar .sb-ok { color: var(--emerald); }
+#statusbar .sb-warn { color: var(--amber); }
+
+/* ──────────────── Disclaimer footer ──────────────── */
+#disclaimer {
+  flex-shrink: 0;
+  background: rgba(11,15,23,0.85);
+  border-top: 1px solid rgba(148,163,184,0.18);
+  padding: 10px 14px;
+  font-size: 10.5px; line-height: 1.55;
+  color: var(--text-dim);
+  max-height: 22vh; overflow-y: auto;
+}
+#disclaimer p { margin-bottom: 4px; }
+#disclaimer p:last-child { margin-bottom: 0; }
+#disclaimer strong { color: var(--text-muted); }
+#disclaimer a { color: var(--accent); text-decoration: none; }
+#disclaimer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     TOP TOOLBAR
+     ============================================================ -->
+<header id="topbar">
+  <div class="brand">
+    <span class="logo">ORIS</span>
+    <span class="ver">v0.1</span>
+    <span class="sep">·</span>
+    <span class="mode" id="brand-mode">Anatomy viewer</span>
+  </div>
+  <a href="/play" class="tb-btn back" id="back-link">← /play</a>
+  <span class="tb-meta"><span id="lbl-file-id">file_id</span> <b id="meta-file-id">1001</b></span>
+  <div class="page-toggle" role="tablist" aria-label="Page mode">
+    <button id="page-viewer" class="active" data-page="viewer">👁 Viewer</button>
+    <button id="page-editor" data-page="editor">✏ Edit</button>
+  </div>
+  <div class="tb-spacer"></div>
+  <div class="lang-toggle" role="tablist" aria-label="Language" data-lang-toggle>
+    <button id="lang-ru" data-lang="ru">RU</button>
+    <button id="lang-en" data-lang="en">EN</button>
+  </div>
+  <div class="mode-toggle" role="tablist" aria-label="Annotation mode">
+    <button id="mode-polyline" class="active" data-mode="polyline">⌒ Polyline</button>
+    <button id="mode-bbox" data-mode="bbox">▭ Bbox</button>
+  </div>
+  <button class="tb-btn" id="btn-snap">🧲 Snap</button>
+  <span class="tb-meta"><span id="lbl-zoom">zoom</span> <b id="meta-zoom">100%</b></span>
+  <button class="tb-btn" id="btn-fit">Fit</button>
+  <button class="tb-btn" id="btn-reset">Reset</button>
+  <button class="tb-btn primary" id="btn-save">✓ Save</button>
+</header>
+
+<!-- ============================================================
+     WORKSPACE: SIDEBAR + CANVAS
+     ============================================================ -->
+<div id="workspace">
+  <aside id="sidebar"></aside>
+  <main id="canvas-host">
+    <canvas id="opg-canvas"></canvas>
+    <div id="hover-tip"></div>
+    <div id="draw-banner">
+      <span id="draw-banner-text">Drawing <b id="draw-banner-name">…</b></span>
+      <button id="draw-banner-commit">Commit (Enter)</button>
+      <button id="draw-banner-cancel" class="danger">Cancel (Esc)</button>
+    </div>
+  </main>
+</div>
+
+<!-- ============================================================
+     STATUS BAR
+     ============================================================ -->
+<div id="statusbar">
+  <span><span id="sbl-active">active</span> <b id="sb-active">—</b></span>
+  <span><span id="sbl-mode">mode</span> <b id="sb-mode">polyline</b></span>
+  <span><span id="sbl-vertices">vertices</span> <b id="sb-vertices">0</b></span>
+  <span><span id="sbl-saved">last save</span> <b id="sb-saved">—</b></span>
+  <span style="margin-left:auto" id="sb-hint">drag points · click segment to insert · right-click point to delete · B / P toggle mode</span>
+</div>
+
+<!-- ============================================================
+     DISCLAIMER (mandatory per plan §"Disclaimer footer")
+     ============================================================ -->
+<footer id="disclaimer">
+  <p data-lang="en"><strong>Disclaimer.</strong> Drag-to-reshape and vertex add/delete affect only the in-browser preview state shown in this editor; they do not modify any clinical record, do not constitute a diagnosis, and have no clinical or legal effect. The panoramic radiographs displayed here are anonymised synthetic reference cases shown with the appropriate patient consent (RUDN K08.1 cohort, ethical approval FAS-РУДН-2024-K08-1, see <a href="/PRIVACY.md">PRIVACY.md</a>). All processing — EXIF strip, 5 % all-side crop, watermark — was performed in accordance with Russian Federal Law 152-FZ on personal data, GDPR-equivalent practice and HIPAA Safe-Harbor de-identification.</p>
+  <p data-lang="ru"><strong>Дисклеймер.</strong> Перетаскивание точек и добавление/удаление вершин изменяют только просмотровое состояние редактора в браузере; они не влияют на клиническую запись, не являются диагнозом и не имеют клинических или юридических последствий. Показанные снимки — это анонимизированные синтетические референсные кейсы, представленные с надлежащего согласия пациента (когорта РУДН К08.1, этическое одобрение FAS-РУДН-2024-К08-1, см. <a href="/PRIVACY.md">PRIVACY.md</a>). Вся обработка (удаление EXIF, обрезка по 5 % с каждой стороны, водяной знак) проведена в соответствии с № 152-ФЗ РФ о персональных данных, практикой GDPR и принципом Safe-Harbor де-идентификации HIPAA.</p>
+</footer>
+
+<script>
+'use strict';
+
+/* ============================================================
+   anatomy_editor.html — embedded controller
+   Adapted from production _sam2_temp/interactive/multi_editor.html
+   (519 LOC). Adaptations:
+     - data feed: /api/anatomy/<file_id>/templates instead of localStorage
+     - dual-mode rendering: each structure has annotation_type 'polyline'
+       or 'bbox'. bbox has 4 corner handles, polyline has N point handles.
+     - save: POST /api/anatomy/<file_id>/templates
+     - hot-keys: B / P flip current structure mode
+   ============================================================ */
+
+const FILE_ID = parseInt(document.querySelector('meta[name="oris-file-id"]').content, 10);
+
+// State (single source of truth — render() is a pure function of this)
+const S = {
+  groups:    [],         // [{name, icon, structures: [...]}, ...]
+  byId:      {},         // {sid: structure}
+  activeId:  null,       // currently selected structure (highlighted)
+  globalMode:'polyline', // 'polyline' | 'bbox' — default mode for new strokes
+  // Page mode: 'viewer' = read-only (pan + zoom + highlight on click),
+  // 'editor' = full drag-to-reshape + +Add + Save. The page boots in
+  // viewer so reviewers can browse anatomy without risk of accidental
+  // edits; clicking '✏ Edit' in the topbar unlocks mutation. The CSS
+  // class `body.viewer-mode` hides editor-only chrome (Save / Reset /
+  // +Add / per-row mode-toggle / delete-custom / global polyline-bbox
+  // toggle), and the mousedown/keydown handlers below short-circuit
+  // every editing path when pageMode === 'viewer'.
+  pageMode: 'viewer',    // 'viewer' | 'editor'
+  // UI language is owned by window.OrisI18n (shared with /play). Use
+  // the getter / setter on that module rather than mutating S.lang
+  // directly — kept here as a read-only mirror so legacy call sites
+  // keep working.
+  get lang() { return OrisI18n.getLang(); },
+  // Magnetic snap: when ON, dragging a vertex / clicking to add a new
+  // vertex / inserting a vertex on a segment will pull toward the
+  // nearest visible vertex of any other structure within `threshold`
+  // screen-pixels. Useful when adjacent landmarks need to share a
+  // boundary vertex (e.g. mandible point clicking right onto an
+  // alveolar-crest tip). Toggle with the 🧲 button or hot-key S.
+  // Persisted in localStorage as 'oris-anatomy-snap'.
+  snap: {
+    enabled: (typeof localStorage !== 'undefined'
+              && localStorage.getItem('oris-anatomy-snap') !== '0'),
+    threshold: 12,
+  },
+  // Live screen-coord of the current snap target (when dragging /
+  // drawing). Painted as a yellow halo in render() so the reviewer
+  // sees what they will snap to before releasing the mouse.
+  snapTarget: null,
+  zoom: 1, panX: 0, panY: 0,
+  drag: null,            // { type: 'point'|'corner'|'pan'|'translate'|'new', ... }
+  hoverPoint: null,      // index of hovered vertex on activeId
+  origImg: null,
+  imgW: 2000, imgH: 1058,
+  savedSeq: 0,
+  // Drawing mode for newly-added custom structures.
+  // When non-null, every left-click on the canvas appends a point to the
+  // active structure (polyline) or starts/extends a bbox (bbox mode).
+  // Enter / double-click → commit (close polygon if `type=closed`); Esc
+  // → discard the new structure entirely. Triggered by clicking '+ Add'
+  // in the sidebar group header.
+  drawMode: null,        // null | { sid, kind: 'polyline'|'bbox' }
+};
+
+// Palette for auto-cycling custom-structure colours
+const CUSTOM_PALETTE = [
+  '#f87171', '#fbbf24', '#4ade80', '#22d3ee',
+  '#a78bfa', '#f472b6', '#fb7185', '#facc15',
+];
+let _customCounter = 0;
+function nextCustomColour() {
+  return CUSTOM_PALETTE[(_customCounter++) % CUSTOM_PALETTE.length];
+}
+
+// ─────────────────────────────────────────────────────────────
+// i18n — bilingual EN / RU. The dictionary itself lives in
+// /static/js/oris-i18n.js (loaded above) so it can be shared with
+// the /play page. Here we just thin-alias the public API and keep
+// the existing call sites working unchanged. Subscribe to
+// onLangChange so a flip from anywhere (this page or /play in
+// another tab) re-runs applyLang(), repainting the editor with
+// the new strings.
+// ─────────────────────────────────────────────────────────────
+const t      = (key, params) => OrisI18n.t(key, params);
+const tName  = (n) => OrisI18n.tName(n);
+function groupKey(g) {
+  if (typeof g.name === 'string') return g.name;
+  return g.name?.ru || g.name?.en || '';
+}
+
+// ─────────────────────────────────────────────────────────────
+// DOM refs
+// ─────────────────────────────────────────────────────────────
+const canvas = document.getElementById('opg-canvas');
+const ctx    = canvas.getContext('2d');
+const sidebar= document.getElementById('sidebar');
+const host   = document.getElementById('canvas-host');
+const tip    = document.getElementById('hover-tip');
+const sbActive   = document.getElementById('sb-active');
+const sbMode     = document.getElementById('sb-mode');
+const sbVertices = document.getElementById('sb-vertices');
+const sbSaved    = document.getElementById('sb-saved');
+const metaZoom   = document.getElementById('meta-zoom');
+
+function fitCanvasSize() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = host.clientWidth  * dpr;
+  canvas.height = host.clientHeight * dpr;
+  canvas.style.width  = host.clientWidth  + 'px';
+  canvas.style.height = host.clientHeight + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', () => { fitCanvasSize(); render(); });
+
+// ─────────────────────────────────────────────────────────────
+// Coordinate transforms
+// ─────────────────────────────────────────────────────────────
+function imgToScreen(nx, ny) {
+  // (nx, ny) are normalised [0..1]; convert to screen px via current zoom/pan
+  return [ S.panX + nx * S.imgW * S.zoom,
+           S.panY + ny * S.imgH * S.zoom ];
+}
+function screenToImg(sx, sy) {
+  return [ (sx - S.panX) / (S.imgW * S.zoom),
+           (sy - S.panY) / (S.imgH * S.zoom) ];
+}
+
+// ─────────────────────────────────────────────────────────────
+// Render
+// ─────────────────────────────────────────────────────────────
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (S.origImg) {
+    const w = S.imgW * S.zoom;
+    const h = S.imgH * S.zoom;
+    ctx.drawImage(S.origImg, S.panX, S.panY, w, h);
+  }
+
+  // Render every structure that has data
+  for (const g of S.groups) {
+    for (const s of g.structures) {
+      drawStructure(s);
+    }
+  }
+
+  // Snap halo — drawn AFTER all structures so it sits on top of every
+  // outline. Only paints while a drag/draw operation is locked onto a
+  // snap target; mouseup clears S.snapTarget.
+  if (S.snapTarget) {
+    const [hx, hy] = S.snapTarget;
+    ctx.save();
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#fbbf24';
+    ctx.shadowColor = 'rgba(251,191,36,0.65)';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(hx, hy, 9, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  metaZoom.textContent = Math.round(S.zoom * 100) + '%';
+  if (S.activeId) {
+    const s = S.byId[S.activeId];
+    if (s) {
+      sbActive.textContent   = tName(s.name);
+      sbMode.textContent     = s.annotation_type;
+      sbVertices.textContent = (s.annotation_type === 'bbox')
+        ? (s.bbox ? '4' : '0')
+        : ((s.points || []).length);
+    }
+  } else {
+    sbActive.textContent   = t('countDash');
+    sbMode.textContent     = t('countDash');
+    sbVertices.textContent = '0';
+  }
+}
+
+function drawStructure(s) {
+  // Visibility toggle: hidden structures render nothing on canvas.
+  // Sidebar still lists them (dimmed) so the reviewer can flip them back.
+  if (s._hidden) return;
+  const isActive = (s.id === S.activeId);
+  // Vertex dots and bbox corner handles are EDITING affordances —
+  // dragging only makes sense in Editor mode. Viewer renders just the
+  // outline + label so the reviewer sees the structure shape without
+  // visual noise from clickable handles.
+  const showHandles = isActive && S.pageMode === 'editor';
+  const colour = s.color || '#5b8def';
+  ctx.lineWidth = isActive ? 3 : 2;
+  ctx.strokeStyle = colour;
+
+  if (s.annotation_type === 'bbox') {
+    if (!s.bbox) return;
+    const [x1, y1] = imgToScreen(s.bbox.x1, s.bbox.y1);
+    const [x2, y2] = imgToScreen(s.bbox.x2, s.bbox.y2);
+    const w = x2 - x1, h = y2 - y1;
+    ctx.setLineDash(isActive ? [] : [8, 4]);
+    ctx.strokeRect(x1, y1, w, h);
+    ctx.setLineDash([]);
+    if (showHandles) {
+      // 4 corner handles — Editor only
+      const handles = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]];
+      ctx.fillStyle = colour;
+      handles.forEach(([hx, hy]) => {
+        ctx.beginPath();
+        ctx.rect(hx - 4, hy - 4, 8, 8);
+        ctx.fill();
+        ctx.strokeStyle = '#0e1014';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.strokeStyle = colour;
+        ctx.lineWidth = isActive ? 3 : 2;
+      });
+    }
+    drawLabel(x1, y1 - 6, tName(s.name), colour);
+    return;
+  }
+
+  // polyline
+  const pts = s.points || [];
+  if (!pts.length) return;
+  ctx.beginPath();
+  pts.forEach((p, i) => {
+    const [sx, sy] = imgToScreen(p[0], p[1]);
+    if (i === 0) ctx.moveTo(sx, sy);
+    else         ctx.lineTo(sx, sy);
+  });
+  if (s.type === 'closed' && pts.length > 2) {
+    ctx.closePath();
+    ctx.fillStyle = colour + '22';
+    ctx.fill();
+  }
+  ctx.setLineDash(isActive ? [] : [8, 4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  if (showHandles) {
+    // Vertex dots — Editor only
+    pts.forEach((p, i) => {
+      const [sx, sy] = imgToScreen(p[0], p[1]);
+      ctx.beginPath();
+      ctx.arc(sx, sy, (S.hoverPoint === i) ? 6 : 4, 0, Math.PI * 2);
+      ctx.fillStyle = colour;
+      ctx.fill();
+      ctx.strokeStyle = '#0e1014';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.strokeStyle = colour;
+      ctx.lineWidth = 3;
+    });
+  }
+  // Label is shown for the active structure in BOTH modes — in Viewer
+  // it's the only cue saying "this is the one I clicked in the list".
+  if (isActive && pts.length > 0) {
+    const [lx, ly] = imgToScreen(pts[0][0], pts[0][1]);
+    drawLabel(lx + 6, ly - 6, tName(s.name), colour);
+  }
+}
+
+function drawLabel(x, y, text, colour) {
+  ctx.font = '600 12px "IBM Plex Mono", monospace';
+  const m = ctx.measureText(text);
+  ctx.fillStyle = colour;
+  ctx.fillRect(x - 2, y - 14, m.width + 8, 16);
+  ctx.fillStyle = '#0e1014';
+  ctx.fillText(text, x + 2, y - 2);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Hit testing
+// ─────────────────────────────────────────────────────────────
+const HIT_PX_POINT = 9;
+const HIT_PX_EDGE  = 6;
+
+function findPointHit(s, sx, sy) {
+  const pts = s.points || [];
+  for (let i = 0; i < pts.length; i++) {
+    const [px, py] = imgToScreen(pts[i][0], pts[i][1]);
+    if (Math.abs(sx - px) <= HIT_PX_POINT && Math.abs(sy - py) <= HIT_PX_POINT) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+function findEdgeHit(s, sx, sy) {
+  const pts = s.points || [];
+  if (pts.length < 2) return -1;
+  let best = -1, bestD = HIT_PX_EDGE + 0.5;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [x1, y1] = imgToScreen(pts[i][0],   pts[i][1]);
+    const [x2, y2] = imgToScreen(pts[i+1][0], pts[i+1][1]);
+    const d = pointToSegmentDist(sx, sy, x1, y1, x2, y2);
+    if (d < bestD) { best = i; bestD = d; }
+  }
+  // Also test closing edge if closed
+  if (s.type === 'closed' && pts.length >= 3) {
+    const [x1, y1] = imgToScreen(pts[pts.length-1][0], pts[pts.length-1][1]);
+    const [x2, y2] = imgToScreen(pts[0][0], pts[0][1]);
+    const d = pointToSegmentDist(sx, sy, x1, y1, x2, y2);
+    if (d < bestD) { best = pts.length - 1; bestD = d; }
+  }
+  return best;
+}
+
+function pointToSegmentDist(px, py, x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len2 = dx * dx + dy * dy;
+  if (len2 === 0) return Math.hypot(px - x1, py - y1);
+  let t = ((px - x1) * dx + (py - y1) * dy) / len2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+
+function findBboxCorner(s, sx, sy) {
+  if (!s.bbox) return -1;
+  const [x1, y1] = imgToScreen(s.bbox.x1, s.bbox.y1);
+  const [x2, y2] = imgToScreen(s.bbox.x2, s.bbox.y2);
+  const corners = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]];
+  for (let i = 0; i < 4; i++) {
+    const [cx, cy] = corners[i];
+    if (Math.abs(sx - cx) <= HIT_PX_POINT && Math.abs(sy - cy) <= HIT_PX_POINT) return i;
+  }
+  return -1;
+}
+
+function bboxContains(s, sx, sy) {
+  if (!s.bbox) return false;
+  const [x1, y1] = imgToScreen(s.bbox.x1, s.bbox.y1);
+  const [x2, y2] = imgToScreen(s.bbox.x2, s.bbox.y2);
+  return sx > x1 && sx < x2 && sy > y1 && sy < y2;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Magnetic snap — find the nearest visible vertex (polyline point or
+// bbox corner) within `S.snap.threshold` screen-pixels of the cursor.
+// Returns { sx, sy, ix, iy } where (sx, sy) are the snapped screen
+// coords (drawn as a halo) and (ix, iy) are the corresponding image
+// coords [0..1] used to overwrite the dragged / inserted point.
+// `excludeSid` + `excludeIdx` skip the vertex currently being dragged
+// (so a point doesn't snap to itself).
+// ─────────────────────────────────────────────────────────────
+function findSnapTarget(sx, sy, excludeSid, excludeIdx) {
+  if (!S.snap.enabled) return null;
+  const t = S.snap.threshold;
+  let best = null, bestD = t + 0.5;
+  for (const g of S.groups) {
+    for (const s of g.structures) {
+      if (s._hidden) continue;
+      if (s.annotation_type === 'polyline') {
+        const pts = s.points || [];
+        for (let i = 0; i < pts.length; i++) {
+          if (s.id === excludeSid && i === excludeIdx) continue;
+          const [px, py] = imgToScreen(pts[i][0], pts[i][1]);
+          const d = Math.hypot(sx - px, sy - py);
+          if (d < bestD) { bestD = d; best = { sx: px, sy: py, ix: pts[i][0], iy: pts[i][1] }; }
+        }
+      } else if (s.annotation_type === 'bbox' && s.bbox) {
+        const corners = [
+          [s.bbox.x1, s.bbox.y1], [s.bbox.x2, s.bbox.y1],
+          [s.bbox.x2, s.bbox.y2], [s.bbox.x1, s.bbox.y2],
+        ];
+        for (const [cx, cy] of corners) {
+          const [px, py] = imgToScreen(cx, cy);
+          const d = Math.hypot(sx - px, sy - py);
+          if (d < bestD) { bestD = d; best = { sx: px, sy: py, ix: cx, iy: cy }; }
+        }
+      }
+    }
+  }
+  return best;
+}
+// Wrap screenToImg with optional snap. Returns { ix, iy, snapped }.
+function snappedImg(sx, sy, excludeSid, excludeIdx) {
+  const snap = findSnapTarget(sx, sy, excludeSid, excludeIdx);
+  if (snap) {
+    S.snapTarget = [snap.sx, snap.sy];
+    return { ix: snap.ix, iy: snap.iy, snapped: true };
+  }
+  S.snapTarget = null;
+  const [ix, iy] = screenToImg(sx, sy);
+  return { ix, iy, snapped: false };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Mouse interactions
+// ─────────────────────────────────────────────────────────────
+function eventToCanvas(e) {
+  const r = canvas.getBoundingClientRect();
+  return [e.clientX - r.left, e.clientY - r.top];
+}
+
+canvas.addEventListener('mousedown', e => {
+  const [sx, sy] = eventToCanvas(e);
+  const s = S.byId[S.activeId];
+
+  // ────────────────────────────────────────────────
+  // Viewer mode: pan only — no editing of any kind.
+  // Right-click and middle-click are ignored.
+  // ────────────────────────────────────────────────
+  if (S.pageMode === 'viewer') {
+    if (e.button !== 0) return;
+    S.drag = { type: 'pan', startX: sx - S.panX, startY: sy - S.panY };
+    host.classList.add('dragging');
+    return;
+  }
+
+  // ────────────────────────────────────────────────
+  // Drawing mode for newly-added custom structures
+  // ────────────────────────────────────────────────
+  if (S.drawMode && s) {
+    if (e.button === 2) {           // right-click commits in polyline
+      e.preventDefault();
+      commitDrawing();
+      return;
+    }
+    const sn = snappedImg(sx, sy);
+    const ix = sn.ix, iy = sn.iy;
+    if (S.drawMode.kind === 'polyline') {
+      s.points = s.points || [];
+      s.points.push([Math.max(0, Math.min(1, ix)),
+                     Math.max(0, Math.min(1, iy))]);
+      markDirty(s);
+      render();
+      return;
+    }
+    if (S.drawMode.kind === 'bbox') {
+      // First click anchors top-left, drag handles the rest via mousemove
+      s.bbox = { x1: ix, y1: iy, x2: ix, y2: iy };
+      S.drag = { type: 'new-bbox', sid: s.id };
+      markDirty(s);
+      render();
+      return;
+    }
+  }
+
+  // Right-click: delete vertex / clear bbox (when not drawing)
+  if (e.button === 2) {
+    e.preventDefault();
+    if (!s) return;
+    if (s.annotation_type === 'polyline') {
+      const idx = findPointHit(s, sx, sy);
+      if (idx >= 0 && (s.points || []).length > 0) {
+        s.points.splice(idx, 1);
+        markDirty(s);
+        render();
+      }
+    } else if (s.annotation_type === 'bbox' && bboxContains(s, sx, sy)) {
+      s.bbox = null;
+      markDirty(s);
+      render();
+    }
+    return;
+  }
+
+  // Try interaction with active structure first
+  if (s) {
+    if (s.annotation_type === 'polyline') {
+      const idx = findPointHit(s, sx, sy);
+      if (idx >= 0) {
+        S.drag = { type: 'point', sid: s.id, idx };
+        return;
+      }
+      const edge = findEdgeHit(s, sx, sy);
+      if (edge >= 0) {
+        const sn = snappedImg(sx, sy);
+        s.points.splice(edge + 1, 0, [sn.ix, sn.iy]);
+        markDirty(s);
+        S.drag = { type: 'point', sid: s.id, idx: edge + 1 };
+        render();
+        return;
+      }
+    } else if (s.annotation_type === 'bbox') {
+      const corner = findBboxCorner(s, sx, sy);
+      if (corner >= 0) {
+        S.drag = { type: 'corner', sid: s.id, corner };
+        return;
+      }
+      if (bboxContains(s, sx, sy)) {
+        S.drag = { type: 'translate', sid: s.id, lastSx: sx, lastSy: sy };
+        return;
+      }
+      // Empty space + bbox missing → start drawing new bbox
+      if (!s.bbox) {
+        const sn = snappedImg(sx, sy);
+        s.bbox = { x1: sn.ix, y1: sn.iy, x2: sn.ix, y2: sn.iy };
+        S.drag = { type: 'new-bbox', sid: s.id };
+        markDirty(s);
+        render();
+        return;
+      }
+    }
+  }
+
+  // Fall back to pan
+  S.drag = { type: 'pan', startX: sx - S.panX, startY: sy - S.panY };
+  host.classList.add('dragging');
+});
+
+canvas.addEventListener('mousemove', e => {
+  const [sx, sy] = eventToCanvas(e);
+  const d = S.drag;
+  if (d) {
+    if (d.type === 'pan') {
+      S.panX = sx - d.startX;
+      S.panY = sy - d.startY;
+      render();
+      return;
+    }
+    const s = S.byId[d.sid];
+    if (!s) return;
+    if (d.type === 'point') {
+      const sn = snappedImg(sx, sy, d.sid, d.idx);
+      s.points[d.idx] = [Math.max(0, Math.min(1, sn.ix)), Math.max(0, Math.min(1, sn.iy))];
+      markDirty(s);
+      render();
+    } else if (d.type === 'corner') {
+      const sn = snappedImg(sx, sy);
+      const corners = [['x1','y1'], ['x2','y1'], ['x2','y2'], ['x1','y2']];
+      const [kx, ky] = corners[d.corner];
+      s.bbox[kx] = Math.max(0, Math.min(1, sn.ix));
+      s.bbox[ky] = Math.max(0, Math.min(1, sn.iy));
+      markDirty(s);
+      render();
+    } else if (d.type === 'translate') {
+      const [ix, iy] = screenToImg(sx, sy);
+      const [lx, ly] = screenToImg(d.lastSx, d.lastSy);
+      const dx = ix - lx, dy = iy - ly;
+      s.bbox.x1 += dx; s.bbox.x2 += dx;
+      s.bbox.y1 += dy; s.bbox.y2 += dy;
+      d.lastSx = sx; d.lastSy = sy;
+      markDirty(s);
+      render();
+    } else if (d.type === 'new-bbox') {
+      const sn = snappedImg(sx, sy);
+      s.bbox.x2 = Math.max(0, Math.min(1, sn.ix));
+      s.bbox.y2 = Math.max(0, Math.min(1, sn.iy));
+      markDirty(s);
+      render();
+    }
+    return;
+  }
+  // Not dragging: clear lingering snap halo so it doesn't paint while idle.
+  if (S.snapTarget) { S.snapTarget = null; render(); }
+
+  // Viewer mode: no point-hover affordance — there are no dots to hover.
+  // Suppress the "point N/M" tooltip and the hover-grow effect on dots.
+  if (S.pageMode === 'viewer') {
+    if (S.hoverPoint !== null) { S.hoverPoint = null; render(); }
+    tip.style.display = 'none';
+    return;
+  }
+
+  // Editor: hover hit-testing for cursor feedback on active structure
+  const s = S.byId[S.activeId];
+  if (s && s.annotation_type === 'polyline') {
+    const idx = findPointHit(s, sx, sy);
+    if (idx !== S.hoverPoint) {
+      S.hoverPoint = idx;
+      render();
+    }
+    if (idx >= 0) {
+      tip.textContent = `${tName(s.name)} · point ${idx + 1}/${(s.points || []).length}`;
+      tip.style.left = (sx + 12) + 'px';
+      tip.style.top  = (sy + 12) + 'px';
+      tip.style.display = 'block';
+      return;
+    }
+  }
+  tip.style.display = 'none';
+});
+
+canvas.addEventListener('mouseup',   () => {
+  S.drag = null;
+  host.classList.remove('dragging');
+  if (S.snapTarget) { S.snapTarget = null; render(); }
+});
+canvas.addEventListener('mouseleave',() => {
+  S.drag = null;
+  host.classList.remove('dragging');
+  tip.style.display = 'none';
+  if (S.snapTarget) { S.snapTarget = null; render(); }
+});
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+canvas.addEventListener('dblclick', () => { if (S.drawMode) commitDrawing(); });
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const [sx, sy] = eventToCanvas(e);
+  const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+  const newZoom = Math.max(0.1, Math.min(8, S.zoom * factor));
+  // Zoom around cursor: keep image pixel under cursor stable
+  S.panX = sx - (sx - S.panX) * (newZoom / S.zoom);
+  S.panY = sy - (sy - S.panY) * (newZoom / S.zoom);
+  S.zoom = newZoom;
+  render();
+}, { passive: false });
+
+// ─────────────────────────────────────────────────────────────
+// Keyboard
+// ─────────────────────────────────────────────────────────────
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  // H toggles visibility of the active structure — purely a viewing
+  // operation, so available in BOTH Viewer and Editor modes.
+  if ((e.key === 'h' || e.key === 'H') && S.activeId) {
+    toggleVisibility(S.activeId);
+    return;
+  }
+  // Viewer mode: only navigation keys allowed (F = fit, Esc = deselect).
+  if (S.pageMode === 'viewer') {
+    if (e.key === 'f' || e.key === 'F') { fit(); return; }
+    if (e.key === 'Escape') { S.activeId = null; renderSidebar(); render(); return; }
+    return;
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault(); save(); return;
+  }
+  if (S.drawMode) {
+    if (e.key === 'Enter')  { commitDrawing();  return; }
+    if (e.key === 'Escape') { cancelDrawing();  return; }
+  }
+  if (e.key === 'f' || e.key === 'F') { fit(); return; }
+  if (e.key === 'b' || e.key === 'B') { setStructMode(S.activeId, 'bbox'); return; }
+  if (e.key === 'p' || e.key === 'P') { setStructMode(S.activeId, 'polyline'); return; }
+  // Plain S (no Ctrl/Cmd) toggles magnetic snap. Ctrl+S already saves.
+  if ((e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.metaKey) {
+    setSnap(!S.snap.enabled); return;
+  }
+  if (e.key === 'Escape') { S.activeId = null; renderSidebar(); render(); return; }
+});
+
+// ─────────────────────────────────────────────────────────────
+// Sidebar render
+// ─────────────────────────────────────────────────────────────
+function renderSidebar() {
+  let html = '';
+  for (const g of S.groups) {
+    const gKey = groupKey(g);          // canonical RU name — stable backend key
+    const gDisplay = tName(g.name);    // localised label shown in UI
+    html += `<div class="group" data-group="${escAttr(gKey)}">`;
+    const allHidden = isGroupAllHidden(g);
+    html += `<div class="group-head"><span class="icon">${g.icon || '·'}</span>`
+          + `<span>${esc(gDisplay)}</span>`
+          + `<span class="count">${g.structures.length}</span>`
+          + `<button class="add-btn" data-add-group="${escAttr(gKey)}" `
+          + `title="${escAttr(t('addTitle', {group: gDisplay}))}">${esc(t('addBtn'))}</button>`
+          // Group eye: only render when the group has at least one
+          // structure (empty groups have nothing to hide). Class flips
+          // to .is-hidden when EVERY structure in the group is hidden.
+          + (g.structures.length
+              ? `<button class="group-vis${allHidden ? ' is-hidden' : ''}" `
+              + `data-vis-group="${escAttr(gKey)}" `
+              + `aria-pressed="${allHidden ? 'true' : 'false'}" `
+              + `title="${escAttr(allHidden ? t('groupShowAll') : t('groupHideAll'))}">👁</button>`
+              : '')
+          + `</div>`;
+    html += '<div class="group-rows">';
+    for (const s of g.structures) {
+      const active = (s.id === S.activeId) ? ' active' : '';
+      const isCustom = !!s._custom;
+      const isHidden = !!s._hidden;
+      const sDisplay = tName(s.name);
+      const sHint    = tName(s.hint) || sDisplay;
+      const pts = (s.annotation_type === 'bbox')
+        ? (s.bbox ? '▭' : '∅')
+        : `${(s.points || []).length} ${t('structuresCountSuffix')}`;
+      html += `<div class="struct${active}${isCustom ? ' is-custom' : ''}${isHidden ? ' is-row-hidden' : ''}" data-id="${escAttr(s.id)}">`
+            + `<span class="swatch" style="background:${escAttr(s.color || '#5b8def')}"></span>`
+            + `<span class="label" title="${escAttr(sHint)}">${esc(sDisplay)}</span>`
+            + `<span class="pts">${pts}</span>`
+            + `<button class="struct-vis${isHidden ? ' is-hidden' : ''}" data-vis-id="${escAttr(s.id)}" `
+            + `title="${escAttr(isHidden ? t('structShow') : t('structHide'))}" aria-pressed="${isHidden ? 'true' : 'false'}">👁</button>`
+            + `<button class="struct-mode ${escAttr(s.annotation_type)}" data-mode-id="${escAttr(s.id)}" title="${escAttr(t('structModeTitle'))}">`
+            + (s.annotation_type === 'bbox' ? '▭' : '⌒')
+            + '</button>'
+            + (isCustom
+                ? `<button class="delete-custom" data-delete-id="${escAttr(s.id)}" title="${escAttr(t('deleteCustomTitle'))}">×</button>`
+                : '')
+            + '</div>';
+    }
+    html += '</div></div>';
+  }
+  sidebar.innerHTML = html;
+  // Wire up click handlers
+  sidebar.querySelectorAll('.struct').forEach(el => {
+    el.addEventListener('click', e => {
+      if (e.target.closest('.struct-mode')
+          || e.target.closest('.delete-custom')
+          || e.target.closest('.struct-vis')) return;
+      S.activeId = el.dataset.id;
+      renderSidebar(); render();
+    });
+  });
+  sidebar.querySelectorAll('.struct-vis').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleVisibility(el.dataset.visId);
+    });
+  });
+  sidebar.querySelectorAll('.group-vis').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleGroupVisibility(el.dataset.visGroup);
+    });
+  });
+  sidebar.querySelectorAll('.struct-mode').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const sid = el.dataset.modeId;
+      const s = S.byId[sid];
+      if (!s) return;
+      const next = (s.annotation_type === 'bbox') ? 'polyline' : 'bbox';
+      setStructMode(sid, next);
+    });
+  });
+  sidebar.querySelectorAll('.add-btn').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      addCustomStructure(el.dataset.addGroup);
+    });
+  });
+  sidebar.querySelectorAll('.delete-custom').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const sid = el.dataset.deleteId;
+      deleteCustomStructure(sid);
+    });
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Per-structure visibility toggle (the 👁 button).
+// Hidden structures are simply skipped in drawStructure(); they remain
+// in the sidebar (dimmed) so the reviewer can re-enable them. State is
+// session-only — _hidden never goes into the save payload.
+// ─────────────────────────────────────────────────────────────
+function toggleVisibility(sid) {
+  const s = S.byId[sid];
+  if (!s) return;
+  s._hidden = !s._hidden;
+  // Hiding the active structure mid-edit would leave handles invisible
+  // but still hit-testable — deselect to avoid confusion.
+  if (s._hidden && S.activeId === sid) S.activeId = null;
+  renderSidebar();
+  render();
+}
+
+// Group-level visibility: derived from per-structure _hidden flags.
+// "All hidden" = every structure in the group has _hidden === true; the
+// click action then becomes "show all". Otherwise the action is "hide
+// all" — even a single visible structure flips the group to "hide".
+function isGroupAllHidden(g) {
+  return g.structures.length > 0 && g.structures.every(s => s._hidden);
+}
+function toggleGroupVisibility(groupName) {
+  // groupName comes from data-vis-group, which we wrote as the canonical
+  // RU name (groupKey(g)) — match by groupKey, not the bilingual object.
+  const g = S.groups.find(x => groupKey(x) === groupName);
+  if (!g || !g.structures.length) return;
+  const newHidden = g.structures.some(s => !s._hidden); // any visible → hide all
+  for (const s of g.structures) {
+    s._hidden = newHidden;
+    if (newHidden && S.activeId === s.id) S.activeId = null;
+  }
+  renderSidebar();
+  render();
+}
+
+// ─────────────────────────────────────────────────────────────
+// Custom structure: add / draw / commit / cancel / delete
+// ─────────────────────────────────────────────────────────────
+function addCustomStructure(groupName) {
+  // Cancel any in-progress drawing first
+  if (S.drawMode) cancelDrawing();
+  // groupName is the canonical RU key (data-add-group). For the prompt,
+  // show the user-facing localised version.
+  const g = S.groups.find(x => groupKey(x) === groupName);
+  const groupDisplay = g ? tName(g.name) : groupName;
+  const name = (window.prompt(
+    t('promptCustomName', {group: groupDisplay}),
+    t('promptCustomNameDefault')) || '').trim();
+  if (!name) return;
+  // Ask annotation kind
+  const kind = (window.prompt(
+    t('promptKind'),
+    S.globalMode) || S.globalMode).trim().toLowerCase();
+  const annotation_type = (kind === 'bbox') ? 'bbox' : 'polyline';
+  const sid = `custom_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+  const colour = nextCustomColour();
+  const newStruct = {
+    id: sid, name, color: colour,
+    type: 'closed',                            // assume closed; reviewer can edit
+    annotation_type,
+    points: (annotation_type === 'polyline') ? [] : [],
+    bbox:   (annotation_type === 'bbox')     ? null : null,
+    _custom: true, _group: groupName,
+    hint: `Custom ${annotation_type} added by reviewer`,
+  };
+  // Inject into local state and the matching group (`g` was resolved
+  // earlier in this function via groupKey).
+  S.byId[sid] = newStruct;
+  if (g) g.structures.push(newStruct);
+  S.activeId = sid;
+  markDirty(newStruct);
+  // Enter drawing mode
+  S.drawMode = { sid, kind: annotation_type };
+  showDrawBanner(newStruct);
+  renderSidebar();
+  render();
+}
+
+function commitDrawing() {
+  if (!S.drawMode) return;
+  const s = S.byId[S.drawMode.sid];
+  if (!s) { S.drawMode = null; hideDrawBanner(); return; }
+  if (s.annotation_type === 'polyline' && (s.points || []).length < 2) {
+    // Not enough points to be a useful polyline — discard.
+    cancelDrawing();
+    return;
+  }
+  if (s.annotation_type === 'bbox' && !s.bbox) {
+    cancelDrawing();
+    return;
+  }
+  S.drawMode = null;
+  hideDrawBanner();
+  render();
+}
+
+function cancelDrawing() {
+  if (!S.drawMode) return;
+  const s = S.byId[S.drawMode.sid];
+  if (s && s._custom) {
+    // Remove the half-drawn custom structure entirely
+    deleteCustomStructure(s.id, /*silent=*/true);
+  }
+  S.drawMode = null;
+  hideDrawBanner();
+  render();
+  renderSidebar();
+}
+
+function deleteCustomStructure(sid, silent) {
+  const s = S.byId[sid];
+  if (!s || !s._custom) return;
+  if (!silent && !confirm(t('confirmDeleteCustom', {name: tName(s.name)}))) return;
+  delete S.byId[sid];
+  for (const g of S.groups) {
+    g.structures = g.structures.filter(x => x.id !== sid);
+  }
+  // Mark deletion: we need to send a tombstone entry on save so the
+  // server clears the override. Use _deleted flag on a stub kept in
+  // _dirty — buildOverridesPayload picks it up.
+  _dirty.add(sid);
+  _deleted.add(sid);
+  if (S.activeId === sid) S.activeId = null;
+  renderSidebar();
+  render();
+}
+
+function showDrawBanner(s) {
+  const el = document.getElementById('draw-banner');
+  const text = document.getElementById('draw-banner-text');
+  const name = esc(tName(s.name));
+  el.className = (s.annotation_type === 'bbox') ? 'bbox-hint' : 'poly-hint';
+  text.innerHTML = (s.annotation_type === 'polyline')
+    ? t('drawingPolyline', {name})
+    : t('drawingBbox',     {name});
+  // Update commit/cancel button labels each time (lang may have flipped)
+  const cb = document.getElementById('draw-banner-commit');
+  if (cb) cb.textContent = t('commit');
+  const cnb = document.getElementById('draw-banner-cancel');
+  if (cnb) cnb.textContent = t('cancel');
+  el.style.display = 'block';
+}
+function hideDrawBanner() { document.getElementById('draw-banner').style.display = 'none'; }
+document.getElementById('draw-banner-commit').addEventListener('click', commitDrawing);
+document.getElementById('draw-banner-cancel').addEventListener('click', cancelDrawing);
+
+function setStructMode(sid, mode) {
+  const s = S.byId[sid];
+  if (!s || s.annotation_type === mode) return;
+  s.annotation_type = mode;
+  // Auto-derive bbox from polyline bounds if switching polyline → bbox
+  if (mode === 'bbox' && !s.bbox && (s.points || []).length) {
+    const xs = s.points.map(p => p[0]);
+    const ys = s.points.map(p => p[1]);
+    s.bbox = { x1: Math.min(...xs), y1: Math.min(...ys),
+               x2: Math.max(...xs), y2: Math.max(...ys) };
+  }
+  markDirty(s);
+  renderSidebar();
+  render();
+}
+
+function esc(s)     { return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function escAttr(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ─────────────────────────────────────────────────────────────
+// Override tracking and save
+// ─────────────────────────────────────────────────────────────
+const _dirty = new Set();
+const _deleted = new Set();
+function markDirty(s) { _dirty.add(s.id); }
+
+function buildOverridesPayload() {
+  const out = {};
+  for (const sid of _dirty) {
+    if (_deleted.has(sid)) {
+      // Tombstone: the server treats `_deleted: true` as "drop this id
+      // from the overrides map so the base template (if any) shows
+      // through unchanged". Custom structures vanish entirely.
+      out[sid] = { _deleted: true };
+      continue;
+    }
+    const s = S.byId[sid];
+    if (!s) continue;
+    const rec = { annotation_type: s.annotation_type };
+    if (s.annotation_type === 'polyline') {
+      rec.points = s.points || [];
+      rec.type   = s.type || 'open';
+    } else {
+      rec.bbox = s.bbox || null;
+    }
+    if (s._custom) {
+      rec._custom = true;
+      rec._group  = s._group;
+      rec.name    = s.name;
+      rec.color   = s.color;
+      if (s.hint) rec.hint = s.hint;
+    } else {
+      // Allow renaming / re-colouring of base structures too — small
+      // niceity for reviewers but no code cost.
+      if (s.name)  rec.name  = s.name;
+      if (s.color) rec.color = s.color;
+    }
+    out[sid] = rec;
+  }
+  return out;
+}
+
+async function save() {
+  const overrides = buildOverridesPayload();
+  if (Object.keys(overrides).length === 0) {
+    sbSaved.textContent = t('saveNoEdits');
+    return;
+  }
+  const r = await fetch(`/api/anatomy/${FILE_ID}/templates`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ overrides, source: 'manual' }),
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    sbSaved.textContent = t('saveFailed') + (err.error || r.status);
+    return;
+  }
+  const d = await r.json();
+  S.savedSeq = d.sequence_num;
+  sbSaved.innerHTML = t('saveOk', {seq: d.sequence_num, n: d.structures_saved});
+  _dirty.clear();
+}
+
+document.getElementById('btn-save').addEventListener('click', save);
+document.getElementById('btn-fit').addEventListener('click', fit);
+document.getElementById('btn-reset').addEventListener('click', async () => {
+  if (!confirm(t('confirmReset'))) return;
+  await fetch(`/api/anatomy/${FILE_ID}/templates`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ overrides: {}, source: 'manual' }),
+  });
+  await load();
+});
+
+document.querySelectorAll('.mode-toggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-toggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    S.globalMode = btn.dataset.mode;
+    if (S.activeId) setStructMode(S.activeId, S.globalMode);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// Page mode (Viewer ↔ Editor)
+// ─────────────────────────────────────────────────────────────
+function setPageMode(mode) {
+  if (mode !== 'viewer' && mode !== 'editor') return;
+  // Cancel any in-progress custom-structure drawing when leaving editor —
+  // otherwise the half-drawn structure becomes editable invisibly.
+  if (S.drawMode && mode === 'viewer') cancelDrawing();
+  S.pageMode = mode;
+  document.body.classList.toggle('viewer-mode', mode === 'viewer');
+  document.querySelectorAll('.page-toggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.page === mode);
+  });
+  const brand = document.getElementById('brand-mode');
+  if (brand) brand.textContent = (mode === 'viewer') ? t('appViewer') : t('appEditor');
+  const hint = document.getElementById('sb-hint');
+  if (hint) hint.textContent = (mode === 'viewer') ? t('sbHintViewer') : t('sbHintEditor');
+  renderSidebar();
+  render();
+}
+document.querySelectorAll('.page-toggle button').forEach(btn => {
+  btn.addEventListener('click', () => setPageMode(btn.dataset.page));
+});
+
+// ─────────────────────────────────────────────────────────────
+// Language switch (EN ↔ RU). The toggle button is auto-wired by
+// OrisI18n, so we only need to register applyLang() as a listener
+// — every flip (locally OR from the /play tab) re-paints the
+// editor's labels.
+// ─────────────────────────────────────────────────────────────
+function applyLang() {
+  document.documentElement.lang = S.lang;
+  document.title = `ORIS · ${(S.pageMode === 'viewer') ? t('appViewer') : t('appEditor')} · file_id ${FILE_ID}`;
+  document.getElementById('brand-mode').textContent =
+    (S.pageMode === 'viewer') ? t('appViewer') : t('appEditor');
+  document.getElementById('back-link').textContent = t('backToPlay');
+  document.getElementById('lbl-file-id').textContent = t('fileIdLabel');
+  document.getElementById('lbl-zoom').textContent = t('zoomLabel');
+  // Page-mode toggle
+  const pv = document.getElementById('page-viewer');
+  pv.textContent = t('pageViewer'); pv.title = t('pageViewerTitle');
+  const pe = document.getElementById('page-editor');
+  pe.textContent = t('pageEditor'); pe.title = t('pageEditorTitle');
+  // Annotation-mode toggle
+  document.getElementById('mode-polyline').textContent = t('polyline');
+  document.getElementById('mode-bbox').textContent     = t('bbox');
+  // Header buttons
+  const fitBtn = document.getElementById('btn-fit');
+  fitBtn.textContent = t('fit'); fitBtn.title = t('fitTitle');
+  const resetBtn = document.getElementById('btn-reset');
+  resetBtn.textContent = t('reset'); resetBtn.title = t('resetTitle');
+  const saveBtn = document.getElementById('btn-save');
+  saveBtn.textContent = t('save'); saveBtn.title = t('saveTitle');
+  const snapBtn = document.getElementById('btn-snap');
+  if (snapBtn) {
+    snapBtn.textContent = t('snapBtn');
+    snapBtn.title = t('snapTitle');
+    snapBtn.classList.toggle('active', S.snap.enabled);
+  }
+  // Status-bar labels
+  document.getElementById('sbl-active').textContent   = t('sbActive');
+  document.getElementById('sbl-mode').textContent     = t('sbMode');
+  document.getElementById('sbl-vertices').textContent = t('sbVertices');
+  document.getElementById('sbl-saved').textContent    = t('sbSaved');
+  document.getElementById('sb-hint').textContent =
+    (S.pageMode === 'viewer') ? t('sbHintViewer') : t('sbHintEditor');
+  // Lang button active state is handled centrally by OrisI18n.
+  // Disclaimer paragraphs (only the matching language is shown)
+  document.querySelectorAll('#disclaimer p[data-lang]').forEach(p => {
+    p.classList.toggle('show', p.dataset.lang === S.lang);
+  });
+  // Sidebar uses tName(g.name) / tName(s.name) — re-render flips them
+  renderSidebar();
+  render();
+}
+// Subscribe — any setLang() call (from this tab OR /play) calls applyLang.
+OrisI18n.onLangChange(applyLang);
+
+// ─────────────────────────────────────────────────────────────
+// Magnetic snap toggle
+// ─────────────────────────────────────────────────────────────
+function setSnap(enabled) {
+  S.snap.enabled = !!enabled;
+  try { localStorage.setItem('oris-anatomy-snap', enabled ? '1' : '0'); } catch(e) {}
+  const btn = document.getElementById('btn-snap');
+  if (btn) btn.classList.toggle('active', S.snap.enabled);
+}
+document.getElementById('btn-snap').addEventListener('click', () => setSnap(!S.snap.enabled));
+
+// ─────────────────────────────────────────────────────────────
+// Image load + fit
+// ─────────────────────────────────────────────────────────────
+function fit() {
+  if (!S.origImg) return;
+  const w = host.clientWidth, h = host.clientHeight;
+  const z = Math.min(w / S.imgW, h / S.imgH) * 0.96;
+  S.zoom = z;
+  S.panX = (w - S.imgW * z) / 2;
+  S.panY = (h - S.imgH * z) / 2;
+  render();
+}
+
+function loadImage() {
+  const img = new Image();
+  img.onload = () => {
+    S.origImg = img;
+    S.imgW = img.naturalWidth;
+    S.imgH = img.naturalHeight;
+    fit();
+    render();
+  };
+  img.src = `/panorama/${FILE_ID}/image`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Bootstrap: load templates + image, render sidebar + canvas
+// ─────────────────────────────────────────────────────────────
+async function load() {
+  const r = await fetch(`/api/anatomy/${FILE_ID}/templates`);
+  const d = await r.json();
+  S.groups = d.groups || [];
+  S.byId = {};
+  for (const g of S.groups) {
+    for (const s of g.structures) {
+      S.byId[s.id] = s;
+    }
+  }
+  S.savedSeq = d.saved_seq || 0;
+  if (S.savedSeq) sbSaved.innerHTML = t('loadedSeq', {seq: S.savedSeq});
+  // Default-active first structure of first non-empty group for instant feedback
+  const firstNonEmpty = S.groups.find(g => g.structures.length);
+  if (firstNonEmpty) S.activeId = firstNonEmpty.structures[0].id;
+  renderSidebar();
+  render();
+  _dirty.clear();
+}
+
+// Boot
+// Page boots in Viewer mode: apply CSS class so editor-only chrome
+// is hidden before the first render. applyLang() then sets every
+// localised label (incl. brand, hints, button text, disclaimer
+// paragraphs) according to S.lang from localStorage.
+document.body.classList.add('viewer-mode');
+applyLang();
+fitCanvasSize();
+loadImage();
+load();
+</script>
+</body>
+</html>

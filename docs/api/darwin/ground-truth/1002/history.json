@@ -1,0 +1,15 @@
+{
+  "file_id": 1002,
+  "history": [
+    {
+      "change_type": "bulk_prefill",
+      "created_at": "2026-04-29 09:05:06",
+      "fdi": null,
+      "new_value": null,
+      "old_value": null,
+      "sequence_num": 1,
+      "session_id": "774f503f-2175-4043-91b1-e83005a4b479",
+      "source": "manual"
+    }
+  ]
+}

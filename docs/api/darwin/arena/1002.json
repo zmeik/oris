@@ -1,0 +1,181 @@
+{
+  "algorithms": [
+    {
+      "branch": "main",
+      "codename": "alpha-baseline",
+      "confidence": 0.95,
+      "config": {
+        "crops": [
+          {
+            "id": "default"
+          }
+        ],
+        "filters": []
+      },
+      "config_summary": "1 crops \u00d7 0 filters",
+      "formula": {
+        "1.1": "attrition",
+        "1.2": "attrition",
+        "1.3": "endo+post+crowned",
+        "1.4": "impl_cover",
+        "1.5": "impl_cover",
+        "1.6": "missing",
+        "1.7": "missing",
+        "1.8": "missing",
+        "2.1": "attrition",
+        "2.2": "attrition",
+        "2.3": "attrition",
+        "2.4": "crowned",
+        "2.5": "endo+crowned",
+        "2.6": "bridge",
+        "2.7": "crowned",
+        "2.8": "missing",
+        "3.1": "attrition",
+        "3.2": "attrition",
+        "3.3": "attrition",
+        "3.4": "crowned+endo",
+        "3.5": "endo+crowned",
+        "3.6": "crowned",
+        "3.7": "missing",
+        "3.8": "missing",
+        "4.1": "attrition",
+        "4.2": "attrition",
+        "4.3": "attrition",
+        "4.4": "attrition",
+        "4.5": "attrition",
+        "4.6": "impl_restored",
+        "4.7": "impl_restored",
+        "4.8": "impl_restored"
+      },
+      "generation": 1,
+      "images": [
+        "synthetic"
+      ],
+      "is_alive": true,
+      "is_champion": false,
+      "score": 0.94
+    },
+    {
+      "branch": "exp-clahe",
+      "codename": "beta-aggressive",
+      "confidence": 0.84,
+      "config": {
+        "crops": [
+          {
+            "id": "tight"
+          }
+        ],
+        "filters": [
+          {
+            "name": "clahe"
+          }
+        ]
+      },
+      "config_summary": "1 crops \u00d7 1 filters",
+      "formula": {
+        "1.1": "attrition",
+        "1.2": "attrition",
+        "1.3": "endo+post+crowned",
+        "1.4": "impl_cover",
+        "1.5": "impl_cover",
+        "1.6": "missing",
+        "1.7": "missing",
+        "1.8": "missing",
+        "2.1": "attrition",
+        "2.2": "attrition",
+        "2.3": "attrition",
+        "2.4": "crowned",
+        "2.5": "endo+crowned",
+        "2.6": "bridge",
+        "2.7": "crowned",
+        "2.8": "missing",
+        "3.1": "attrition",
+        "3.2": "attrition",
+        "3.3": "attrition",
+        "3.4": "crowned+endo",
+        "3.5": "endo+crowned",
+        "3.6": "crowned",
+        "3.7": "missing",
+        "3.8": "missing",
+        "4.1": "attrition",
+        "4.2": "attrition",
+        "4.3": "attrition",
+        "4.4": "attrition",
+        "4.5": "attrition",
+        "4.6": "impl_restored",
+        "4.7": "impl_restored",
+        "4.8": "impl_restored"
+      },
+      "generation": 2,
+      "images": [
+        "synthetic"
+      ],
+      "is_alive": true,
+      "is_champion": false,
+      "score": 0.82
+    },
+    {
+      "branch": "champion",
+      "codename": "gamma-champion",
+      "confidence": 0.97,
+      "config": {
+        "crops": [
+          {
+            "id": "wide"
+          },
+          {
+            "id": "tight"
+          }
+        ],
+        "filters": [
+          {
+            "name": "sharpen"
+          }
+        ]
+      },
+      "config_summary": "2 crops \u00d7 1 filters",
+      "formula": {
+        "1.1": "attrition",
+        "1.2": "attrition",
+        "1.3": "endo+post+crowned",
+        "1.4": "impl_cover",
+        "1.5": "impl_cover",
+        "1.6": "missing",
+        "1.7": "missing",
+        "1.8": "missing",
+        "2.1": "attrition",
+        "2.2": "attrition",
+        "2.3": "attrition",
+        "2.4": "crowned",
+        "2.5": "endo+crowned",
+        "2.6": "bridge",
+        "2.7": "crowned",
+        "2.8": "missing",
+        "3.1": "attrition",
+        "3.2": "attrition",
+        "3.3": "attrition",
+        "3.4": "crowned+endo",
+        "3.5": "endo+crowned",
+        "3.6": "crowned",
+        "3.7": "missing",
+        "3.8": "missing",
+        "4.1": "attrition",
+        "4.2": "attrition",
+        "4.3": "attrition",
+        "4.4": "attrition",
+        "4.5": "attrition",
+        "4.6": "impl_restored",
+        "4.7": "impl_restored",
+        "4.8": "impl_restored"
+      },
+      "generation": 3,
+      "images": [
+        "synthetic"
+      ],
+      "is_alive": true,
+      "is_champion": true,
+      "score": 0.96
+    }
+  ],
+  "file_id": 1002
+}

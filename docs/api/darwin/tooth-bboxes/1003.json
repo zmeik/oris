@@ -1,0 +1,395 @@
+{
+  "detections": [
+    {
+      "area_px": 10531,
+      "cls": "Tooth",
+      "conf": 0.5722,
+      "fdi": "1.2",
+      "idx": 0,
+      "quadrant": "Q1",
+      "tsi": 7,
+      "x1": 838.9,
+      "x2": 913.4,
+      "y1": 268.0,
+      "y2": 484.6
+    },
+    {
+      "area_px": 11023,
+      "cls": "Tooth",
+      "conf": 0.5805,
+      "fdi": "1.1",
+      "idx": 1,
+      "quadrant": "Q1",
+      "tsi": 8,
+      "x1": 896.8,
+      "x2": 970.4,
+      "y1": 277.2,
+      "y2": 480.6
+    },
+    {
+      "area_px": 9139,
+      "cls": "Tooth",
+      "conf": 0.6036,
+      "fdi": "2.4",
+      "idx": 2,
+      "quadrant": "Q2",
+      "tsi": 12,
+      "x1": 1144.3,
+      "x2": 1217.3,
+      "y1": 302.7,
+      "y2": 500.9
+    },
+    {
+      "area_px": 7325,
+      "cls": "Tooth",
+      "conf": 0.7633,
+      "fdi": "3.3",
+      "idx": 3,
+      "quadrant": "Q3",
+      "tsi": 22,
+      "x1": 1051.9,
+      "x2": 1111.0,
+      "y1": 641.7,
+      "y2": 842.8
+    },
+    {
+      "area_px": 8205,
+      "cls": "Tooth",
+      "conf": 0.7768,
+      "fdi": "3.4",
+      "idx": 4,
+      "quadrant": "Q3",
+      "tsi": 21,
+      "x1": 1135.7,
+      "x2": 1199.1,
+      "y1": 634.9,
+      "y2": 831.0
+    },
+    {
+      "area_px": 8888,
+      "cls": "Tooth",
+      "conf": 0.8194,
+      "fdi": "4.3",
+      "idx": 5,
+      "quadrant": "Q4",
+      "tsi": 27,
+      "x1": 832.5,
+      "x2": 897.1,
+      "y1": 653.7,
+      "y2": 858.1
+    },
+    {
+      "area_px": 7110,
+      "cls": "Tooth",
+      "conf": 0.8032,
+      "fdi": "4.1",
+      "idx": 6,
+      "quadrant": "Q4",
+      "tsi": 25,
+      "x1": 921.0,
+      "x2": 985.5,
+      "y1": 692.6,
+      "y2": 863.8
+    },
+    {
+      "area_px": 0,
+      "cls": "Tooth",
+      "conf": 0.5,
+      "fdi": "1.3",
+      "idx": 7,
+      "quadrant": "Q1",
+      "source": "interpolated",
+      "tsi": -1,
+      "x1": 764.4,
+      "x2": 838.9,
+      "y1": 268.0,
+      "y2": 484.6
+    },
+    {
+      "area_px": 0,
+      "cls": "Tooth",
+      "conf": 0.5,
+      "fdi": "1.4",
+      "idx": 8,
+      "quadrant": "Q1",
+      "source": "interpolated",
+      "tsi": -1,
+      "x1": 689.9,
+      "x2": 764.4,
+      "y1": 268.0,
+      "y2": 484.6
+    },
+    {
+      "area_px": 0,
+      "cls": "Tooth",
+      "conf": 0.5,
+      "fdi": "1.5",
+      "idx": 9,
+      "quadrant": "Q1",
+      "source": "interpolated",
+      "tsi": -1,
+      "x1": 615.4,
+      "x2": 689.9,
+      "y1": 268.0,
+      "y2": 484.6
+    },
+    {
+      "area_px": 0,
+      "cls": "Tooth",
+      "conf": 0.5,
+      "fdi": "1.6",
+      "idx": 10,
+      "quadrant": "Q1",
+      "source": "interpolated",
+      "tsi": -1,
+      "x1": 540.9,
+      "x2": 615.4,
+      "y1": 268.0,
+      "y2": 484.6
+    },
+    {
+      "area_px": 0,
+      "cls": "Tooth",
+      "conf": 0.5,
+      "fdi": "1.7",
+      "idx": 11,
+      "quadrant": "Q1",
+      "source": "interpolated",
+      "tsi": -1,
+      "x1": 466.4,
+      "x2": 540.9,
+      "y1": 268.0,
+      "y2": 484.6
+    },
+    {
+      "area_px": 0,
+      "cls": "Tooth",
+      "conf": 0.5,
+      "fdi": "2.2",
+      "idx": 12,
+      "quadrant": "Q2",
+      "source": "interpolated",
+      "tsi": -1,
+      "x1": 1020.5,
+      "x2": 1093.8,
+      "y1": 290.0,
+      "y2": 490.8
+    },
+    {
+      "area_px": 0,
+      "cls": "Tooth",
+      "conf": 0.5,
+      "fdi": "2.3",
+      "idx": 13,
+      "quadrant": "Q2",
+      "source": "interpolated",
+      "tsi": -1,
+      "x1": 1082.3,
+      "x2": 1155.7,
+      "y1": 290.0,
+      "y2": 490.8
+    },
+    {
+      "area_px": 0,
+      "cls": "Tooth",
+      "conf": 0.5,
+      "fdi": "2.5",
+      "idx": 14,
+      "quadrant": "Q2",
+      "source": "interpolated",
+      "tsi": -1,
+      "x1": 1217.3,
+      "x2": 1290.3,
+      "y1": 302.7,
+      "y2": 500.9
+    },
+    {
+      "area_px": 0,
+      "cls": "Tooth",
+      "conf": 0.5,
+      "fdi": "2.6",
+      "idx": 15,
+      "quadrant": "Q2",
+      "source": "interpolated",
+      "tsi": -1,
+      "x1": 1290.3,
+      "x2": 1363.3,
+      "y1": 302.7,
+      "y2": 500.9
+    },
+    {
+      "area_px": 0,
+      "cls": "Tooth",
+      "conf": 0.5,
+      "fdi": "2.7",
+      "idx": 16,
+      "quadrant": "Q2",
+      "source": "interpolated",
+      "tsi": -1,
+      "x1": 1363.3,
+      "x2": 1436.3,
+      "y1": 302.7,
+      "y2": 500.9
+    },
+    {
+      "area_px": 0,
+      "cls": "Tooth",
+      "conf": 0.5,
+      "fdi": "3.1",
+      "idx": 17,
+      "quadrant": "Q3",
+      "source": "interpolated",
+      "tsi": -1,
+      "x1": 965.1,
+      "x2": 1026.9,
+      "y1": 667.2,
+      "y2": 853.3
+    },
+    {
+      "area_px": 0,
+      "cls": "Tooth",
+      "conf": 0.5,
+      "fdi": "3.2",
+      "idx": 18,
+      "quadrant": "Q3",
+      "source": "interpolated",
+      "tsi": -1,
+      "x1": 1007.8,
+      "x2": 1069.6,
+      "y1": 667.2,
+      "y2": 853.3
+    },
+    {
+      "area_px": 0,
+      "cls": "Tooth",
+      "conf": 0.5,
+      "fdi": "3.5",
+      "idx": 19,
+      "quadrant": "Q3",
+      "source": "interpolated",
+      "tsi": -1,
+      "x1": 1199.1,
+      "x2": 1262.5,
+      "y1": 634.9,
+      "y2": 831.0
+    },
+    {
+      "area_px": 0,
+      "cls": "Tooth",
+      "conf": 0.5,
+      "fdi": "4.2",
+      "idx": 20,
+      "quadrant": "Q4",
+      "source": "interpolated",
+      "tsi": -1,
+      "x1": 876.8,
+      "x2": 941.3,
+      "y1": 673.1,
+      "y2": 860.9
+    },
+    {
+      "area_px": 0,
+      "cls": "Tooth",
+      "conf": 0.5,
+      "fdi": "4.4",
+      "idx": 21,
+      "quadrant": "Q4",
+      "source": "interpolated",
+      "tsi": -1,
+      "x1": 767.9,
+      "x2": 832.5,
+      "y1": 653.7,
+      "y2": 858.1
+    },
+    {
+      "area_px": 0,
+      "cls": "Tooth",
+      "conf": 0.5,
+      "fdi": "4.5",
+      "idx": 22,
+      "quadrant": "Q4",
+      "source": "interpolated",
+      "tsi": -1,
+      "x1": 703.3,
+      "x2": 767.9,
+      "y1": 653.7,
+      "y2": 858.1
+    }
+  ],
+  "fdi_map": {
+    "1.1": [
+      1
+    ],
+    "1.2": [
+      0
+    ],
+    "1.3": [
+      7
+    ],
+    "1.4": [
+      8
+    ],
+    "1.5": [
+      9
+    ],
+    "1.6": [
+      10
+    ],
+    "1.7": [
+      11
+    ],
+    "2.2": [
+      12
+    ],
+    "2.3": [
+      13
+    ],
+    "2.4": [
+      2
+    ],
+    "2.5": [
+      14
+    ],
+    "2.6": [
+      15
+    ],
+    "2.7": [
+      16
+    ],
+    "3.1": [
+      17
+    ],
+    "3.2": [
+      18
+    ],
+    "3.3": [
+      3
+    ],
+    "3.4": [
+      4
+    ],
+    "3.5": [
+      19
+    ],
+    "4.1": [
+      6
+    ],
+    "4.2": [
+      20
+    ],
+    "4.3": [
+      5
+    ],
+    "4.4": [
+      21
+    ],
+    "4.5": [
+      22
+    ]
+  },
+  "formula_source": "SemiT-SAM (32-class FDI)",
+  "image_size": {
+    "height": 1013,
+    "width": 2000
+  }
+}

@@ -1,0 +1,274 @@
+{
+  "nodes": [
+    {
+      "branch": "main",
+      "codename": "alpha-baseline",
+      "confidence": 0.95,
+      "created_at": "2026-04-29T10:10:23.621872+00:00",
+      "duration_ms": 0,
+      "experiment_id": null,
+      "generation": 1,
+      "id": 28,
+      "images": [
+        "synthetic"
+      ],
+      "implants": 0,
+      "is_alive": true,
+      "is_champion": false,
+      "mutation_type": "synthetic",
+      "name": "alpha-baseline",
+      "parent_id": null,
+      "pathologies": 0,
+      "restorations": 0,
+      "score_human": 0.94,
+      "tags": [
+        "demo"
+      ],
+      "teeth": 32,
+      "tldr": "Synthetic demo algorithm",
+      "tokens": 0,
+      "verdict": "synthetic_demo",
+      "version": "v1"
+    },
+    {
+      "branch": "exp-clahe",
+      "codename": "beta-aggressive",
+      "confidence": 0.84,
+      "created_at": "2026-04-29T10:10:23.621894+00:00",
+      "duration_ms": 0,
+      "experiment_id": null,
+      "generation": 2,
+      "id": 29,
+      "images": [
+        "synthetic"
+      ],
+      "implants": 0,
+      "is_alive": true,
+      "is_champion": false,
+      "mutation_type": "synthetic",
+      "name": "beta-aggressive",
+      "parent_id": null,
+      "pathologies": 0,
+      "restorations": 0,
+      "score_human": 0.82,
+      "tags": [
+        "demo"
+      ],
+      "teeth": 32,
+      "tldr": "Synthetic demo algorithm",
+      "tokens": 0,
+      "verdict": "synthetic_demo",
+      "version": "v1"
+    },
+    {
+      "branch": "champion",
+      "codename": "gamma-champion",
+      "confidence": 0.97,
+      "created_at": "2026-04-29T10:10:23.621899+00:00",
+      "duration_ms": 0,
+      "experiment_id": null,
+      "generation": 3,
+      "id": 30,
+      "images": [
+        "synthetic"
+      ],
+      "implants": 0,
+      "is_alive": true,
+      "is_champion": true,
+      "mutation_type": "synthetic",
+      "name": "gamma-champion",
+      "parent_id": null,
+      "pathologies": 0,
+      "restorations": 0,
+      "score_human": 0.96,
+      "tags": [
+        "demo"
+      ],
+      "teeth": 32,
+      "tldr": "Synthetic demo algorithm",
+      "tokens": 0,
+      "verdict": "synthetic_demo",
+      "version": "v1"
+    },
+    {
+      "branch": "main",
+      "codename": "alpha-baseline",
+      "confidence": 0.95,
+      "created_at": "2026-04-29T10:10:23.621902+00:00",
+      "duration_ms": 0,
+      "experiment_id": null,
+      "generation": 1,
+      "id": 31,
+      "images": [
+        "synthetic"
+      ],
+      "implants": 0,
+      "is_alive": true,
+      "is_champion": false,
+      "mutation_type": "synthetic",
+      "name": "alpha-baseline",
+      "parent_id": null,
+      "pathologies": 0,
+      "restorations": 0,
+      "score_human": 0.94,
+      "tags": [
+        "demo"
+      ],
+      "teeth": 32,
+      "tldr": "Synthetic demo algorithm",
+      "tokens": 0,
+      "verdict": "synthetic_demo",
+      "version": "v1"
+    },
+    {
+      "branch": "exp-clahe",
+      "codename": "beta-aggressive",
+      "confidence": 0.84,
+      "created_at": "2026-04-29T10:10:23.621905+00:00",
+      "duration_ms": 0,
+      "experiment_id": null,
+      "generation": 2,
+      "id": 32,
+      "images": [
+        "synthetic"
+      ],
+      "implants": 0,
+      "is_alive": true,
+      "is_champion": false,
+      "mutation_type": "synthetic",
+      "name": "beta-aggressive",
+      "parent_id": null,
+      "pathologies": 0,
+      "restorations": 0,
+      "score_human": 0.82,
+      "tags": [
+        "demo"
+      ],
+      "teeth": 32,
+      "tldr": "Synthetic demo algorithm",
+      "tokens": 0,
+      "verdict": "synthetic_demo",
+      "version": "v1"
+    },
+    {
+      "branch": "champion",
+      "codename": "gamma-champion",
+      "confidence": 0.97,
+      "created_at": "2026-04-29T10:10:23.621907+00:00",
+      "duration_ms": 0,
+      "experiment_id": null,
+      "generation": 3,
+      "id": 33,
+      "images": [
+        "synthetic"
+      ],
+      "implants": 0,
+      "is_alive": true,
+      "is_champion": true,
+      "mutation_type": "synthetic",
+      "name": "gamma-champion",
+      "parent_id": null,
+      "pathologies": 0,
+      "restorations": 0,
+      "score_human": 0.96,
+      "tags": [
+        "demo"
+      ],
+      "teeth": 32,
+      "tldr": "Synthetic demo algorithm",
+      "tokens": 0,
+      "verdict": "synthetic_demo",
+      "version": "v1"
+    },
+    {
+      "branch": "main",
+      "codename": "alpha-baseline",
+      "confidence": 0.95,
+      "created_at": "2026-04-29T10:10:23.621909+00:00",
+      "duration_ms": 0,
+      "experiment_id": null,
+      "generation": 1,
+      "id": 34,
+      "images": [
+        "synthetic"
+      ],
+      "implants": 0,
+      "is_alive": true,
+      "is_champion": false,
+      "mutation_type": "synthetic",
+      "name": "alpha-baseline",
+      "parent_id": null,
+      "pathologies": 0,
+      "restorations": 0,
+      "score_human": 0.94,
+      "tags": [
+        "demo"
+      ],
+      "teeth": 32,
+      "tldr": "Synthetic demo algorithm",
+      "tokens": 0,
+      "verdict": "synthetic_demo",
+      "version": "v1"
+    },
+    {
+      "branch": "exp-clahe",
+      "codename": "beta-aggressive",
+      "confidence": 0.84,
+      "created_at": "2026-04-29T10:10:23.621912+00:00",
+      "duration_ms": 0,
+      "experiment_id": null,
+      "generation": 2,
+      "id": 35,
+      "images": [
+        "synthetic"
+      ],
+      "implants": 0,
+      "is_alive": true,
+      "is_champion": false,
+      "mutation_type": "synthetic",
+      "name": "beta-aggressive",
+      "parent_id": null,
+      "pathologies": 0,
+      "restorations": 0,
+      "score_human": 0.82,
+      "tags": [
+        "demo"
+      ],
+      "teeth": 32,
+      "tldr": "Synthetic demo algorithm",
+      "tokens": 0,
+      "verdict": "synthetic_demo",
+      "version": "v1"
+    },
+    {
+      "branch": "champion",
+      "codename": "gamma-champion",
+      "confidence": 0.97,
+      "created_at": "2026-04-29T10:10:23.621914+00:00",
+      "duration_ms": 0,
+      "experiment_id": null,
+      "generation": 3,
+      "id": 36,
+      "images": [
+        "synthetic"
+      ],
+      "implants": 0,
+      "is_alive": true,
+      "is_champion": true,
+      "mutation_type": "synthetic",
+      "name": "gamma-champion",
+      "parent_id": null,
+      "pathologies": 0,
+      "restorations": 0,
+      "score_human": 0.96,
+      "tags": [
+        "demo"
+      ],
+      "teeth": 32,
+      "tldr": "Synthetic demo algorithm",
+      "tokens": 0,
+      "verdict": "synthetic_demo",
+      "version": "v1"
+    }
+  ]
+}

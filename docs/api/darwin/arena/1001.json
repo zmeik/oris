@@ -1,0 +1,181 @@
+{
+  "algorithms": [
+    {
+      "branch": "main",
+      "codename": "alpha-baseline",
+      "confidence": 0.95,
+      "config": {
+        "crops": [
+          {
+            "id": "default"
+          }
+        ],
+        "filters": []
+      },
+      "config_summary": "1 crops \u00d7 0 filters",
+      "formula": {
+        "1.1": "restored:vdlmo+caries:vdlm+endo",
+        "1.2": "restored:vdlmo+caries:vdlm+crowned",
+        "1.3": "endo+restored+crowned",
+        "1.4": "impl_restored",
+        "1.5": "impl_restored",
+        "1.6": "impl_restored",
+        "1.7": "missing",
+        "1.8": "missing",
+        "2.1": "impl_restored",
+        "2.2": "restored:vdlmo+post+endo",
+        "2.3": "endo+crowned+post",
+        "2.4": "impl_restored",
+        "2.5": "impl_restored",
+        "2.6": "impl_restored",
+        "2.7": "missing",
+        "2.8": "missing",
+        "3.1": "impl_cover",
+        "3.2": "missing",
+        "3.3": "missing",
+        "3.4": "impl_cover",
+        "3.5": "missing",
+        "3.6": "missing",
+        "3.7": "missing",
+        "3.8": "missing",
+        "4.1": "missing",
+        "4.2": "impl_cover",
+        "4.3": "missing",
+        "4.4": "impl_cover",
+        "4.5": "missing",
+        "4.6": "missing",
+        "4.7": "missing",
+        "4.8": "missing"
+      },
+      "generation": 1,
+      "images": [
+        "synthetic"
+      ],
+      "is_alive": true,
+      "is_champion": false,
+      "score": 0.94
+    },
+    {
+      "branch": "exp-clahe",
+      "codename": "beta-aggressive",
+      "confidence": 0.84,
+      "config": {
+        "crops": [
+          {
+            "id": "tight"
+          }
+        ],
+        "filters": [
+          {
+            "name": "clahe"
+          }
+        ]
+      },
+      "config_summary": "1 crops \u00d7 1 filters",
+      "formula": {
+        "1.1": "restored:vdlmo+caries:vdlm+endo",
+        "1.2": "restored:vdlmo+caries:vdlm+crowned",
+        "1.3": "endo+restored+crowned",
+        "1.4": "impl_restored",
+        "1.5": "impl_restored",
+        "1.6": "impl_restored",
+        "1.7": "missing",
+        "1.8": "missing",
+        "2.1": "impl_restored",
+        "2.2": "restored:vdlmo+post+endo",
+        "2.3": "endo+crowned+post",
+        "2.4": "impl_restored",
+        "2.5": "impl_restored",
+        "2.6": "impl_restored",
+        "2.7": "missing",
+        "2.8": "missing",
+        "3.1": "impl_cover",
+        "3.2": "missing",
+        "3.3": "missing",
+        "3.4": "impl_cover",
+        "3.5": "missing",
+        "3.6": "missing",
+        "3.7": "missing",
+        "3.8": "missing",
+        "4.1": "missing",
+        "4.2": "impl_cover",
+        "4.3": "missing",
+        "4.4": "impl_cover",
+        "4.5": "missing",
+        "4.6": "missing",
+        "4.7": "missing",
+        "4.8": "missing"
+      },
+      "generation": 2,
+      "images": [
+        "synthetic"
+      ],
+      "is_alive": true,
+      "is_champion": false,
+      "score": 0.82
+    },
+    {
+      "branch": "champion",
+      "codename": "gamma-champion",
+      "confidence": 0.97,
+      "config": {
+        "crops": [
+          {
+            "id": "wide"
+          },
+          {
+            "id": "tight"
+          }
+        ],
+        "filters": [
+          {
+            "name": "sharpen"
+          }
+        ]
+      },
+      "config_summary": "2 crops \u00d7 1 filters",
+      "formula": {
+        "1.1": "restored:vdlmo+caries:vdlm+endo",
+        "1.2": "restored:vdlmo+caries:vdlm+crowned",
+        "1.3": "endo+restored+crowned",
+        "1.4": "impl_restored",
+        "1.5": "impl_restored",
+        "1.6": "impl_restored",
+        "1.7": "missing",
+        "1.8": "missing",
+        "2.1": "impl_restored",
+        "2.2": "restored:vdlmo+post+endo",
+        "2.3": "endo+crowned+post",
+        "2.4": "impl_restored",
+        "2.5": "impl_restored",
+        "2.6": "impl_restored",
+        "2.7": "missing",
+        "2.8": "missing",
+        "3.1": "impl_cover",
+        "3.2": "missing",
+        "3.3": "missing",
+        "3.4": "impl_cover",
+        "3.5": "missing",
+        "3.6": "missing",
+        "3.7": "missing",
+        "3.8": "missing",
+        "4.1": "missing",
+        "4.2": "impl_cover",
+        "4.3": "missing",
+        "4.4": "impl_cover",
+        "4.5": "missing",
+        "4.6": "missing",
+        "4.7": "missing",
+        "4.8": "missing"
+      },
+      "generation": 3,
+      "images": [
+        "synthetic"
+      ],
+      "is_alive": true,
+      "is_champion": true,
+      "score": 0.96
+    }
+  ],
+  "file_id": 1001
+}

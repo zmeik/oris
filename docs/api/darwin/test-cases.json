@@ -1,0 +1,20 @@
+[
+  {
+    "created_at": "2026-01-01T00:00:00Z",
+    "file_id": 1001,
+    "filename": "case_A.png",
+    "label": "Case A \u2014 multi-tooth + 7 implants + bridges (mixed clinical)"
+  },
+  {
+    "created_at": "2026-01-01T00:00:00Z",
+    "file_id": 1002,
+    "filename": "case_B.png",
+    "label": "Case B \u2014 heavy restoration (7 crowns + 5 implants + bridge)"
+  },
+  {
+    "created_at": "2026-01-01T00:00:00Z",
+    "file_id": 1003,
+    "filename": "case_C.png",
+    "label": "Case C \u2014 implant-only (10 implants, bar overdenture, all-on-X)"
+  }
+]
