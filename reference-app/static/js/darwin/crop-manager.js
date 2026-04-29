@@ -1238,7 +1238,9 @@ function _renderCropCarousel(fileId, jaw) {
         // Tooltip on card
         const confStr = card.conf ? ` ${Math.round(card.conf*100)}%` : '';
         const gtTip = card.gtAbbr ? `\nGT: ${card.gtAbbr} (${card.gtRaw})` : '';
-        cardEl.title = noDet ? `${fdi} — no detection\nClick: draw crop manually` : `${fdi} — ${card.gtAbbr || card.cls}${confStr}${gtTip}\nClick: expand | Drag to a tooth to reassign`;
+        cardEl.title = noDet
+            ? `${fdi} — no detection\nClick: draw crop manually`
+            : `${fdi} — ${card.gtAbbr || card.cls}${confStr}${gtTip}\nClick: open fullscreen editor   ·   Drag: reassign FDI`;
         // Click on empty card → draw manual crop on OPG
         if (noDet) {
             cardEl.addEventListener('click', (e) => {
@@ -1461,19 +1463,36 @@ function _renderCropCarousel(fileId, jaw) {
             _drawCropThumb(cvs, opgImg, card, _uniformScale);
         }
 
-        // Click handler — don't toggle if clicking canvas of already-active card
-        // (canvas clicks are handled by annotation mousedown: hit-test, draw, resize)
+        // Click handler — restored production UX:
+        //   • Single click on a crop with a bbox → open the full-screen
+        //     editor (the "comfortable work mode" the reviewer remembers).
+        //     The card is also marked active so closing fullscreen via Esc
+        //     lands the reviewer back on a highlighted carousel slot.
+        //   • Single click on a crop with NO detection → just activate
+        //     (so the reviewer can draw a manual crop in carousel mode).
+        //   • Click on the annotation canvas of an already-active card
+        //     while a fullscreen editor is OPEN — the canvas mousedown
+        //     handler runs the annotation tool. The fullscreen flow
+        //     handles its own clicks separately, so we don't conflict.
+        //   • Ctrl/Cmd+click — kept as a synonym for power users.
+        //   • Double-click — kept as a redundant trigger for users who
+        //     learnt the dblclick gesture.
         cardEl.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Ctrl+click → open fullscreen crop editor
-            if ((e.ctrlKey || e.metaKey) && card.bbox) {
-                // Ensure card is active first
-                if (!cardEl.classList.contains('active')) _activateCropCard(fileId, fdi);
-                _cropFsOpen(fileId, fdi);
-                return;
-            }
-            if (cardEl.classList.contains('active') && e.target.closest('.cc-canvas')) return;
-            _activateCropCard(fileId, fdi);
+            // Active-card canvas hits go to annotation mousedown — the
+            // mousedown handler already ran in carousel mode before we
+            // reach this click. Only block if we'd otherwise re-open FS.
+            if (cardEl.classList.contains('active') && e.target.closest('.cc-canvas')
+                && _cropFsState && _cropFsState.open) return;
+            if (!cardEl.classList.contains('active')) _activateCropCard(fileId, fdi);
+            if (card.bbox) _cropFsOpen(fileId, fdi);
+        });
+        cardEl.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (!card.bbox) return;
+            if (!cardEl.classList.contains('active')) _activateCropCard(fileId, fdi);
+            _cropFsOpen(fileId, fdi);
         });
 
         container.appendChild(cardEl);
