@@ -1039,18 +1039,27 @@ function _bridgeContextMenu(e, cellEl, fileId, fdi) {
     const links = arenaBridgeLinks[fileId] || {};
 
     // ── Bridge section ──
+    // Localized verbs: "Связать → / Разъединить →" become "Link → / Unlink →"
+    // when OrisI18n.getLang() === 'en'. Same toggle logic, same handlers.
+    const _isEn_ctx = () => (typeof OrisI18n !== 'undefined') && OrisI18n.getLang() === 'en';
     let bridgeBtns = '';
     if (rightFdi) {
         const rKey = makeBridgeKey(fdi, rightFdi);
         const rLinked = !!links[rKey];
+        const lblR = rLinked
+            ? (_isEn_ctx() ? '✕ Unlink →' : '✕ Разъединить →')
+            : (_isEn_ctx() ? '🔗 Link →'   : '🔗 Связать →');
         bridgeBtns += `<button onclick="toggleBridgeLink('${fileId}','${fdi}','${rightFdi}');this.closest('.note-ctx-menu').remove()">
-            ${rLinked ? '✕ Разъединить →' : '🔗 Связать →'} ${rightFdi}</button>`;
+            ${lblR} ${rightFdi}</button>`;
     }
     if (leftFdi) {
         const lKey = makeBridgeKey(fdi, leftFdi);
         const lLinked = !!links[lKey];
+        const lblL = lLinked
+            ? (_isEn_ctx() ? '✕ Unlink ←' : '✕ Разъединить ←')
+            : (_isEn_ctx() ? '🔗 Link ←'   : '🔗 Связать ←');
         bridgeBtns += `<button onclick="toggleBridgeLink('${fileId}','${fdi}','${leftFdi}');this.closest('.note-ctx-menu').remove()">
-            ${lLinked ? '✕ Разъединить ←' : '🔗 Связать ←'} ${leftFdi}</button>`;
+            ${lblL} ${leftFdi}</button>`;
     }
 
     // ── Note section (multi-tag toggle) ──
@@ -1141,34 +1150,45 @@ function _bridgeContextMenu(e, cellEl, fileId, fdi) {
     const fs00 = rd.fillStates?.['0_0'];
     const canalLabel = hasEndo ? (fs00 !== undefined ? FILL_STATES[fs00]?.label || '?' : '?') : '—';
 
+    // Localized button-label prefixes for the root-pathology cycle
+    // buttons. Each clicks `_ctxCycle*()` to advance state — labels
+    // show the current value (paLabel / furcLabel / etc.) which is
+    // already locale-aware via _stN().
+    const _periapL = _isEn_ctx() ? 'Periapical: '   : 'Периапикально: ';
+    const _furcL   = _isEn_ctx() ? 'Furcation: '    : 'Фуркация: ';
+    const _latML   = _isEn_ctx() ? 'Lat. mesial: '  : 'Лат. мез.: ';
+    const _latDL   = _isEn_ctx() ? 'Lat. distal: '  : 'Лат. дист.: ';
+    const _epL     = _isEn_ctx() ? 'Endo-perio: '   : 'Эндо-перио: ';
+    const _wearL   = _isEn_ctx() ? 'Wear: TWI '     : 'Стираемость: TWI ';
+    const _canalL  = _isEn_ctx() ? 'Canal R1: '     : 'Канал R1: ';
     let rootPathBtns = `
         <button class="note-tag-btn" onclick="_ctxCyclePeriapical('${fileId}','${fdi}');_ctxRefreshRootSection(this,'${fileId}','${fdi}')" style="${pa0 ? 'background:rgba(239,68,68,0.15);border-left:2px solid var(--red)' : ''}">
-            📍 Периапикально: ${paLabel}</button>`;
+            📍 ${_periapL}${paLabel}</button>`;
     if (nRoots > 1) {
         rootPathBtns += `
         <button class="note-tag-btn" onclick="_ctxCycleFurcation('${fileId}','${fdi}');_ctxRefreshRootSection(this,'${fileId}','${fdi}')" style="${furc0 ? 'background:rgba(234,179,8,0.15);border-left:2px solid var(--gold)' : ''}">
-            🔀 Фуркация: ${furcLabel}</button>`;
+            🔀 ${_furcL}${furcLabel}</button>`;
     }
     rootPathBtns += `
         <button class="note-tag-btn" onclick="_ctxCycleLateral('${fileId}','${fdi}','0','m');_ctxRefreshRootSection(this,'${fileId}','${fdi}')" style="${lat0m?.type && lat0m.type!=='none' ? 'background:rgba(168,85,247,0.15);border-left:2px solid rgba(168,85,247,0.7)' : ''}">
-            📐 Лат. мез.: ${lat0mLabel}</button>
+            📐 ${_latML}${lat0mLabel}</button>
         <button class="note-tag-btn" onclick="_ctxCycleLateral('${fileId}','${fdi}','0','d');_ctxRefreshRootSection(this,'${fileId}','${fdi}')" style="${lat0d?.type && lat0d.type!=='none' ? 'background:rgba(59,130,246,0.15);border-left:2px solid var(--blue)' : ''}">
-            📐 Лат. дист.: ${lat0dLabel}</button>
+            📐 ${_latDL}${lat0dLabel}</button>
         <button class="note-tag-btn" onclick="_ctxCycleEndoPerio('${fileId}','${fdi}');_ctxRefreshRootSection(this,'${fileId}','${fdi}')" style="${ep0?.type && ep0.type!=='none' ? 'background:rgba(239,68,68,0.15);border-left:2px solid var(--red)' : ''}">
-            🔗 Эндо-перио: ${epLabel}</button>
+            🔗 ${_epL}${epLabel}</button>
         <button class="note-tag-btn" onclick="_ctxCycleTWI('${fileId}','${fdi}');_ctxRefreshRootSection(this,'${fileId}','${fdi}')" style="${twiVal > 0 ? 'background:rgba(234,179,8,0.15);border-left:2px solid var(--gold)' : ''}">
-            📊 Стираемость: TWI ${twiVal}</button>`;
+            📊 ${_wearL}${twiVal}</button>`;
     if (hasEndo) {
         rootPathBtns += `
         <button class="note-tag-btn" onclick="_ctxCycleCanal('${fileId}','${fdi}');_ctxRefreshRootSection(this,'${fileId}','${fdi}')" style="${fs00 ? 'background:rgba(34,197,94,0.15);border-left:2px solid var(--green)' : ''}">
-            🦷 Канал R1: ${canalLabel}</button>`;
+            🦷 ${_canalL}${canalLabel}</button>`;
     }
 
     const menu = document.createElement('div');
     menu.className = 'note-ctx-menu';
     menu.innerHTML = `
         <div style="font-size:10px;color:var(--text-dim);padding:2px 10px;margin-bottom:2px;font-weight:600">${(typeof OrisI18n !== 'undefined') ? OrisI18n.t('pickerTitleTooth', {fdi}) : 'Зуб ' + fdi}</div>
-        ${bridgeBtns ? `<div style="font-size:9px;color:var(--text-dim);padding:2px 10px;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px">Мост</div>${bridgeBtns}` : ''}
+        ${bridgeBtns ? `<div style="font-size:9px;color:var(--text-dim);padding:2px 10px;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px">${_isEn_ctx() ? 'Bridge' : 'Мост'}</div>${bridgeBtns}` : ''}
         <div style="font-size:9px;color:var(--text-dim);padding:2px 10px;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid var(--border);padding-top:6px">🦷 ${(typeof OrisI18n!=='undefined' && OrisI18n.getLang()==='en') ? 'Root pathology' : 'Патология корня'}</div>
         ${rootPathBtns}
         <div style="font-size:9px;color:var(--text-dim);padding:2px 10px;margin-top:4px;text-transform:uppercase;letter-spacing:0.5px;border-top:1px solid var(--border);padding-top:6px">📝 ${(typeof OrisI18n!=='undefined' && OrisI18n.getLang()==='en') ? 'Notes' : 'Заметки'}${notesSummary}</div>
