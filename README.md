@@ -233,14 +233,19 @@ Read [PRIVACY.md](PRIVACY.md) before deploying ORIS in clinical settings.
 
 ## Contact
 
-- **Author:** Sergo G. Manukov ([ORCID 0000-0002-7659-2677](https://orcid.org/0000-0002-7659-2677))
-- **Affiliation:** RUDN University, Moscow, Russian Federation
-- **Email:** see ORCID profile
-- **Issues / discussion:** use GitHub Issues for this repository
+**Sergo G. Manukov** &middot; [Google Scholar](https://scholar.google.com/citations?user=3Xfn4PoAAAAJ&hl=en) &middot; [ORCID 0000-0002-7659-2677](https://orcid.org/0000-0002-7659-2677)
+
+Affiliations:
+
+- **RUDN University**, Moscow, Russian Federation &mdash; PhD candidate (primary affiliation, dissertation defence September 2026)
+- **New Vision University**, Tbilisi, Georgia &mdash; visiting researcher
+
+Email: <smanukov@newvision.ge> &middot; Issues and discussion: use [GitHub Issues](https://github.com/zmeik/oris/issues) for this repository.
 
 ## Acknowledgments
 
 - The Darwin-Lab Arena project at RUDN Diagnostic Centre for the production codebase that informed v0.1
+- New Vision University (Tbilisi) for visiting-researcher support during the schema design and reference-application work
 - The OSIPI LL-XML lexicon authors for the architectural precedent
 - The ACP for GPT-9 (2017) and GPT-10 (2023) prosthodontic terminology
 
