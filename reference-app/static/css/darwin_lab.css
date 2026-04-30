@@ -153,6 +153,30 @@ body.theme-light {
     --shadow-lg: 0 12px 40px rgba(20,34,61,0.18);
 }
 
+/* Theme-light topbar/lang-toggle polish — added 30.04.2026 for IJOS Fig. 2.
+   The default dark-theme button styles render the active language toggle as a
+   solid black square against the white topbar. These rules give the active
+   tab a proper accent-blue fill and white text, matching the visual style
+   conventions of the rest of the light theme. Also aligns gt-text-formula
+   inline-styled element with the light-theme bg-elev token. */
+body.theme-light .lang-toggle button.active,
+body.theme-light [class*="lang"] button.active,
+body.theme-light [role="tab"][aria-selected="true"] {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+}
+body.theme-light .gt-text-formula {
+    background: var(--surface2) !important;
+    color: var(--text-muted) !important;
+    border-color: var(--border) !important;
+}
+body.theme-light .arena-detail-empty,
+body.theme-light .td-placeholder {
+    /* Belt-and-suspenders — match the global hide rule above */
+    display: none !important;
+}
+
 /* ───────────────────────────── Reset / base ───────────────────────────── */
 * { margin:0; padding:0; box-sizing:border-box; }
 html { font-size:16px; }
@@ -955,7 +979,13 @@ details.ref-section > :last-child { padding-bottom: var(--sp-3); }
 .arena-detail-panel .adp-diff-item .fdi { color: var(--text); font-weight: var(--fw-semi); width: 28px; font-variant-numeric: tabular-nums; }
 .arena-detail-panel .adp-diff-item .got { color: var(--red); }
 .arena-detail-panel .adp-diff-item .exp { color: var(--green); }
-.arena-detail-empty { color: var(--text-dim); font-size: 11px; padding: var(--sp-5) var(--sp-2); text-align:center; }
+/* .arena-detail-empty placeholder ("Click an algorithm name to see details") is
+   visually noisy in screenshots — it sits over the formula grid and offers no value
+   when the user has not yet clicked an algorithm. Hidden by default; the panel
+   simply shows nothing until populated. Fixed 30.04.2026 for IJOS Fig. 2.
+   Original styling kept commented for reference. */
+.arena-detail-empty { display: none !important; }
+/* .arena-detail-empty { color: var(--text-dim); font-size: 11px; padding: var(--sp-5) var(--sp-2); text-align:center; } */
 
 /* Tooth detail panel (right side) */
 .td-section-header {

@@ -78,8 +78,23 @@
         }
     </style>
     <script>
-        // Restore saved theme on load (synthetic-only, no auth)
-        try { if (localStorage.getItem('oris-theme') === 'light') document.body.classList.add('theme-light'); } catch(e){}
+        // Restore saved theme on load (synthetic-only, no auth).
+        // DEFAULT changed to LIGHT on 30.04.2026 for scientific/academic context
+        // (IJOS submission Fig. 2). Reviewers and casual visitors land on the
+        // paper-style light theme; users who explicitly toggle dark via the
+        // theme button still get their preference saved in localStorage.
+        try {
+          const saved = localStorage.getItem('oris-theme');
+          if (saved === 'dark') {
+            document.body.classList.remove('theme-light');
+          } else {
+            // saved === 'light' OR null/undefined (first visit) → light theme
+            document.body.classList.add('theme-light');
+          }
+        } catch(e) {
+          // localStorage blocked → fall back to light theme
+          document.body.classList.add('theme-light');
+        }
     </script>
 
     <!-- Left sidebar: algorithm list -->

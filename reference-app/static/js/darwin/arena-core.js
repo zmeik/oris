@@ -551,10 +551,11 @@ async function loadArena() {
                             <div class="leg-item"><div class="leg-dot" style="box-shadow:inset 0 0 0 1.5px var(--red)"></div><span data-i18n="legAbbr_error">${_tt('legAbbr_error')}</span></div>
                         </div>
                         <div class="gt-text-formula" id="gt-text-formula-${tc.file_id}"
-                             style="font-family:'SF Mono',Monaco,Consolas,monospace;font-size:11px;color:#94a3b8;
-                                    padding:8px 10px;background:rgba(15,23,42,0.6);border-radius:4px;margin:4px 0;
+                             style="font-family:'SF Mono',Monaco,Consolas,monospace;font-size:11px;
+                                    color:var(--text-muted, #94a3b8);
+                                    padding:8px 10px;background:var(--bg-elev);border-radius:4px;margin:4px 0;
                                     white-space:pre;overflow-x:auto;line-height:1.6;
-                                    letter-spacing:0.3px;border:1px solid rgba(255,255,255,0.06);"></div>
+                                    letter-spacing:0.3px;border:1px solid var(--border, rgba(255,255,255,0.06));"></div>
                     </div>
                     <div class="arena-formulas-col">
                         <div class="arena-formulas" id="arena-formulas-${tc.file_id}">

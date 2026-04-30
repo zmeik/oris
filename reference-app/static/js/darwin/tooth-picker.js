@@ -2738,6 +2738,17 @@ function _updateToothDetailPanel(fileId, fdi) {
     if (!card) return;
     card.style.display = '';
     if (placeholder) placeholder.style.display = 'none';
+    // Also hide the secondary placeholder ("Click an algorithm name…") which
+    // lives in `.arena-detail-empty` inside the right-hand `.arena-detail-panel`.
+    // Without this it stays visible after a tooth is selected, overlapping the
+    // formula and creating the cluttered look in pre-29.04.2026 screenshots.
+    try {
+        const detailPanel = document.getElementById('arena-detail-' + fileId);
+        if (detailPanel) {
+            const emptyHints = detailPanel.querySelectorAll('.arena-detail-empty');
+            emptyHints.forEach(el => { el.style.display = 'none'; });
+        }
+    } catch (_) { /* defensive: never block tooth-picker UI on hint cleanup */ }
     // Force-show the detail column on small screens
     const col = card.closest('.arena-detail-col');
     if (col) col.classList.add('force-show');

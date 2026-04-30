@@ -1895,7 +1895,11 @@ async function _initCropCarousel(fileId) {
         }
     }
 
-    _carouselState[fileId] = { cards, activeFdi: null, opgChildrenMode: 'all' };
+    // Default opgChildrenMode = 'off': start with a clean OPG (no bbox-label clutter
+    // from per-FDI groups stacking on top of each other). Reviewers can toggle ON
+    // via the "Objects" button if they want to see the AI-detected child overlays.
+    // Fixed 29.04.2026 in response to cluttered Fig. 2 screenshot for IJOS submission.
+    _carouselState[fileId] = { cards, activeFdi: null, opgChildrenMode: 'off' };
 
     // Auto-redetect YOLO children for interpolated cards (gap-filling bbox, no YOLO)
     // and manual crops restored from crop_overrides on reload
